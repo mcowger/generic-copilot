@@ -24,15 +24,6 @@ export async function prepareTokenCount(
 			if (part instanceof vscode.LanguageModelTextPart) {
 				// Estimate tokens directly for plain text
 				totalTokens += estimateTextTokens(part.value);
-			} else if (part instanceof vscode.LanguageModelDataPart) {
-				// Estimate tokens for image or data parts based on type
-				if (part.mimeType.startsWith("image/")) {
-					// Images are approximately 170 tokens
-					totalTokens += 170;
-				} else {
-					// For other binary data, use a more conservative estimate
-					totalTokens += Math.ceil(part.data.length / 4);
-				}
 			} else if (part instanceof vscode.LanguageModelToolCallPart) {
 				// Tool call token calculation
 				const toolCallText = `${part.name}(${JSON.stringify(part.input)})`;

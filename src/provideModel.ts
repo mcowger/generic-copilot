@@ -1,7 +1,8 @@
 import * as vscode from "vscode";
 import { CancellationToken, LanguageModelChatInformation } from "vscode";
 
-import type { HFModelItem, HFModelsResponse } from "./types";
+import type { ModelItem, HFModelsResponse } from "./types";
+import { resolveModelWithProvider } from "./utils";
 
 const DEFAULT_CONTEXT_LENGTH = 128000;
 const DEFAULT_MAX_TOKENS = 4096;
@@ -20,33 +21,38 @@ export async function prepareLanguageModelChatInformation(
 ): Promise<LanguageModelChatInformation[]> {
 	// Check for user-configured models first
 	const config = vscode.workspace.getConfiguration();
-	const userModels = config.get<HFModelItem[]>("oaicopilot.models", []);
+	const userModels = config.get<ModelItem[]>("oaicopilot.models", []);
 
 	let infos: LanguageModelChatInformation[];
 	if (userModels && userModels.length > 0) {
 		// Return user-provided models directly
 		infos = userModels.map((m) => {
-			const contextLen = m?.context_length ?? DEFAULT_CONTEXT_LENGTH;
-			const maxOutput = m?.max_completion_tokens ?? m?.max_tokens ?? DEFAULT_MAX_TOKENS;
+			// Resolve model configuration with provider inheritance
+			const resolved = resolveModelWithProvider(m);
+
+			const contextLen = resolved?.context_length ?? DEFAULT_CONTEXT_LENGTH;
+			const maxOutput = resolved?.max_completion_tokens ?? resolved?.max_tokens ?? DEFAULT_MAX_TOKENS;
 			const maxInput = Math.max(1, contextLen - maxOutput);
 
 			// 使用配置ID（如果存在）来生成唯一的模型ID
-			const modelId = m.configId ? `${m.id}::${m.configId}` : m.id;
-			const modelName = m.configId ? `${m.id}::${m.configId} via ${m.owned_by}` : `${m.id} via ${m.owned_by}`;
+			const modelId = resolved.configId ? `${resolved.id}::${resolved.configId}` : resolved.id;
+			const modelName = resolved.configId
+				? `${resolved.id}::${resolved.configId} via ${resolved.owned_by}`
+				: `${resolved.id} via ${resolved.owned_by}`;
 
 			return {
 				id: modelId,
 				name: modelName,
-				tooltip: m.configId
-					? `OAI Compatible ${m.id} (config: ${m.configId}) via ${m.owned_by}`
-					: `OAI Compatible via ${m.owned_by}`,
-				family: m.family ?? "oai-compatible",
+				tooltip: resolved.configId
+					? `OAI Compatible ${resolved.id} (config: ${resolved.configId}) via ${resolved.owned_by}`
+					: `OAI Compatible via ${resolved.owned_by}`,
+				family: resolved.family ?? "oai-compatible",
 				version: "1.0.0",
 				maxInputTokens: maxInput,
 				maxOutputTokens: maxOutput,
 				capabilities: {
 					toolCalling: true,
-					imageInput: m?.vision ?? false,
+					imageInput: resolved?.vision ?? false,
 				},
 			} satisfies LanguageModelChatInformation;
 		});
@@ -123,7 +129,7 @@ export async function prepareLanguageModelChatInformation(
  * Fetch the list of models and supplementary metadata from Hugging Face.
  * @param apiKey The HF API key used to authenticate.
  */
-async function fetchModels(apiKey: string, userAgent: string): Promise<{ models: HFModelItem[] }> {
+async function fetchModels(apiKey: string, userAgent: string): Promise<{ models: ModelItem[] }> {
 	const config = vscode.workspace.getConfiguration();
 	const BASE_URL = config.get<string>("oaicopilot.baseUrl", "");
 	if (!BASE_URL || !BASE_URL.startsWith("http")) {

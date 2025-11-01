@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { HuggingFaceChatModelProvider } from "./provider";
-import type { HFModelItem } from "./types";
+import type { ModelItem, ProviderConfig } from "./types";
+import { resolveModelWithProvider } from "./utils";
 
 export function activate(context: vscode.ExtensionContext) {
 	// Build a descriptive User-Agent to help quantify API usage
@@ -43,16 +44,31 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand("oaicopilot.setProviderApikey", async () => {
 			// Get provider list from configuration
 			const config = vscode.workspace.getConfiguration();
-			const userModels = config.get<HFModelItem[]>("oaicopilot.models", []);
+			const userModels = config.get<ModelItem[]>("oaicopilot.models", []);
+			const configuredProviders = config.get<ProviderConfig[]>("oaicopilot.providers", []);
 
-			// Extract unique providers (case-insensitive)
-			const providers = Array.from(
-				new Set(userModels.map((m) => m.owned_by.toLowerCase()).filter((p) => p && p.trim() !== ""))
-			).sort();
+			// Extract unique providers from models (with resolution) and configured providers
+			const providersFromModels = Array.from(
+				new Set(
+					userModels
+						.map((m) => {
+							const resolved = resolveModelWithProvider(m);
+							return resolved.owned_by?.toLowerCase();
+						})
+						.filter((p) => p && p.trim() !== "")
+				)
+			);
+
+			const providersFromConfig = configuredProviders
+				.map((p) => p.key.toLowerCase())
+				.filter((p) => p && p.trim() !== "");
+
+			// Combine and deduplicate all providers
+			const providers = Array.from(new Set([...providersFromModels, ...providersFromConfig])).sort();
 
 			if (providers.length === 0) {
 				vscode.window.showErrorMessage(
-					"No providers found in oaicopilot.models configuration. Please configure models first."
+					"No providers found in oaicopilot.models or oaicopilot.providers configuration. Please configure providers or models first."
 				);
 				return;
 			}

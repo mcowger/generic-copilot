@@ -40,7 +40,7 @@ export interface ChatMessageContent {
 /**
  * A single underlying provider (e.g., together, groq) for a model.
  */
-export interface HFProvider {
+export interface Provider {
 	provider: string;
 	status: string;
 	supports_tools?: boolean;
@@ -51,20 +51,29 @@ export interface HFProvider {
 /**
  * A model entry returned by the Hugging Face router models endpoint.
  */
-export interface HFArchitecture {
+export interface Architecture {
 	input_modalities?: string[];
 	output_modalities?: string[];
 }
 
-export interface HFModelItem {
+export interface ModelItem {
 	id: string;
 	object?: string;
 	created?: number;
+	/**
+	 * Model provider. Can be overridden by provider reference.
+	 * If 'provider' field is specified, this value is inherited from the provider.
+	 */
 	owned_by: string;
+	/**
+	 * Reference to a provider key for inheriting configuration.
+	 * When specified, the model inherits baseUrl, owned_by, and defaults from the provider.
+	 */
+	provider?: string;
 	configId?: string;
 	baseUrl?: string;
-	providers?: HFProvider[];
-	architecture?: HFArchitecture;
+	providers?: Provider[];
+	architecture?: Architecture;
 	context_length?: number;
 	vision?: boolean;
 	max_tokens?: number;
@@ -125,7 +134,7 @@ export interface HFExtraModelInfo {
  */
 export interface HFModelsResponse {
 	object: string;
-	data: HFModelItem[];
+	data: ModelItem[];
 }
 
 /**
@@ -178,4 +187,37 @@ export interface RetryConfig {
 	enabled?: boolean;
 	max_attempts?: number;
 	interval_ms?: number;
+}
+
+/**
+ * Provider configuration that can be inherited by models
+ */
+export interface ProviderConfig {
+	/** Canonical provider key (lowercase, used as owned_by and for API key storage) */
+	key: string;
+	/** Display name for the provider */
+	displayName?: string;
+	/** Base URL for the provider's API endpoint */
+	baseUrl: string;
+	/** Default parameters that models can inherit */
+	defaults?: {
+		context_length?: number;
+		max_tokens?: number;
+		max_completion_tokens?: number;
+		temperature?: number | null;
+		top_p?: number | null;
+		top_k?: number;
+		min_p?: number;
+		frequency_penalty?: number;
+		presence_penalty?: number;
+		repetition_penalty?: number;
+		vision?: boolean;
+		family?: string;
+		reasoning_effort?: string;
+		enable_thinking?: boolean;
+		thinking_budget?: number;
+		thinking?: ThinkingConfig;
+		reasoning?: ReasoningConfig;
+		extra?: Record<string, unknown>;
+	};
 }

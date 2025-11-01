@@ -10,7 +10,7 @@ import {
 } from "vscode";
 
 import type {
-	HFModelItem,
+	ModelItem,
 	ReasoningDetail,
 	ReasoningSummaryDetail,
 	ReasoningTextDetail,
@@ -25,6 +25,7 @@ import {
 	parseModelId,
 	createRetryConfig,
 	executeWithRetry,
+	resolveModelWithProvider,
 } from "./utils";
 
 import { prepareLanguageModelChatInformation } from "./provideModel";
@@ -183,7 +184,7 @@ export class HuggingFaceChatModelProvider implements LanguageModelChatProvider {
 
 			// get model config from user settings
 			const config = vscode.workspace.getConfiguration();
-			const userModels = config.get<HFModelItem[]>("oaicopilot.models", []);
+			const userModels = config.get<ModelItem[]>("oaicopilot.models", []);
 
 			// 解析模型ID以处理配置ID
 			const parsedModelId = parseModelId(model.id);
@@ -191,7 +192,7 @@ export class HuggingFaceChatModelProvider implements LanguageModelChatProvider {
 			// 查找匹配的用户模型配置
 			// 优先匹配同时具有相同基础ID和配置ID的模型
 			// 如果没有配置ID，则匹配基础ID相同的模型
-			let um: HFModelItem | undefined = userModels.find(
+			let um: ModelItem | undefined = userModels.find(
 				(um) =>
 					um.id === parsedModelId.baseId &&
 					((parsedModelId.configId && um.configId === parsedModelId.configId) ||
@@ -203,9 +204,12 @@ export class HuggingFaceChatModelProvider implements LanguageModelChatProvider {
 				um = userModels.find((um) => um.id === parsedModelId.baseId);
 			}
 
+			// Resolve model configuration with provider inheritance
+			const resolvedModel = um ? resolveModelWithProvider(um) : um;
+
 			// Get API key for the model's provider
-			const provider = um?.owned_by;
-			const useGenericKey = !um?.baseUrl;
+			const provider = resolvedModel?.owned_by;
+			const useGenericKey = !resolvedModel?.baseUrl;
 			const modelApiKey = await this.ensureApiKey(useGenericKey, provider);
 			if (!modelApiKey) {
 				throw new Error("OAI Compatible API key not found");
@@ -218,13 +222,13 @@ export class HuggingFaceChatModelProvider implements LanguageModelChatProvider {
 				stream: true,
 				stream_options: { include_usage: true },
 			};
-			requestBody = this.prepareRequestBody(requestBody, um, options);
+			requestBody = this.prepareRequestBody(requestBody, resolvedModel, options);
 
 			// debug log
 			// console.log("[OAI Compatible Model Provider] RequestBody:", JSON.stringify(requestBody));
 
 			// send chat request
-			const BASE_URL = um?.baseUrl || config.get<string>("oaicopilot.baseUrl", "");
+			const BASE_URL = resolvedModel?.baseUrl || config.get<string>("oaicopilot.baseUrl", "");
 			if (!BASE_URL || !BASE_URL.startsWith("http")) {
 				throw new Error(`Invalid base URL configuration.`);
 			}
@@ -278,7 +282,7 @@ export class HuggingFaceChatModelProvider implements LanguageModelChatProvider {
 
 	private prepareRequestBody(
 		rb: Record<string, unknown>,
-		um: HFModelItem | undefined,
+		um: ModelItem | undefined,
 		options: ProvideLanguageModelChatResponseOptions
 	) {
 		// temperature

@@ -1,0 +1,113 @@
+{
+  "_comment1": "Provider-first Configuration Example",
+  "_comment2": "This example demonstrates the new provider-first configuration approach",
+  "_comment3": "that reduces duplication and simplifies multi-provider setups.",
+  
+  "oaicopilot.providers": [
+    {
+      "key": "modelscope",
+      "displayName": "ModelScope",
+      "baseUrl": "https://api-inference.modelscope.cn/v1",
+      "defaults": {
+        "context_length": 256000,
+        "max_tokens": 8192,
+        "temperature": 0,
+        "top_p": 1,
+        "family": "oai-compatible"
+      }
+    },
+    {
+      "key": "siliconflow",
+      "displayName": "SiliconFlow",
+      "baseUrl": "https://api.siliconflow.cn/v1",
+      "defaults": {
+        "context_length": 128000,
+        "max_tokens": 4096,
+        "temperature": 0.7,
+        "top_p": 0.95
+      }
+    },
+    {
+      "key": "zai",
+      "displayName": "Zai",
+      "baseUrl": "https://open.zaidata.com/v1",
+      "defaults": {
+        "context_length": 256000,
+        "max_tokens": 8192,
+        "temperature": 0.7,
+        "top_p": 1
+      }
+    },
+    {
+      "key": "openrouter",
+      "displayName": "OpenRouter",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "defaults": {
+        "context_length": 200000,
+        "max_tokens": 4096,
+        "temperature": 0.8,
+        "reasoning": {
+          "enabled": true,
+          "effort": "medium"
+        }
+      }
+    }
+  ],
+  
+  "oaicopilot.models": [
+    {
+      "_comment": "Model inheriting all defaults from modelscope provider",
+      "id": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+      "provider": "modelscope"
+    },
+    {
+      "_comment": "Model inheriting from modelscope but overriding temperature",
+      "id": "deepseek-ai/DeepSeek-V3",
+      "provider": "modelscope",
+      "temperature": 0.5
+    },
+    {
+      "_comment": "Model with multiple configs for the same base model",
+      "id": "glm-4.6",
+      "configId": "thinking",
+      "provider": "zai",
+      "thinking": {
+        "type": "enabled"
+      }
+    },
+    {
+      "id": "glm-4.6",
+      "configId": "no-thinking",
+      "provider": "zai",
+      "temperature": 0,
+      "thinking": {
+        "type": "disabled"
+      }
+    },
+    {
+      "_comment": "Model with reasoning configuration",
+      "id": "anthropic/claude-3.5-sonnet",
+      "provider": "openrouter",
+      "reasoning": {
+        "enabled": true,
+        "effort": "high"
+      }
+    },
+    {
+      "_comment": "Model from siliconflow with custom max_tokens",
+      "id": "Qwen/Qwen2.5-Coder-32B-Instruct",
+      "provider": "siliconflow",
+      "max_tokens": 16384,
+      "vision": true
+    },
+    {
+      "_comment": "Legacy model config without provider (still supported)",
+      "id": "custom-model",
+      "owned_by": "custom-provider",
+      "baseUrl": "https://api.custom-provider.com/v1",
+      "context_length": 128000,
+      "max_tokens": 4096,
+      "temperature": 0.8
+    }
+  ]
+}

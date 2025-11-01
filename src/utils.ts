@@ -4,8 +4,9 @@ import type {
 	OpenAIChatRole,
 	OpenAIFunctionToolDef,
 	OpenAIToolCall,
-	ChatMessageContent,
 	RetryConfig,
+	ProviderConfig,
+	ModelItem,
 } from "./types";
 
 const RETRY_MAX_ATTEMPTS = 3;
@@ -181,15 +182,12 @@ export function convertMessages(messages: readonly vscode.LanguageModelChatReque
 	for (const m of messages) {
 		const role = mapRole(m);
 		const textParts: string[] = [];
-		const imageParts: vscode.LanguageModelDataPart[] = [];
 		const toolCalls: OpenAIToolCall[] = [];
 		const toolResults: { callId: string; content: string }[] = [];
 
 		for (const part of m.content ?? []) {
 			if (part instanceof vscode.LanguageModelTextPart) {
 				textParts.push(part.value);
-			} else if (part instanceof vscode.LanguageModelDataPart && isImageMimeType(part.mimeType)) {
-				imageParts.push(part);
 			} else if (part instanceof vscode.LanguageModelToolCallPart) {
 				const id = part.callId || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 				let args = "{}";
@@ -218,29 +216,8 @@ export function convertMessages(messages: readonly vscode.LanguageModelChatReque
 
 		if (textParts.length > 0) {
 			if (role === "user") {
-				if (imageParts.length > 0) {
-					// 多模态消息：包含图片、文本
-					const contentArray: ChatMessageContent[] = [];
-					contentArray.push({
-						type: "text",
-						text: textParts.join("\n"),
-					});
 
-					// 添加图片内容
-					for (const imagePart of imageParts) {
-						const dataUrl = createDataUrl(imagePart);
-						contentArray.push({
-							type: "image_url",
-							image_url: {
-								url: dataUrl,
-							},
-						});
-					}
-					out.push({ role, content: contentArray });
-				} else {
-					// 纯文本消息
-					out.push({ role, content: textParts.join("\n") });
-				}
+				out.push({ role, content: textParts.join("\n") });
 			} else if (role === "system" || (role === "assistant" && !emittedAssistantToolCall)) {
 				out.push({ role, content: textParts.join("\n") });
 			}
@@ -249,20 +226,6 @@ export function convertMessages(messages: readonly vscode.LanguageModelChatReque
 	return out;
 }
 
-/**
- * 检查是否为图片MIME类型
- */
-function isImageMimeType(mimeType: string): boolean {
-	return mimeType.startsWith("image/") && ["image/jpeg", "image/png", "image/gif", "image/webp"].includes(mimeType);
-}
-
-/**
- * 创建图片的data URL
- */
-function createDataUrl(dataPart: vscode.LanguageModelDataPart): string {
-	const base64Data = Buffer.from(dataPart.data).toString("base64");
-	return `data:${dataPart.mimeType};base64,${base64Data}`;
-}
 
 /**
  * Convert VS Code tool definitions to OpenAI function tool definitions.
@@ -538,4 +501,60 @@ export async function executeWithRetry<T>(
 
 	// This should never be reached, but TypeScript needs it
 	throw lastError || new Error("Retry failed");
+}
+
+/**
+ * Resolve model configuration with provider inheritance.
+ * If a model references a provider, inherits baseUrl, owned_by, and defaults from the provider.
+ * Model-specific values always override inherited values.
+ * @param model The model configuration to resolve
+ * @returns Resolved model configuration with inherited values
+ */
+export function resolveModelWithProvider(model: ModelItem): ModelItem {
+	// If no provider reference, return model as-is
+	if (!model.provider) {
+		return model;
+	}
+
+	// Get providers from configuration
+	const config = vscode.workspace.getConfiguration();
+	const providers = config.get<ProviderConfig[]>("oaicopilot.providers", []);
+
+	// Find the referenced provider
+	const provider = providers.find((p) => p.key === model.provider);
+	if (!provider) {
+		console.warn(`[OAI Compatible Model Provider] Provider '${model.provider}' not found in configuration`);
+		return model;
+	}
+
+	// Create resolved model by merging provider defaults with model config
+	const resolved: ModelItem = {
+		...model,
+		// Inherit owned_by from provider key
+		owned_by: provider.key,
+		// Inherit baseUrl from provider if not explicitly set
+		baseUrl: model.baseUrl || provider.baseUrl,
+	};
+
+	// Helper to detect plain objects
+	const isPlainObject = (val: unknown): val is Record<string, unknown> =>
+		!!val && typeof val === "object" && !Array.isArray(val);
+
+	// Generic merge: apply provider.defaults into resolved without overwriting existing model values.
+	// If both values are plain objects, perform a shallow merge with model taking precedence.
+	if (provider.defaults) {
+		for (const [key, defVal] of Object.entries(provider.defaults as Record<string, unknown>)) {
+			const curVal = (resolved as unknown as Record<string, unknown>)[key];
+			if (curVal === undefined) {
+				// Adopt default when model hasn't specified a value
+				(resolved as unknown as Record<string, unknown>)[key] = defVal;
+			} else if (isPlainObject(curVal) && isPlainObject(defVal)) {
+				// Shallow merge objects: defaults first, then model overrides
+				(resolved as unknown as Record<string, unknown>)[key] = { ...defVal, ...curVal };
+			}
+			// For non-object values that already exist, keep model's value
+		}
+	}
+
+	return resolved;
 }

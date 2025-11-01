@@ -1,6 +1,6 @@
 {
-	"name": "oai-compatible-copilot",
-	"publisher": "johnny-zhao",
+	"name": "generic-copilot-providers",
+	"publisher": "mcowger",
 	"displayName": "OAI Compatible Provider for Copilot",
 	"description": "An extension that integrates Openai Compatible Inference Providers into GitHub Copilot Chat",
 	"icon": "assets/logo.png",
@@ -13,11 +13,11 @@
     ],
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/JohnnyZ93/oai-compatible-copilot"
+		"url": "https://github.com/mcowger/generic-copilot-providers"
 	},
-	"version": "0.1.3",
+	"version": "0.9.0",
 	"engines": {
-		"vscode": "^1.104.0"
+		"vscode": "^1.105.0"
 	},
 	"extensionDependencies": [
         "github.copilot-chat"
@@ -26,20 +26,10 @@
 		"AI",
 		"Chat"
 	],
-	"badges": [
-		{
-			"url": "https://img.shields.io/github/stars/JohnnyZ93/oai-compatible-copilot?style=social",
-			"description": "Star oai-compatible-copilot on Github",
-			"href": "https://github.com/JohnnyZ93/oai-compatible-copilot"
-		}
-	],
-	"bugs": {
-		"url": "https://github.com/JohnnyZ93/oai-compatible-copilot/issues"
-	},
 	"license": "MIT",
 	"enabledApiProposals": [
         "chatProvider",
-		"languageModelDataPart",
+		"languageModelCapabilities",
 		"languageModelThinkingPart"
     ],
 	"contributes": {
@@ -68,6 +58,116 @@
 					"default": "https://router.huggingface.co/v1",
 					"description": "The base URL for the Openai Compatible Inference API. Default value is Hugging Face."
 				},
+				"oaicopilot.providers": {
+					"type": "array",
+					"default": [],
+					"items": {
+						"type": "object",
+						"properties": {
+							"key": {
+								"type": "string",
+								"description": "Canonical provider key (lowercase, used as owned_by and for API key storage)."
+							},
+							"displayName": {
+								"type": "string",
+								"description": "(Optional) Display name for the provider."
+							},
+							"baseUrl": {
+								"type": "string",
+								"description": "Base URL for the provider's API endpoint."
+							},
+							"defaults": {
+								"type": "object",
+								"description": "(Optional) Default parameters that models can inherit.",
+								"properties": {
+									"context_length": {
+										"type": "number",
+										"description": "Default context length for models."
+									},
+									"max_tokens": {
+										"type": "number",
+										"description": "Default max tokens for models."
+									},
+									"max_completion_tokens": {
+										"type": "number",
+										"description": "Default max completion tokens for models."
+									},
+									"temperature": {
+										"type": [
+											"number",
+											"null"
+										],
+										"description": "Default temperature for models."
+									},
+									"top_p": {
+										"type": [
+											"number",
+											"null"
+										],
+										"description": "Default top_p for models."
+									},
+									"top_k": {
+										"type": "number",
+										"description": "Default top_k for models."
+									},
+									"min_p": {
+										"type": "number",
+										"description": "Default min_p for models."
+									},
+									"frequency_penalty": {
+										"type": "number",
+										"description": "Default frequency penalty for models."
+									},
+									"presence_penalty": {
+										"type": "number",
+										"description": "Default presence penalty for models."
+									},
+									"repetition_penalty": {
+										"type": "number",
+										"description": "Default repetition penalty for models."
+									},
+									"vision": {
+										"type": "boolean",
+										"description": "Default vision capability for models."
+									},
+									"family": {
+										"type": "string",
+										"description": "Default model family for models."
+									},
+									"reasoning_effort": {
+										"type": "string",
+										"description": "Default reasoning effort for models."
+									},
+									"enable_thinking": {
+										"type": "boolean",
+										"description": "Default enable_thinking for models."
+									},
+									"thinking_budget": {
+										"type": "number",
+										"description": "Default thinking budget for models."
+									},
+									"thinking": {
+										"type": "object",
+										"description": "Default thinking configuration for models."
+									},
+									"reasoning": {
+										"type": "object",
+										"description": "Default reasoning configuration for models."
+									},
+									"extra": {
+										"type": "object",
+										"description": "Default extra parameters for models."
+									}
+								}
+							}
+						},
+						"required": [
+							"key",
+							"baseUrl"
+						]
+					},
+					"description": "A list of provider configurations. Models can reference providers to inherit baseUrl, owned_by, and default parameters."
+				},
 				"oaicopilot.models": {
 					"type": "array",
 					"default": [],
@@ -78,13 +178,17 @@
 								"type": "string",
 								"description": "Model ID (e.g., 'glm-4.6')."
 							},
+							"provider": {
+								"type": "string",
+								"description": "(Optional) Reference to a provider key. If specified, the model inherits baseUrl, owned_by, and defaults from the provider configuration."
+							},
 							"configId": {
 								"type": "string",
 								"description": "(Optional) Configuration ID for this model. Allows defining the same model with different settings (e.g. 'glm-4.6::thinking', 'glm-4.6::no-thinking')."
 							},
 							"owned_by": {
 								"type": "string",
-								"description": "Model provider (e.g., 'zai', 'openai')."
+								"description": "Model provider (e.g., 'zai', 'openai'). Can be inherited from provider if 'provider' field is specified."
 							},
 							"family": {
 								"type": "string",
@@ -248,8 +352,7 @@
 							}
 						},
 						"required": [
-							"id",
-							"owned_by"
+							"id"
 						]
 					},
 					"description": "A list of preferred models to use. If provided, these models will be used directly instead of fetching from the API."
