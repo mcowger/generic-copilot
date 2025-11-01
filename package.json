@@ -397,7 +397,7 @@
 	"main": "./out/extension.js",
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
-		"download-api": "dts dev && mv vscode.proposed.*.ts src",
+		"download-api": "npx dts dev && mv vscode.proposed.*.ts src",
 		"compile": "tsc -p ./",
 		"lint": "eslint",
 		"format": "prettier --write .",

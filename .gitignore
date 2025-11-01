@@ -7,5 +7,4 @@ node_modules
 CLAUDE.md
 .doc
 .clinerules
-vscode.proposed.chatProvider.d.ts
-vscode.proposed.languageModelThinkingPart.d.ts
+**/vscode.proposed.*.d.ts
