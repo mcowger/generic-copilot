@@ -325,33 +325,33 @@ export class ConfigurationPanel {
 						'<div class="form-group">' +
 							'<label>Context Length</label>' +
 							'<input type="number" value="' + (provider.defaults.context_length || '') + '" ' +
-								'onchange="updateProviderDefault(' + index + ', \\'context_length\\', parseInt(this.value))">' +
+								'onchange="updateProviderDefault(' + index + ', ' + "'context_length'" + ', parseInt(this.value))">' +
 						'</div>' +
 						'<div class="form-group">' +
 							'<label>Max Tokens</label>' +
 							'<input type="number" value="' + (provider.defaults.max_tokens || '') + '" ' +
-								'onchange="updateProviderDefault(' + index + ', \\'max_tokens\\', parseInt(this.value))">' +
+								'onchange="updateProviderDefault(' + index + ', ' + "'max_tokens'" + ', parseInt(this.value))">' +
 						'</div>' +
 						'<div class="form-group">' +
 							'<label>Temperature (0-2)</label>' +
 							'<input type="number" step="0.1" value="' + (provider.defaults.temperature != null ? provider.defaults.temperature : '') + '" ' +
-								'onchange="updateProviderDefault(' + index + ', \\'temperature\\', parseFloat(this.value))">' +
+								'onchange="updateProviderDefault(' + index + ', ' + "'temperature'" + ', parseFloat(this.value))">' +
 						'</div>' +
 						'<div class="form-group">' +
 							'<label>Top P (0-1)</label>' +
 							'<input type="number" step="0.1" value="' + (provider.defaults.top_p != null ? provider.defaults.top_p : '') + '" ' +
-								'onchange="updateProviderDefault(' + index + ', \\'top_p\\', parseFloat(this.value))">' +
+								'onchange="updateProviderDefault(' + index + ', ' + "'top_p'" + ', parseFloat(this.value))">' +
 						'</div>' +
 						'<div class="form-group">' +
 							'<label>Family</label>' +
 							'<input type="text" value="' + (provider.defaults.family || '') + '" ' +
-								'onchange="updateProviderDefault(' + index + ', \\'family\\', this.value)" ' +
+								'onchange="updateProviderDefault(' + index + ', ' + "'family'" + ', this.value)" ' +
 								'placeholder="e.g., gpt-4, claude-3, gemini">' +
 						'</div>' +
 						'<div class="form-group">' +
 							'<label class="checkbox-label">' +
 								'<input type="checkbox" ' + (provider.defaults.vision ? 'checked' : '') + ' ' +
-									'onchange="updateProviderDefault(' + index + ', \\'vision\\', this.checked)">' +
+									'onchange="updateProviderDefault(' + index + ', ' + "'vision'" + ', this.checked)">' +
 								'Vision Support' +
 							'</label>' +
 						'</div>' +
@@ -368,19 +368,19 @@ export class ConfigurationPanel {
 					'<div class="form-group">' +
 						'<label>Key (required) *</label>' +
 						'<input type="text" value="' + (provider.key || '') + '" ' +
-							'onchange="updateProvider(' + index + ', \\'key\\', this.value)" ' +
+							'onchange="updateProvider(' + index + ', ' + "'key'" + ', this.value)" ' +
 							'placeholder="e.g., openai, anthropic">' +
 						'<div class="error" style="display: ' + (!provider.key ? 'block' : 'none') + '">Key is required</div>' +
 					'</div>' +
 					'<div class="form-group">' +
 						'<label>Display Name</label>' +
 						'<input type="text" value="' + (provider.displayName || '') + '" ' +
-							'onchange="updateProvider(' + index + ', \\'displayName\\', this.value)">' +
+							'onchange="updateProvider(' + index + ', ' + "'displayName'" + ', this.value)">' +
 					'</div>' +
 					'<div class="form-group">' +
 						'<label>Base URL (required) *</label>' +
 						'<input type="text" value="' + (provider.baseUrl || '') + '" ' +
-							'onchange="updateProvider(' + index + ', \\'baseUrl\\', this.value)" ' +
+							'onchange="updateProvider(' + index + ', ' + "'baseUrl'" + ', this.value)" ' +
 							'placeholder="e.g., https://api.openai.com/v1">' +
 						'<div class="error" style="display: ' + (!provider.baseUrl ? 'block' : 'none') + '">Base URL is required</div>' +
 					'</div>' +
@@ -388,7 +388,7 @@ export class ConfigurationPanel {
 						'<label>Headers (JSON)</label>' +
 						'<textarea rows="3" ' +
 							'onchange="updateProviderHeaders(' + index + ', this.value)" ' +
-							'placeholder=\\'{"X-Custom-Header": "value"}\\'>' + (provider.headers ? JSON.stringify(provider.headers, null, 2) : '') + '</textarea>' +
+							"placeholder='" + '{"X-Custom-Header": "value"}' + "'>" + (provider.headers ? JSON.stringify(provider.headers, null, 2) : '') + '</textarea>' +
 					'</div>' +
 					'<div class="form-group">' +
 						'<label class="checkbox-label">' +
@@ -425,19 +425,19 @@ export class ConfigurationPanel {
 					'<div class="form-group">' +
 						'<label>Model ID (required) *</label>' +
 						'<input type="text" value="' + (model.id || '') + '" ' +
-							'onchange="updateModel(' + index + ', \\'id\\', this.value)" ' +
+							'onchange="updateModel(' + index + ', ' + "'id'" + ', this.value)" ' +
 							'placeholder="e.g., gpt-4, claude-3-opus">' +
 						'<div class="error" style="display: ' + (!model.id ? 'block' : 'none') + '">Model ID is required</div>' +
 					'</div>' +
 					'<div class="form-group">' +
 						'<label>Display Name</label>' +
 						'<input type="text" value="' + (model.displayName || '') + '" ' +
-							'onchange="updateModel(' + index + ', \\'displayName\\', this.value)" ' +
+							'onchange="updateModel(' + index + ', ' + "'displayName'" + ', this.value)" ' +
 							'placeholder="Optional human-readable name">' +
 					'</div>' +
 					'<div class="form-group">' +
 						'<label>Provider</label>' +
-						'<select onchange="updateModel(' + index + ', \\'provider\\', this.value)">' +
+						'<select onchange="updateModel(' + index + ', ' + "'provider'" + ', this.value)">' +
 							'<option value="">Select a provider</option>' +
 							providerOptions +
 						'</select>' +
@@ -445,51 +445,51 @@ export class ConfigurationPanel {
 					'<div class="form-group">' +
 						'<label>Owned By</label>' +
 						'<input type="text" value="' + (model.owned_by || '') + '" ' +
-							'onchange="updateModel(' + index + ', \\'owned_by\\', this.value)" ' +
+							'onchange="updateModel(' + index + ', ' + "'owned_by'" + ', this.value)" ' +
 							'placeholder="e.g., openai, anthropic">' +
 					'</div>' +
 					'<div class="form-group">' +
 						'<label>Config ID</label>' +
 						'<input type="text" value="' + (model.configId || '') + '" ' +
-							'onchange="updateModel(' + index + ', \\'configId\\', this.value)" ' +
+							'onchange="updateModel(' + index + ', ' + "'configId'" + ', this.value)" ' +
 							'placeholder="Optional: e.g., thinking, fast">' +
 					'</div>' +
 					'<div class="form-group">' +
 						'<label>Base URL (override)</label>' +
 						'<input type="text" value="' + (model.baseUrl || '') + '" ' +
-							'onchange="updateModel(' + index + ', \\'baseUrl\\', this.value)" ' +
+							'onchange="updateModel(' + index + ', ' + "'baseUrl'" + ', this.value)" ' +
 							'placeholder="Leave empty to use provider base URL">' +
 					'</div>' +
 					'<div class="form-group">' +
 						'<label>Family</label>' +
 						'<input type="text" value="' + (model.family || '') + '" ' +
-							'onchange="updateModel(' + index + ', \\'family\\', this.value)" ' +
+							'onchange="updateModel(' + index + ', ' + "'family'" + ', this.value)" ' +
 							'placeholder="e.g., gpt-4, claude-3, gemini">' +
 					'</div>' +
 					'<div class="form-group">' +
 						'<label>Context Length</label>' +
 						'<input type="number" value="' + (model.context_length || '') + '" ' +
-							'onchange="updateModel(' + index + ', \\'context_length\\', parseInt(this.value))">' +
+							'onchange="updateModel(' + index + ', ' + "'context_length'" + ', parseInt(this.value))">' +
 					'</div>' +
 					'<div class="form-group">' +
 						'<label>Max Tokens</label>' +
 						'<input type="number" value="' + (model.max_tokens || '') + '" ' +
-							'onchange="updateModel(' + index + ', \\'max_tokens\\', parseInt(this.value))">' +
+							'onchange="updateModel(' + index + ', ' + "'max_tokens'" + ', parseInt(this.value))">' +
 					'</div>' +
 					'<div class="form-group">' +
 						'<label>Temperature (0-2)</label>' +
 						'<input type="number" step="0.1" value="' + (model.temperature != null ? model.temperature : '') + '" ' +
-							'onchange="updateModel(' + index + ', \\'temperature\\', this.value === \\'\\' ? null : parseFloat(this.value))">' +
+							'onchange="updateModel(' + index + ', ' + "'temperature'" + ', this.value === ' + "''"+' ? null : parseFloat(this.value))">' +
 					'</div>' +
 					'<div class="form-group">' +
 						'<label>Top P (0-1)</label>' +
 						'<input type="number" step="0.1" value="' + (model.top_p != null ? model.top_p : '') + '" ' +
-							'onchange="updateModel(' + index + ', \\'top_p\\', this.value === \\'\\' ? null : parseFloat(this.value))">' +
+							'onchange="updateModel(' + index + ', ' + "'top_p'" + ', this.value === ' + "''"+' ? null : parseFloat(this.value))">' +
 					'</div>' +
 					'<div class="form-group">' +
 						'<label class="checkbox-label">' +
 							'<input type="checkbox" ' + (model.vision ? 'checked' : '') + ' ' +
-								'onchange="updateModel(' + index + ', \\'vision\\', this.checked)">' +
+								'onchange="updateModel(' + index + ', ' + "'vision'" + ', this.checked)">' +
 							'Vision Support' +
 						'</label>' +
 					'</div>' +
