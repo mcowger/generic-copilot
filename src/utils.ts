@@ -587,11 +587,11 @@ export function normalizeModelItem(model: ModelItem): ModelItem {
 
 	// Convert flat structure to grouped structure
 	const modelProperties: ModelProperties = {
-		id: model.id!,
+		id: model.id || '',
 		object: model.object,
 		created: model.created,
 		displayName: model.displayName,
-		owned_by: model.owned_by!,
+		owned_by: model.owned_by || '',
 		provider: model.provider,
 		configId: model.configId,
 		baseUrl: model.baseUrl,
@@ -639,11 +639,11 @@ export function getModelProperties(model: ModelItem): ModelProperties {
 
 	// Extract from flat structure
 	return {
-		id: model.id!,
+		id: model.id || '',
 		object: model.object,
 		created: model.created,
 		displayName: model.displayName,
-		owned_by: model.owned_by!,
+		owned_by: model.owned_by || '',
 		provider: model.provider,
 		configId: model.configId,
 		baseUrl: model.baseUrl,
