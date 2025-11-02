@@ -511,8 +511,12 @@ export async function executeWithRetry<T>(
  * @returns Resolved model configuration with inherited values
  */
 export function resolveModelWithProvider(model: ModelItem): ModelItem {
+	// Get the provider reference from either grouped or flat structure
+	const props = getModelProperties(model);
+	const providerRef = props.provider;
+
 	// If no provider reference, return model as-is
-	if (!model.provider) {
+	if (!providerRef) {
 		return model;
 	}
 
@@ -521,20 +525,29 @@ export function resolveModelWithProvider(model: ModelItem): ModelItem {
 	const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
 
 	// Find the referenced provider
-	const provider = providers.find((p) => p.key === model.provider);
+	const provider = providers.find((p) => p.key === providerRef);
 	if (!provider) {
-		console.warn(`[Generic Compatible Model Provider] Provider '${model.provider}' not found in configuration`);
+		console.warn(`[Generic Compatible Model Provider] Provider '${providerRef}' not found in configuration`);
 		return model;
 	}
 
 	// Create resolved model by merging provider defaults with model config
 	const resolved: ModelItem = {
 		...model,
-		// Inherit owned_by from provider key
+		// Inherit owned_by from provider key (for flat structure)
 		owned_by: provider.key,
-		// Inherit baseUrl from provider if not explicitly set
-		baseUrl: model.baseUrl || provider.baseUrl,
+		// Inherit baseUrl from provider if not explicitly set (for flat structure)
+		baseUrl: props.baseUrl || provider.baseUrl,
 	};
+
+	// If using grouped structure, update model_properties
+	if (model.model_properties) {
+		resolved.model_properties = {
+			...model.model_properties,
+			owned_by: provider.key,
+			baseUrl: props.baseUrl || provider.baseUrl,
+		};
+	}
 
 	// Helper to detect plain objects
 	const isPlainObject = (val: unknown): val is Record<string, unknown> =>

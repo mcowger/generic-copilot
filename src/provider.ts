@@ -189,16 +189,20 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 				baseIdForMatch = baseIdForMatch.slice(slashIdx + 1);
 			}
 
-			const getDeclaredProviderKey = (m: ModelItem): string | undefined => (m.provider ?? m.owned_by)?.toLowerCase();
+			const getDeclaredProviderKey = (m: ModelItem): string | undefined => {
+				const props = getModelProperties(m);
+				return (props.provider ?? props.owned_by)?.toLowerCase();
+			};
 
 			// Find the matching user model configuration
 			// Prefer match: same model id AND same configId AND (if present) same provider key
 			let um: ModelItem | undefined = userModels.find((m) => {
-				if (m.id !== baseIdForMatch) {
+				const props = getModelProperties(m);
+				if (props.id !== baseIdForMatch) {
 					return false;
 				}
 				const configMatch =
-					(parsedModelId.configId && m.configId === parsedModelId.configId) || (!parsedModelId.configId && !m.configId);
+					(parsedModelId.configId && props.configId === parsedModelId.configId) || (!parsedModelId.configId && !props.configId);
 				if (!configMatch) {
 					return false;
 				}
@@ -212,10 +216,12 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 			// If not found, relax provider constraint (match by id and configId only)
 			if (!um) {
 				um = userModels.find(
-					(m) =>
-						m.id === baseIdForMatch &&
-						((parsedModelId.configId && m.configId === parsedModelId.configId) ||
-							(!parsedModelId.configId && !m.configId))
+					(m) => {
+						const props = getModelProperties(m);
+						return props.id === baseIdForMatch &&
+							((parsedModelId.configId && props.configId === parsedModelId.configId) ||
+								(!parsedModelId.configId && !props.configId));
+					}
 				);
 			}
 
