@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { CancellationToken, LanguageModelChatInformation } from "vscode";
 
-import type { ModelItem, ModelsResponse } from "./types";
+import type { ModelItem } from "./types";
 import { resolveModelWithProvider } from "./utils";
 
 const DEFAULT_CONTEXT_LENGTH = 128000;
@@ -14,10 +14,10 @@ const DEFAULT_MAX_TOKENS = 4096;
  * @returns A promise that resolves to the list of available language models
  */
 export async function prepareLanguageModelChatInformation(
-	options: { silent: boolean },
+	_options: { silent: boolean },
 	_token: CancellationToken,
-	secrets: vscode.SecretStorage,
-	userAgent: string
+	_secrets: vscode.SecretStorage,
+	_userAgent: string
 ): Promise<LanguageModelChatInformation[]> {
 	// Check for user-configured models first
 	const config = vscode.workspace.getConfiguration();
@@ -57,68 +57,8 @@ export async function prepareLanguageModelChatInformation(
 			} satisfies LanguageModelChatInformation;
 		});
 	} else {
-		// Fallback: Fetch models from API
-		const apiKey = await ensureApiKey(options.silent, secrets);
-		if (!apiKey) {
-			if (options.silent) {
-				return [];
-			} else {
-				throw new Error("Generic Compatible API key not found");
-			}
-		}
-		const { models } = await fetchModels(apiKey, userAgent);
-
-		infos = models.flatMap((m) => {
-			const providers = m?.providers ?? [];
-			const modalities = m.architecture?.input_modalities ?? [];
-			const vision = Array.isArray(modalities) && modalities.includes("image");
-
-			// Build entries for all providers that support tool calling
-			const toolProviders = providers.filter((p) => p.supports_tools === true);
-			const entries: LanguageModelChatInformation[] = [];
-
-			for (const p of toolProviders) {
-				const contextLen = p?.context_length ?? DEFAULT_CONTEXT_LENGTH;
-				const maxOutput = DEFAULT_MAX_TOKENS;
-				const maxInput = Math.max(1, contextLen - maxOutput);
-				entries.push({
-				id: `${p.provider}/${m.id}`,
-				name: `${p.provider}/${m.id}`,
-				tooltip: `${p.provider}/${m.id}`,
-					family: m.family ?? "generic",
-					version: "1.0.0",
-					maxInputTokens: maxInput,
-					maxOutputTokens: maxOutput,
-					capabilities: {
-						toolCalling: true,
-						imageInput: vision,
-					},
-				} satisfies LanguageModelChatInformation);
-			}
-
-			if (entries.length === 0) {
-				const base = providers.length > 0 ? providers[0] : null;
-				const contextLen = base?.context_length ?? DEFAULT_CONTEXT_LENGTH;
-				const maxOutput = DEFAULT_MAX_TOKENS;
-				const maxInput = Math.max(1, contextLen - maxOutput);
-				const providerName = base?.provider ?? "generic";
-				entries.push({
-				id: `${providerName}/${m.id}`,
-				name: `${providerName}/${m.id}`,
-				tooltip: `${providerName}/${m.id}`,
-					family: m.family ?? "generic",
-					version: "1.0.0",
-					maxInputTokens: maxInput,
-					maxOutputTokens: maxOutput,
-					capabilities: {
-						toolCalling: true,
-						imageInput: true,
-					},
-				} satisfies LanguageModelChatInformation);
-			}
-
-			return entries;
-		});
+		// No user-provided models and no generic API key fallback; return empty list
+		infos = [];
 	}
 
 	// debug log
@@ -126,67 +66,4 @@ export async function prepareLanguageModelChatInformation(
 	return infos;
 }
 
-/**
- * Fetch the list of models and supplementary metadata from Hugging Face.
- * @param apiKey The HF API key used to authenticate.
- */
-async function fetchModels(apiKey: string, userAgent: string): Promise<{ models: ModelItem[] }> {
-	const config = vscode.workspace.getConfiguration();
-	const BASE_URL = config.get<string>("generic-copilot.baseUrl", "");
-	if (!BASE_URL || !BASE_URL.startsWith("http")) {
-		throw new Error(`Invalid base URL configuration.`);
-	}
-	const modelsList = (async () => {
-		const resp = await fetch(`${BASE_URL}/models`, {
-			method: "GET",
-			headers: { Authorization: `Bearer ${apiKey}`, "User-Agent": userAgent },
-		});
-		if (!resp.ok) {
-			let text = "";
-			try {
-				text = await resp.text();
-			} catch (error) {
-				console.error("[Generic Compatible Model Provider] Failed to read response text", error);
-			}
-			const err = new Error(
-				`Failed to fetch Generic Compatible models: ${resp.status} ${resp.statusText}${text ? `\n${text}` : ""}`
-			);
-			console.error("[Generic Compatible Model Provider] Failed to fetch Generic Compatible models", err);
-			throw err;
-		}
-		const parsed = (await resp.json()) as ModelsResponse;
-		return parsed.data ?? [];
-	})();
-
-	try {
-		const models = await modelsList;
-		return { models };
-	} catch (err) {
-		console.error("[Generic Compatible Model Provider] Failed to fetch Generic Compatible models", err);
-		throw err;
-	}
-}
-
-/**
- * Ensure an API key exists in SecretStorage, optionally prompting the user when not silent.
- * @param silent If true, do not prompt the user.
- * @param secrets vscode.SecretStorage
- */
-async function ensureApiKey(silent: boolean, secrets: vscode.SecretStorage): Promise<string | undefined> {
-	// Fall back to generic API key
-	let apiKey = await secrets.get("generic-copilot.apiKey");
-
-	if (!apiKey && !silent) {
-		const entered = await vscode.window.showInputBox({
-			title: "Generic Compatible API Key",
-			prompt: "Enter your Generic Compatible API key",
-			ignoreFocusOut: true,
-			password: true,
-		});
-		if (entered && entered.trim()) {
-			apiKey = entered.trim();
-			await secrets.store("generic-copilot.apiKey", apiKey);
-		}
-	}
-	return apiKey;
-}
+// No generic API key helpers; provider-level keys only

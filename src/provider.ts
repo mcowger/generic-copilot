@@ -55,11 +55,11 @@ export class HuggingFaceChatModelProvider implements LanguageModelChatProvider {
 	private _textToolActive:
 		| undefined
 		| {
-				name?: string;
-				index?: number;
-				argBuffer: string;
-				emitted?: boolean;
-		  };
+			name?: string;
+			index?: number;
+			argBuffer: string;
+			emitted?: boolean;
+		};
 	private _emittedTextToolCallKeys = new Set<string>();
 	private _emittedTextToolCallIds = new Set<string>();
 
@@ -80,7 +80,7 @@ export class HuggingFaceChatModelProvider implements LanguageModelChatProvider {
 	constructor(
 		private readonly secrets: vscode.SecretStorage,
 		private readonly userAgent: string
-	) {}
+	) { }
 
 	/**
 	 * Get the list of available language models contributed by this provider
@@ -207,12 +207,15 @@ export class HuggingFaceChatModelProvider implements LanguageModelChatProvider {
 			// Resolve model configuration with provider inheritance
 			const resolvedModel = um ? resolveModelWithProvider(um) : um;
 
-			// Get API key for the model's provider
+			// Get API key for the model's provider (provider-level keys only)
 			const provider = resolvedModel?.owned_by;
-			const useGenericKey = !resolvedModel?.baseUrl;
-			const modelApiKey = await this.ensureApiKey(useGenericKey, provider);
+			const modelApiKey = await this.ensureApiKey(provider);
 			if (!modelApiKey) {
-				throw new Error("Generic Compatible API key not found");
+				throw new Error(
+					provider && provider.trim()
+						? `API key for provider "${provider}" not found`
+						: "No provider specified for model; please set 'owned_by' and configure its API key"
+				);
 			}
 
 			// requestBody
@@ -407,18 +410,16 @@ export class HuggingFaceChatModelProvider implements LanguageModelChatProvider {
 	 * @param useGenericKey If true, use generic API key.
 	 * @param provider Optional provider name to get provider-specific API key.
 	 */
-	private async ensureApiKey(useGenericKey: boolean, provider?: string): Promise<string | undefined> {
-		// Try to get provider-specific API key first
-		let apiKey: string | undefined;
+	private async ensureApiKey(provider?: string): Promise<string | undefined> {
+		// Provider-level keys only; no generic key fallback
 		if (provider && provider.trim() !== "") {
 			const normalizedProvider = provider.toLowerCase();
 			const providerKey = `generic-copilot.apiKey.${normalizedProvider}`;
-			apiKey = await this.secrets.get(providerKey);
-
-			if (!apiKey && !useGenericKey) {
+			let apiKey = await this.secrets.get(providerKey);
+			if (!apiKey) {
 				const entered = await vscode.window.showInputBox({
-					title: `Generic Compatible API Key for ${normalizedProvider}`,
-					prompt: `Enter your Generic Compatible API key for ${normalizedProvider}`,
+					title: `API key for ${normalizedProvider}`,
+					prompt: `Enter API key for ${normalizedProvider}`,
 					ignoreFocusOut: true,
 					password: true,
 				});
@@ -427,26 +428,10 @@ export class HuggingFaceChatModelProvider implements LanguageModelChatProvider {
 					await this.secrets.store(providerKey, apiKey);
 				}
 			}
+			return apiKey ?? undefined;
 		}
-
-		// Fall back to generic API key
-		if (!apiKey) {
-			apiKey = await this.secrets.get("generic-copilot.apiKey");
-		}
-
-		if (!apiKey && useGenericKey) {
-			const entered = await vscode.window.showInputBox({
-				title: "Generic Compatible API Key",
-				prompt: "Enter your Generic Compatible API key",
-				ignoreFocusOut: true,
-				password: true,
-			});
-			if (entered && entered.trim()) {
-				apiKey = entered.trim();
-				await this.secrets.store("generic-copilot.apiKey", apiKey);
-			}
-		}
-		return apiKey;
+		// If provider is missing, cannot determine which key to use
+		return undefined;
 	}
 
 	/**

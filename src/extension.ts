@@ -14,30 +14,6 @@ export function activate(context: vscode.ExtensionContext) {
 	// Register the Hugging Face provider under the vendor id used in package.json
 	vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
 
-	// Management command to configure API key
-	context.subscriptions.push(
-		vscode.commands.registerCommand("generic-copilot.setApikey", async () => {
-			const existing = await context.secrets.get("generic-copilot.apiKey");
-			const apiKey = await vscode.window.showInputBox({
-				title: "Generic Compatible Provider API Key",
-				prompt: existing ? "Update your Generic Compatible API key" : "Enter your Generic Compatible API key",
-				ignoreFocusOut: true,
-				password: true,
-				value: existing ?? "",
-			});
-			if (apiKey === undefined) {
-				return; // user canceled
-			}
-			if (!apiKey.trim()) {
-				await context.secrets.delete("generic-copilot.apiKey");
-				vscode.window.showInformationMessage("Generic Compatible API key cleared.");
-				return;
-			}
-			await context.secrets.store("generic-copilot.apiKey", apiKey.trim());
-			vscode.window.showInformationMessage("Generic Compatible API key saved.");
-		})
-	);
-
 	// Management command to configure provider-specific API keys
 	context.subscriptions.push(
 		vscode.commands.registerCommand("generic-copilot.setProviderApikey", async () => {
