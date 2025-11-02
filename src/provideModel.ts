@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { CancellationToken, LanguageModelChatInformation } from "vscode";
 
-import type { ModelItem } from "./types";
+import type { ModelItem, ProviderConfig } from "./types";
 import { resolveModelWithProvider } from "./utils";
 
 const DEFAULT_CONTEXT_LENGTH = 128000;
@@ -34,15 +34,27 @@ export async function prepareLanguageModelChatInformation(
 			const maxOutput = resolved?.max_completion_tokens ?? resolved?.max_tokens ?? DEFAULT_MAX_TOKENS;
 			const maxInput = Math.max(1, contextLen - maxOutput);
 
-			// Use provider/model::configId format for display
+			// Build canonical ID using provider key and raw model id
 			const modelId = resolved.configId
 				? `${resolved.owned_by}/${resolved.id}::${resolved.configId}`
 				: `${resolved.owned_by}/${resolved.id}`;
-			const modelName = modelId;
+			// Compose human-friendly display name as providerDisplayName/modelDisplayName[::configId]
+			const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
+			const providerMeta = providers.find((p) => p.key === resolved.owned_by);
+			const providerDn = (providerMeta?.displayName && providerMeta.displayName.trim().length > 0)
+				? providerMeta.displayName
+				: resolved.owned_by;
+			const modelDn = (resolved.displayName && resolved.displayName.trim().length > 0)
+				? resolved.displayName
+				: resolved.id;
+			const modelName = resolved.configId
+				? `${providerDn}/${modelDn}::${resolved.configId}`
+				: `${providerDn}/${modelDn}`;
 
 			return {
 				id: modelId,
 				name: modelName,
+				detail: providerDn,
 				tooltip: resolved.configId
 				? `${resolved.owned_by}/${resolved.id}::${resolved.configId}`
 				: `${resolved.owned_by}/${resolved.id}`,

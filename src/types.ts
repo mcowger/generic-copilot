@@ -48,9 +48,7 @@ export interface Provider {
 	context_length?: number;
 }
 
-/**
- * A model entry returned by the Hugging Face router models endpoint.
- */
+
 export interface Architecture {
 	input_modalities?: string[];
 	output_modalities?: string[];
@@ -60,6 +58,11 @@ export interface ModelItem {
 	id: string;
 	object?: string;
 	created?: number;
+	/**
+	 * Optional human-friendly display name for this model configuration.
+	 * When provided, the UI should prefer this over the raw model id.
+	 */
+	displayName?: string;
 	/**
 	 * Model provider. Can be overridden by provider reference.
 	 * If 'provider' field is specified, this value is inherited from the provider.
@@ -120,10 +123,6 @@ export interface ReasoningConfig {
 	enabled?: boolean;
 }
 
-/**
- * Supplemental model info from the Hugging Face hub API.
- */
-// Deprecated: extra model info was previously fetched from the hub API
 export interface ExtraModelInfo {
 	id: string;
 	pipeline_tag?: string;

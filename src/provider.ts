@@ -33,10 +33,8 @@ import { prepareTokenCount } from "./provideToken";
 
 const MAX_TOOLS_PER_REQUEST = 128;
 
-/**
- * VS Code Chat provider backed by Hugging Face Inference Providers.
- */
-export class HuggingFaceChatModelProvider implements LanguageModelChatProvider {
+
+export class ChatModelProvider implements LanguageModelChatProvider {
 	/** Buffer for assembling streamed tool calls by index. */
 	private _toolCallBuffers: Map<number, { id?: string; name?: string; args: string }> = new Map<
 		number,
@@ -458,7 +456,7 @@ export class HuggingFaceChatModelProvider implements LanguageModelChatProvider {
 	}
 
 	/**
-	 * Read and parse the HF Router streaming (SSE-like) response and report parts.
+	 * Read and parse the Router streaming (SSE-like) response and report parts.
 	 * @param responseBody The readable stream body.
 	 * @param progress Progress reporter for streamed parts.
 	 * @param token Cancellation token.

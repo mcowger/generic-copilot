@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { HuggingFaceChatModelProvider } from "./provider";
+import { ChatModelProvider } from "./provider";
 import type { ModelItem, ProviderConfig } from "./types";
 import { resolveModelWithProvider } from "./utils";
 
@@ -10,8 +10,8 @@ export function activate(context: vscode.ExtensionContext) {
 	const vscodeVersion = vscode.version;
 	// Keep UA minimal: only extension version and VS Code version
 	const ua = `generic-copilot/${extVersion} VSCode/${vscodeVersion}`;
-	const provider = new HuggingFaceChatModelProvider(context.secrets, ua);
-	// Register the Hugging Face provider under the vendor id used in package.json
+	const provider = new ChatModelProvider(context.secrets, ua);
+
 	vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
 
 	// Management command to configure provider-specific API keys
