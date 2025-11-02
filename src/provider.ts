@@ -9,13 +9,7 @@ import {
 	Progress,
 } from "vscode";
 
-import type {
-	ModelItem,
-	ReasoningDetail,
-	ReasoningSummaryDetail,
-	ReasoningTextDetail,
-	ReasoningConfig,
-} from "./types";
+import type { ModelItem, ReasoningDetail, ReasoningSummaryDetail, ReasoningTextDetail, ReasoningConfig } from "./types";
 
 import {
 	convertTools,
@@ -32,7 +26,6 @@ import { prepareLanguageModelChatInformation } from "./provideModel";
 import { prepareTokenCount } from "./provideToken";
 
 const MAX_TOOLS_PER_REQUEST = 128;
-
 
 export class ChatModelProvider implements LanguageModelChatProvider {
 	/** Buffer for assembling streamed tool calls by index. */
@@ -53,11 +46,11 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 	private _textToolActive:
 		| undefined
 		| {
-			name?: string;
-			index?: number;
-			argBuffer: string;
-			emitted?: boolean;
-		};
+				name?: string;
+				index?: number;
+				argBuffer: string;
+				emitted?: boolean;
+		  };
 	private _emittedTextToolCallKeys = new Set<string>();
 	private _emittedTextToolCallIds = new Set<string>();
 
@@ -78,7 +71,7 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 	constructor(
 		private readonly secrets: vscode.SecretStorage,
 		private readonly userAgent: string
-	) { }
+	) {}
 
 	/**
 	 * Get the list of available language models contributed by this provider
@@ -194,8 +187,7 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 				baseIdForMatch = baseIdForMatch.slice(slashIdx + 1);
 			}
 
-			const getDeclaredProviderKey = (m: ModelItem): string | undefined =>
-				(m.provider ?? m.owned_by)?.toLowerCase();
+			const getDeclaredProviderKey = (m: ModelItem): string | undefined => (m.provider ?? m.owned_by)?.toLowerCase();
 
 			// Find the matching user model configuration
 			// Prefer match: same model id AND same configId AND (if present) same provider key
@@ -203,8 +195,8 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 				if (m.id !== baseIdForMatch) {
 					return false;
 				}
-				const configMatch = (parsedModelId.configId && m.configId === parsedModelId.configId) ||
-					(!parsedModelId.configId && !m.configId);
+				const configMatch =
+					(parsedModelId.configId && m.configId === parsedModelId.configId) || (!parsedModelId.configId && !m.configId);
 				if (!configMatch) {
 					return false;
 				}

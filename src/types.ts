@@ -48,7 +48,6 @@ export interface Provider {
 	context_length?: number;
 }
 
-
 export interface Architecture {
 	input_modalities?: string[];
 	output_modalities?: string[];

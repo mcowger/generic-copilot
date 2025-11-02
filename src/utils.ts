@@ -216,7 +216,6 @@ export function convertMessages(messages: readonly vscode.LanguageModelChatReque
 
 		if (textParts.length > 0) {
 			if (role === "user") {
-
 				out.push({ role, content: textParts.join("\n") });
 			} else if (role === "system" || (role === "assistant" && !emittedAssistantToolCall)) {
 				out.push({ role, content: textParts.join("\n") });
@@ -225,7 +224,6 @@ export function convertMessages(messages: readonly vscode.LanguageModelChatReque
 	}
 	return out;
 }
-
 
 /**
  * Convert VS Code tool definitions to OpenAI function tool definitions.

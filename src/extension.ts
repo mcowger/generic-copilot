@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { ChatModelProvider } from "./provider";
 import type { ModelItem, ProviderConfig } from "./types";
 import { resolveModelWithProvider } from "./utils";
+import { ConfigurationPanel } from "./configurationPanel";
 
 export function activate(context: vscode.ExtensionContext) {
 	// Build a descriptive User-Agent to help quantify API usage
@@ -13,6 +14,13 @@ export function activate(context: vscode.ExtensionContext) {
 	const provider = new ChatModelProvider(context.secrets, ua);
 
 	vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
+
+	// Command to open configuration GUI
+	context.subscriptions.push(
+		vscode.commands.registerCommand("generic-copilot.openConfiguration", () => {
+			ConfigurationPanel.createOrShow(context.extensionUri);
+		})
+	);
 
 	// Management command to configure provider-specific API keys
 	context.subscriptions.push(

@@ -42,6 +42,10 @@
 		],
 		"commands": [
 			{
+				"command": "generic-copilot.openConfiguration",
+				"title": "GenericCopilot: Open Configuration GUI"
+			},
+			{
 				"command": "generic-copilot.setProviderApikey",
 				"title": "GenericCopilot: Set Generic Compatible Multi-Provider Apikey"
 			}

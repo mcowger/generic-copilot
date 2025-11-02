@@ -41,12 +41,12 @@ export async function prepareLanguageModelChatInformation(
 			// Compose human-friendly display name as providerDisplayName/modelDisplayName[::configId]
 			const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
 			const providerMeta = providers.find((p) => p.key === resolved.owned_by);
-			const providerDn = (providerMeta?.displayName && providerMeta.displayName.trim().length > 0)
-				? providerMeta.displayName
-				: resolved.owned_by;
-			const modelDn = (resolved.displayName && resolved.displayName.trim().length > 0)
-				? resolved.displayName
-				: resolved.id;
+			const providerDn =
+				providerMeta?.displayName && providerMeta.displayName.trim().length > 0
+					? providerMeta.displayName
+					: resolved.owned_by;
+			const modelDn =
+				resolved.displayName && resolved.displayName.trim().length > 0 ? resolved.displayName : resolved.id;
 			const modelName = resolved.configId
 				? `${providerDn}/${modelDn}::${resolved.configId}`
 				: `${providerDn}/${modelDn}`;
@@ -56,8 +56,8 @@ export async function prepareLanguageModelChatInformation(
 				name: modelName,
 				detail: providerDn,
 				tooltip: resolved.configId
-				? `${resolved.owned_by}/${resolved.id}::${resolved.configId}`
-				: `${resolved.owned_by}/${resolved.id}`,
+					? `${resolved.owned_by}/${resolved.id}::${resolved.configId}`
+					: `${resolved.owned_by}/${resolved.id}`,
 				family: resolved.family ?? "generic",
 				version: "1.0.0",
 				maxInputTokens: maxInput,
