@@ -1,0 +1,101 @@
+{
+  "_comment1": "Grouped Configuration Example",
+  "_comment2": "This example demonstrates the new grouped structure with model_properties and model_parameters",
+  "_comment3": "This provides clearer separation between what's sent to the API (model_parameters) and internal metadata (model_properties)",
+
+  "generic-copilot.providers": [
+    {
+      "key": "modelscope",
+      "displayName": "ModelScope",
+      "baseUrl": "https://api-inference.modelscope.cn/v1",
+      "defaults": {
+        "model_properties": {
+          "context_length": 256000,
+          "vision": false,
+          "family": "generic"
+        },
+        "model_parameters": {
+          "max_tokens": 8192,
+          "temperature": 0,
+          "top_p": 1
+        }
+      }
+    },
+    {
+      "key": "zai",
+      "displayName": "Zai",
+      "baseUrl": "https://open.zaidata.com/v1",
+      "defaults": {
+        "model_properties": {
+          "context_length": 256000,
+          "vision": false
+        },
+        "model_parameters": {
+          "max_tokens": 8192,
+          "temperature": 0.7,
+          "top_p": 1
+        }
+      }
+    }
+  ],
+
+  "generic-copilot.models": [
+    {
+      "_comment": "Model with grouped structure - parameters sent to API",
+      "model_properties": {
+        "id": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+        "provider": "modelscope",
+        "owned_by": "modelscope",
+        "context_length": 256000,
+        "vision": false,
+        "family": "generic"
+      },
+      "model_parameters": {
+        "max_tokens": 8192,
+        "temperature": 0,
+        "top_p": 1
+      }
+    },
+    {
+      "_comment": "Model with grouped structure - thinking enabled",
+      "model_properties": {
+        "id": "glm-4.6",
+        "configId": "thinking",
+        "provider": "zai",
+        "owned_by": "zai",
+        "context_length": 256000
+      },
+      "model_parameters": {
+        "thinking": {
+          "type": "enabled"
+        },
+        "thinking_budget": 2048,
+        "temperature": 0.7
+      }
+    },
+    {
+      "_comment": "Model with grouped structure - extra parameters",
+      "model_properties": {
+        "id": "custom-model",
+        "owned_by": "custom",
+        "baseUrl": "https://api.custom.com/v1"
+      },
+      "model_parameters": {
+        "temperature": 0.8,
+        "max_tokens": 4096,
+        "extra": {
+          "custom_param": "value",
+          "another_param": 123
+        }
+      }
+    },
+    {
+      "_comment": "Legacy flat structure - still supported for backward compatibility",
+      "id": "deepseek-v3",
+      "provider": "modelscope",
+      "owned_by": "modelscope",
+      "temperature": 0.5,
+      "max_tokens": 16384
+    }
+  ]
+}

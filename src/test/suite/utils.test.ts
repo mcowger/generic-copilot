@@ -10,6 +10,9 @@ import {
     resolveModelWithProvider,
     createRetryConfig,
     executeWithRetry,
+    normalizeModelItem,
+    getModelProperties,
+    getModelParameters,
 } from '../../utils';
 import type { ModelItem, ProviderConfig } from '../../types';
 import { MockCancellationToken, MockConfiguration } from '../helpers/mocks';
@@ -646,6 +649,144 @@ suite('Utils Test Suite', () => {
                     String(status)
                 );
             }
+        });
+    });
+
+    suite('normalizeModelItem', () => {
+        test('should return grouped structure unchanged', () => {
+            const model: ModelItem = {
+                model_properties: {
+                    id: 'test-model',
+                    owned_by: 'test-provider',
+                    context_length: 128000,
+                    vision: false,
+                },
+                model_parameters: {
+                    temperature: 0.7,
+                    max_tokens: 4096,
+                },
+            };
+
+            const normalized = normalizeModelItem(model);
+            assert.deepStrictEqual(normalized, model);
+        });
+
+        test('should convert flat structure to grouped structure', () => {
+            const model: ModelItem = {
+                id: 'test-model',
+                owned_by: 'test-provider',
+                context_length: 128000,
+                vision: false,
+                temperature: 0.7,
+                max_tokens: 4096,
+            };
+
+            const normalized = normalizeModelItem(model);
+            assert.strictEqual(normalized.model_properties?.id, 'test-model');
+            assert.strictEqual(normalized.model_properties?.owned_by, 'test-provider');
+            assert.strictEqual(normalized.model_properties?.context_length, 128000);
+            assert.strictEqual(normalized.model_properties?.vision, false);
+            assert.strictEqual(normalized.model_parameters?.temperature, 0.7);
+            assert.strictEqual(normalized.model_parameters?.max_tokens, 4096);
+        });
+    });
+
+    suite('getModelProperties', () => {
+        test('should extract properties from grouped structure', () => {
+            const model: ModelItem = {
+                model_properties: {
+                    id: 'test-model',
+                    owned_by: 'test-provider',
+                    context_length: 128000,
+                    vision: true,
+                    family: 'gpt-4',
+                },
+                model_parameters: {
+                    temperature: 0.7,
+                },
+            };
+
+            const props = getModelProperties(model);
+            assert.strictEqual(props.id, 'test-model');
+            assert.strictEqual(props.owned_by, 'test-provider');
+            assert.strictEqual(props.context_length, 128000);
+            assert.strictEqual(props.vision, true);
+            assert.strictEqual(props.family, 'gpt-4');
+        });
+
+        test('should extract properties from flat structure', () => {
+            const model: ModelItem = {
+                id: 'test-model',
+                owned_by: 'test-provider',
+                context_length: 128000,
+                vision: true,
+                family: 'gpt-4',
+                temperature: 0.7,
+            };
+
+            const props = getModelProperties(model);
+            assert.strictEqual(props.id, 'test-model');
+            assert.strictEqual(props.owned_by, 'test-provider');
+            assert.strictEqual(props.context_length, 128000);
+            assert.strictEqual(props.vision, true);
+            assert.strictEqual(props.family, 'gpt-4');
+        });
+    });
+
+    suite('getModelParameters', () => {
+        test('should extract parameters from grouped structure', () => {
+            const model: ModelItem = {
+                model_properties: {
+                    id: 'test-model',
+                    owned_by: 'test-provider',
+                },
+                model_parameters: {
+                    temperature: 0.7,
+                    max_tokens: 4096,
+                    top_p: 1,
+                    extra: {
+                        custom_param: 'value',
+                    },
+                },
+            };
+
+            const params = getModelParameters(model);
+            assert.strictEqual(params.temperature, 0.7);
+            assert.strictEqual(params.max_tokens, 4096);
+            assert.strictEqual(params.top_p, 1);
+            assert.deepStrictEqual(params.extra, { custom_param: 'value' });
+        });
+
+        test('should extract parameters from flat structure', () => {
+            const model: ModelItem = {
+                id: 'test-model',
+                owned_by: 'test-provider',
+                temperature: 0.7,
+                max_tokens: 4096,
+                top_p: 1,
+                extra: {
+                    custom_param: 'value',
+                },
+            };
+
+            const params = getModelParameters(model);
+            assert.strictEqual(params.temperature, 0.7);
+            assert.strictEqual(params.max_tokens, 4096);
+            assert.strictEqual(params.top_p, 1);
+            assert.deepStrictEqual(params.extra, { custom_param: 'value' });
+        });
+
+        test('should handle null values for temperature and top_p', () => {
+            const model: ModelItem = {
+                model_parameters: {
+                    temperature: null,
+                    top_p: null,
+                },
+            };
+
+            const params = getModelParameters(model);
+            assert.strictEqual(params.temperature, null);
+            assert.strictEqual(params.top_p, null);
         });
     });
 });
