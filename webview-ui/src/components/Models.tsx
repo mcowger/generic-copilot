@@ -9,6 +9,7 @@ import {
     VscodeTabs,
     VscodeTabHeader,
     VscodeTabPanel,
+    VscodeCollapsible,
 } from '@vscode-elements/react-elements';
 
 export interface ModelsProps {
@@ -68,25 +69,21 @@ const ModelItemCard: React.FC<{
 
     return (
         <div className="item">
-            <div className="item-header">
-                <h3>Model {index + 1}</h3>
-                <div className="item-actions">
-                    <VscodeButton onClick={onRemove} secondary>
-                        Remove
-                    </VscodeButton>
-                </div>
-            </div>
-
-            <VscodeTabs>
-                <VscodeTabHeader slot="header">Properties</VscodeTabHeader>
-                <VscodeTabHeader slot="header">Parameters</VscodeTabHeader>
-                <VscodeTabPanel>
-                    <ModelPropertiesForm value={value.model_properties} providers={providers} onChange={updateProps} />
-                </VscodeTabPanel>
-                <VscodeTabPanel>
-                    <ModelParamsForm value={value.model_parameters} onChange={updateParams} />
-                </VscodeTabPanel>
-            </VscodeTabs>
+            <VscodeCollapsible heading={`Model ${index + 1}${value?.model_properties?.id ? ` – ${value.model_properties.id}` : ''}`} alwaysShowHeaderActions>
+                <VscodeButton onClick={onRemove} secondary slot="actions">
+                    Remove
+                </VscodeButton>
+                <VscodeTabs>
+                    <VscodeTabHeader slot="header">Properties</VscodeTabHeader>
+                    <VscodeTabHeader slot="header">Parameters</VscodeTabHeader>
+                    <VscodeTabPanel>
+                        <ModelPropertiesForm value={value.model_properties} providers={providers} onChange={updateProps} />
+                    </VscodeTabPanel>
+                    <VscodeTabPanel>
+                        <ModelParamsForm value={value.model_parameters} onChange={updateParams} />
+                    </VscodeTabPanel>
+                </VscodeTabs>
+            </VscodeCollapsible>
         </div>
     );
 };

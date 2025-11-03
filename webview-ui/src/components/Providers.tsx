@@ -9,6 +9,7 @@ import {
   VscodeDivider,
   VscodeFormGroup,
   VscodeFormHelper,
+  VscodeCollapsible,
 } from '@vscode-elements/react-elements';
 
 export interface ProvidersProps {
@@ -89,135 +90,131 @@ const ProviderItem: React.FC<{
 
   return (
     <div className="item">
-      <div className="item-header">
-        <h3>Provider {index + 1}</h3>
-        <div className="item-actions">
-          <VscodeButton onClick={onRemove} secondary>
-            Remove
-          </VscodeButton>
-        </div>
-      </div>
+      <VscodeCollapsible heading={`Provider ${index + 1}${provider.displayName ? ` – ${provider.displayName}` : ''}`} alwaysShowHeaderActions>
+        <VscodeButton onClick={onRemove} secondary slot="actions">
+          Remove
+        </VscodeButton>
+        <VscodeFormGroup>
+          <VscodeTextfield
+            type="text"
+            value={(provider.key as unknown as string) ?? ''}
+            placeholder="e.g., openai, anthropic"
+            onInput={(e: any) => updateField('key', e.currentTarget.value)}
+          >
+            <span slot="label">Key (required) *</span>
+          </VscodeTextfield>
+          <VscodeFormHelper style={{ color: 'var(--vscode-errorForeground)', display: provider.key ? 'none' : 'block' }}>
+            Key is required
+          </VscodeFormHelper>
+        </VscodeFormGroup>
 
-      <VscodeFormGroup>
-        <VscodeTextfield
-          type="text"
-          value={(provider.key as unknown as string) ?? ''}
-          placeholder="e.g., openai, anthropic"
-          onInput={(e: any) => updateField('key', e.currentTarget.value)}
-        >
-          <span slot="label">Key (required) *</span>
-        </VscodeTextfield>
-        <VscodeFormHelper style={{ color: 'var(--vscode-errorForeground)', display: provider.key ? 'none' : 'block' }}>
-          Key is required
-        </VscodeFormHelper>
-      </VscodeFormGroup>
+        <VscodeFormGroup>
+          <VscodeTextfield
+            type="text"
+            value={(provider.displayName as unknown as string) ?? ''}
+            onInput={(e: any) => updateField('displayName', e.currentTarget.value)}
+          >
+            <span slot="label">Display Name</span>
+          </VscodeTextfield>
+        </VscodeFormGroup>
 
-      <VscodeFormGroup>
-        <VscodeTextfield
-          type="text"
-          value={(provider.displayName as unknown as string) ?? ''}
-          onInput={(e: any) => updateField('displayName', e.currentTarget.value)}
-        >
-          <span slot="label">Display Name</span>
-        </VscodeTextfield>
-      </VscodeFormGroup>
+        <VscodeFormGroup>
+          <VscodeTextfield
+            type="text"
+            value={(provider.baseUrl as unknown as string) ?? ''}
+            placeholder="e.g., https://api.openai.com/v1"
+            onInput={(e: any) => updateField('baseUrl', e.currentTarget.value)}
+          >
+            <span slot="label">Base URL (required) *</span>
+          </VscodeTextfield>
+          <VscodeFormHelper style={{ color: 'var(--vscode-errorForeground)', display: provider.baseUrl ? 'none' : 'block' }}>
+            Base URL is required
+          </VscodeFormHelper>
+        </VscodeFormGroup>
 
-      <VscodeFormGroup>
-        <VscodeTextfield
-          type="text"
-          value={(provider.baseUrl as unknown as string) ?? ''}
-          placeholder="e.g., https://api.openai.com/v1"
-          onInput={(e: any) => updateField('baseUrl', e.currentTarget.value)}
-        >
-          <span slot="label">Base URL (required) *</span>
-        </VscodeTextfield>
-        <VscodeFormHelper style={{ color: 'var(--vscode-errorForeground)', display: provider.baseUrl ? 'none' : 'block' }}>
-          Base URL is required
-        </VscodeFormHelper>
-      </VscodeFormGroup>
+        <VscodeFormGroup>
+          <VscodeTextarea
+            rows={3 as any}
+            placeholder='{"X-Custom-Header":"value"}'
+            value={prettyJson(provider.headers)}
+            onInput={(e: any) => updateHeaders(e.currentTarget.value)}
+          >
+            <span slot="label">Headers (JSON)</span>
+          </VscodeTextarea>
+          <VscodeFormHelper>Custom headers for this provider (JSON object)</VscodeFormHelper>
+        </VscodeFormGroup>
 
-      <VscodeFormGroup>
-        <VscodeTextarea
-          rows={3 as any}
-          placeholder='{"X-Custom-Header":"value"}'
-          value={prettyJson(provider.headers)}
-          onInput={(e: any) => updateHeaders(e.currentTarget.value)}
-        >
-          <span slot="label">Headers (JSON)</span>
-        </VscodeTextarea>
-        <VscodeFormHelper>Custom headers for this provider (JSON object)</VscodeFormHelper>
-      </VscodeFormGroup>
+        <VscodeFormGroup>
+          <VscodeCheckbox
+            checked={!!provider.defaults}
+            onInput={(e: any) => toggleDefaults((e.currentTarget as any).checked)}
+          >
+            Configure Default Parameters
+          </VscodeCheckbox>
+        </VscodeFormGroup>
 
-      <VscodeFormGroup>
-        <VscodeCheckbox
-          checked={!!provider.defaults}
-          onInput={(e: any) => toggleDefaults((e.currentTarget as any).checked)}
-        >
-          Configure Default Parameters
-        </VscodeCheckbox>
-      </VscodeFormGroup>
-
-      {provider.defaults && (
-        <div className="collapsible-content">
-          <VscodeDivider></VscodeDivider>
-          <VscodeFormGroup>
-            <VscodeTextfield
-              type="number"
-              value={(propDefaults.context_length as unknown as string) ?? ''}
-              onInput={(e: any) => updateDefault('model_properties', 'context_length', parseIntOrUndef(e.currentTarget.value))}
-            >
-              <span slot="label">Context Length</span>
-            </VscodeTextfield>
-          </VscodeFormGroup>
-          <VscodeFormGroup>
-            <VscodeTextfield
-              type="number"
-              value={(paramDefaults.max_tokens as unknown as string) ?? ''}
-              onInput={(e: any) => updateDefault('model_parameters', 'max_tokens', parseIntOrUndef(e.currentTarget.value))}
-            >
-              <span slot="label">Max Tokens</span>
-            </VscodeTextfield>
-          </VscodeFormGroup>
-          <VscodeFormGroup>
-            <VscodeTextfield
-              type="number"
-              step={0.1}
-              value={(paramDefaults.temperature as unknown as string) ?? ''}
-              onInput={(e: any) => updateDefault('model_parameters', 'temperature', parseFloatOrUndef(e.currentTarget.value) ?? '')}
-            >
-              <span slot="label">Temperature (0-2)</span>
-            </VscodeTextfield>
-          </VscodeFormGroup>
-          <VscodeFormGroup>
-            <VscodeTextfield
-              type="number"
-              step={0.1}
-              value={(paramDefaults.top_p as unknown as string) ?? ''}
-              onInput={(e: any) => updateDefault('model_parameters', 'top_p', parseFloatOrUndef(e.currentTarget.value) ?? '')}
-            >
-              <span slot="label">Top P (0-1)</span>
-            </VscodeTextfield>
-          </VscodeFormGroup>
-          <VscodeFormGroup>
-            <VscodeTextfield
-              type="text"
-              placeholder="e.g., gpt-4, claude-3, gemini"
-              value={(propDefaults.family as unknown as string) ?? ''}
-              onInput={(e: any) => updateDefault('model_properties', 'family', e.currentTarget.value)}
-            >
-              <span slot="label">Family</span>
-            </VscodeTextfield>
-          </VscodeFormGroup>
-          <VscodeFormGroup>
-            <VscodeCheckbox
-              checked={!!propDefaults.vision}
-              onInput={(e: any) => updateDefault('model_properties', 'vision', (e.currentTarget as any).checked)}
-            >
-              Vision Support
-            </VscodeCheckbox>
-          </VscodeFormGroup>
-        </div>
-      )}
+        {provider.defaults && (
+          <div className="collapsible-content">
+            <VscodeDivider></VscodeDivider>
+            <VscodeFormGroup>
+              <VscodeTextfield
+                type="number"
+                value={(propDefaults.context_length as unknown as string) ?? ''}
+                onInput={(e: any) => updateDefault('model_properties', 'context_length', parseIntOrUndef(e.currentTarget.value))}
+              >
+                <span slot="label">Context Length</span>
+              </VscodeTextfield>
+            </VscodeFormGroup>
+            <VscodeFormGroup>
+              <VscodeTextfield
+                type="number"
+                value={(paramDefaults.max_tokens as unknown as string) ?? ''}
+                onInput={(e: any) => updateDefault('model_parameters', 'max_tokens', parseIntOrUndef(e.currentTarget.value))}
+              >
+                <span slot="label">Max Tokens</span>
+              </VscodeTextfield>
+            </VscodeFormGroup>
+            <VscodeFormGroup>
+              <VscodeTextfield
+                type="number"
+                step={0.1}
+                value={(paramDefaults.temperature as unknown as string) ?? ''}
+                onInput={(e: any) => updateDefault('model_parameters', 'temperature', parseFloatOrUndef(e.currentTarget.value) ?? '')}
+              >
+                <span slot="label">Temperature (0-2)</span>
+              </VscodeTextfield>
+            </VscodeFormGroup>
+            <VscodeFormGroup>
+              <VscodeTextfield
+                type="number"
+                step={0.1}
+                value={(paramDefaults.top_p as unknown as string) ?? ''}
+                onInput={(e: any) => updateDefault('model_parameters', 'top_p', parseFloatOrUndef(e.currentTarget.value) ?? '')}
+              >
+                <span slot="label">Top P (0-1)</span>
+              </VscodeTextfield>
+            </VscodeFormGroup>
+            <VscodeFormGroup>
+              <VscodeTextfield
+                type="text"
+                placeholder="e.g., gpt-4, claude-3, gemini"
+                value={(propDefaults.family as unknown as string) ?? ''}
+                onInput={(e: any) => updateDefault('model_properties', 'family', e.currentTarget.value)}
+              >
+                <span slot="label">Family</span>
+              </VscodeTextfield>
+            </VscodeFormGroup>
+            <VscodeFormGroup>
+              <VscodeCheckbox
+                checked={!!propDefaults.vision}
+                onInput={(e: any) => updateDefault('model_properties', 'vision', (e.currentTarget as any).checked)}
+              >
+                Vision Support
+              </VscodeCheckbox>
+            </VscodeFormGroup>
+          </div>
+        )}
+      </VscodeCollapsible>
     </div>
   );
 };
