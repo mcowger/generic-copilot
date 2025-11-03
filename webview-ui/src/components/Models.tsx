@@ -34,7 +34,6 @@ const ensureProps = (m: Partial<ModelItem>): ModelItem => {
         family: flat?.family,
         context_length: flat?.context_length,
         vision: flat?.vision,
-        enable_thinking: flat?.enable_thinking,
         headers: flat?.headers,
         architecture: flat?.architecture,
     } as unknown as ModelProperties;

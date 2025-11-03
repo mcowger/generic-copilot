@@ -323,7 +323,6 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 
 		// Get model parameters using helper function (supports both flat and grouped structures)
 		const params = getModelParameters(um);
-		const properties = getModelProperties(um);
 
 		// temperature
 		const oTemperature = options.modelOptions?.temperature ?? 0;
@@ -358,15 +357,10 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 			rb.reasoning_effort = params.reasoning_effort;
 		}
 
-		// enable_thinking (non-OpenRouter only)
-		const enableThinking = properties.enable_thinking;
-		if (enableThinking !== undefined) {
-			rb.enable_thinking = enableThinking;
-
-			if (params.thinking_budget !== undefined) {
-				rb.thinking_budget = params.thinking_budget;
-			}
+		if (params.thinking_budget !== undefined) {
+			rb.thinking_budget = params.thinking_budget;
 		}
+
 
 		// thinking (Zai provider)
 		if (params.thinking?.type !== undefined) {

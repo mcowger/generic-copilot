@@ -510,7 +510,6 @@ Add fixed delay between consecutive requests:
 | `frequency_penalty` | number | — | Frequency penalty [-2, 2] |
 | `presence_penalty` | number | — | Presence penalty [-2, 2] |
 | `repetition_penalty` | number | — | Repetition penalty (0, 2] |
-| `enable_thinking` | boolean | `false` | Enable thinking display |
 | `thinking_budget` | number | — | Max thinking tokens |
 | `thinking` | object | — | Zai thinking config |
 | `reasoning` | object | — | OpenRouter reasoning config |

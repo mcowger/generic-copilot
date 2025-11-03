@@ -185,11 +185,6 @@
 								"type": "string",
 								"description": "Model family (e.g., 'gpt-4', 'claude-3', 'gemini'). Enables model-specific optimizations and behaviors. Defaults to 'generic' if not specified."
 							},
-							"enable_thinking": {
-								"type": "boolean",
-								"default": false,
-								"description": "Enable thinking display features for this model."
-							},
 							"baseUrl": {
 								"type": "string",
 								"description": "Base URL for the model provider. If not provided, the global generic-copilot.baseUrl will be used."

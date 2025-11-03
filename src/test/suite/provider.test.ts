@@ -251,8 +251,7 @@ suite('ChatModelProvider Test Suite', () => {
                     model_properties: {
                         id: 'test-model',
                         owned_by: 'test',
-                        baseUrl: 'https://test.com/v1',
-                    enable_thinking: true,
+                    baseUrl: 'https://test.com/v1',
                     },
                 model_parameters: {
                     }

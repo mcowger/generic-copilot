@@ -27,7 +27,6 @@ const toGrouped = (m: any): ModelItem => {
         family: m?.family,
         context_length: m?.context_length,
         vision: m?.vision,
-        enable_thinking: m?.enable_thinking,
         headers: m?.headers,
         architecture: m?.architecture,
     };

@@ -117,10 +117,7 @@ export interface ModelProperties {
 	 * defaults to "generic".
 	 */
 	family?: string;
-	/**
-	 * Enable thinking display features for this model.
-	 */
-	enable_thinking?: boolean;
+
 	headers?: Record<string, string>;
 }
 
