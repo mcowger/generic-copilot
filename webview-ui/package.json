@@ -1,0 +1,26 @@
+{
+    "name": "vscode-react-webview-ui",
+    "version": "1.0.0",
+    "description": "Basic package setup for a React/TypeScript VSCode Webview UI. Uses esbuild for fast bundling.",
+    "private": true,
+    "main": "dist/main.js",
+    "scripts": {
+        "compile": "esbuild src/main.tsx --bundle --minify --sourcemap --platform=browser --target=es2020 --outfile=dist/main.js",
+        "watch": "esbuild src/main.tsx --bundle --sourcemap --platform=browser --target=es2020 --outfile=dist/main.js --watch",
+        "dev": "npm run watch",
+        "clean:src": "rimraf \"src/**/*.js\" \"src/**/*.js.map\"",
+        "clean": "rimraf dist && npm run clean:src"
+    },
+    "dependencies": {
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0"
+    },
+    "devDependencies": {
+        "@types/node": "^22.0.0",
+        "@types/react": "^19.2.2",
+        "@types/react-dom": "^19.2.1",
+        "esbuild": "^0.25.11",
+        "rimraf": "^6.1.0",
+        "typescript": "^5.9.3"
+    }
+}
