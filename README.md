@@ -186,48 +186,78 @@ Providers are the foundation of the configuration system. Each provider defines 
 
 Models reference providers and automatically inherit their settings. You can override any inherited value at the model level.
 
-#### Model Schema
+We now use the grouped configuration format for models (see the "Grouped Structure" section below). Models should be defined using `model_properties` for internal metadata and `model_parameters` for fields sent to the provider. See `examples/provider-first-config.json` and `examples/grouped-config.json` for concrete samples.
+
+### Grouped Structure
+
+The extension uses a grouped structure that clearly separates parameters sent to the API (`model_parameters`) from internal metadata (`model_properties`). This provides better organization and clarity about what data is sent to the model provider.
+
+#### Why Use Grouped Structure?
+
+- **Clear Separation**: Easily see which settings are sent to the API vs. used internally
+- **Better Organization**: Group related settings together
+- **Unknown Keys**: The `model_parameters.extra` field allows unknown keys for provider-specific parameters
+
+#### Grouped Model Schema
 
 ```json
 {
-  "id": "string",              // Required: Model identifier
-  "provider": "string",        // Required: Provider key to inherit from
-  "configId": "string",        // Optional: Create multiple configs of same model
-  "baseUrl": "string",         // Optional: Override provider's baseUrl
-  "headers": {},               // Optional: Merge with or override provider headers
-  "temperature": 0.5,          // Optional: Override any provider default
-  // ... any parameter can be overridden
+  "model_properties": {
+    "id": "string",              // Required: Model identifier
+    "provider": "string",        // Required: Provider key to inherit from
+    "configId": "string",        // Optional: Create multiple configs
+    "owned_by": "string",        // Provider name (inherited from provider)
+    "baseUrl": "string",         // API endpoint (inherited from provider)
+    "context_length": 128000,    // Context window size
+    "vision": false,             // Vision capability
+    "family": "generic"          // Model family
+  },
+  "model_parameters": {
+    "temperature": 0.7,          // Sampling temperature
+    "max_tokens": 4096,          // Maximum output tokens
+    "top_p": 1,                  // Nucleus sampling
+    "extra": {                   // Unknown keys allowed here
+      "custom_param": "value"
+    }
+  }
 }
 ```
 
-#### Example: Models with Inheritance
+#### Example: Grouped Configuration
 
 ```json
 {
+  "generic-copilot.providers": [
+    {
+      "key": "modelscope",
+      "baseUrl": "https://api-inference.modelscope.cn/v1",
+      "defaults": {
+        "model_properties": {
+          "context_length": 256000,
+          "vision": false
+        },
+        "model_parameters": {
+          "max_tokens": 8192,
+          "temperature": 0
+        }
+      }
+    }
+  ],
   "generic-copilot.models": [
     {
-      "id": "Qwen/Qwen3-Coder-480B",
-      "provider": "modelscope"
-      // Inherits: baseUrl, headers, all defaults from modelscope
-    },
-    {
-      "id": "deepseek-v3",
-      "provider": "modelscope",
-      "temperature": 0.5,
-      "max_tokens": 16384
-      // Inherits from modelscope but overrides temperature and max_tokens
-    },
-    {
-      "id": "claude-3.5-sonnet",
-      "provider": "openrouter",
-      "reasoning": {
-        "effort": "high"
+      "model_properties": {
+        "id": "Qwen/Qwen3-Coder-480B",
+        "provider": "modelscope"
+      },
+      "model_parameters": {
+        "temperature": 0.5
       }
-      // Inherits reasoning.enabled from provider, overrides effort
     }
   ]
 }
 ```
+
+See `examples/grouped-config.json` for a complete example.
 
 ### Multi-Config Models
 
@@ -397,6 +427,26 @@ Configure display of model reasoning:
   "id": "o1-preview",
   "provider": "openai",
   "reasoning_effort": "high"
+}
+```
+
+### API Request Format
+
+When making requests to the model provider:
+
+1. **Model ID Mapping**: The `id` from `model_properties` is sent as the `model` parameter in the API request
+2. **Parameters Only**: Only `model_parameters` (temperature, max_tokens, etc.) are included in the request body
+3. **Excluded Metadata**: `model_properties` like `baseUrl`, `context_length`, `vision`, and `family` are NOT sent to the API - they're used internally by the extension
+4. **Unknown Keys**: Custom parameters can be added via `model_parameters.extra` and will be passed through to the API
+
+Example API request body:
+```json
+{
+  "model": "Qwen/Qwen3-Coder-480B",
+  "messages": [...],
+  "temperature": 0.7,
+  "max_tokens": 4096,
+  "stream": true
 }
 ```
 

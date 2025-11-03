@@ -10,6 +10,8 @@ import {
     resolveModelWithProvider,
     createRetryConfig,
     executeWithRetry,
+    getModelProperties,
+    getModelParameters,
 } from '../../utils';
 import type { ModelItem, ProviderConfig } from '../../types';
 import { MockCancellationToken, MockConfiguration } from '../helpers/mocks';
@@ -385,9 +387,12 @@ suite('Utils Test Suite', () => {
 
         test('should return model as-is when no provider reference', () => {
             const model: ModelItem = {
-                id: 'gpt-4',
-                owned_by: 'openai',
-                baseUrl: 'https://api.openai.com/v1'
+                model_properties: {
+                    id: 'gpt-4',
+                    owned_by: 'openai',
+                    baseUrl: 'https://api.openai.com/v1'
+                },
+                model_parameters: {}
             };
 
             const result = resolveModelWithProvider(model);
@@ -404,14 +409,17 @@ suite('Utils Test Suite', () => {
             mockConfig.set('generic-copilot.providers', providers);
 
             const model: ModelItem = {
-                id: 'test-model',
-                provider: 'test-provider',
-                owned_by: 'temp'
+                model_properties: {
+                    id: 'test-model',
+                    provider: 'test-provider',
+                    owned_by: 'temp'
+                },
+                model_parameters: {}
             };
 
             const result = resolveModelWithProvider(model);
-            assert.strictEqual(result.baseUrl, 'https://test.com/v1');
-            assert.strictEqual(result.owned_by, 'test-provider');
+            assert.strictEqual(result.model_properties.baseUrl, 'https://test.com/v1');
+            assert.strictEqual(result.model_properties.owned_by, 'test-provider');
         });
 
         test('should inherit defaults from provider', () => {
@@ -419,24 +427,31 @@ suite('Utils Test Suite', () => {
                 key: 'test-provider',
                 baseUrl: 'https://test.com/v1',
                 defaults: {
-                    context_length: 100000,
-                    temperature: 0.7,
-                    vision: true
+                    model_properties: {
+                        context_length: 100000,
+                        vision: true
+                    },
+                    model_parameters: {
+                        temperature: 0.7
+                    }
                 }
             }];
 
             mockConfig.set('generic-copilot.providers', providers);
 
             const model: ModelItem = {
-                id: 'test-model',
-                provider: 'test-provider',
-                owned_by: 'temp'
+                model_properties: {
+                    id: 'test-model',
+                    provider: 'test-provider',
+                    owned_by: 'temp'
+                },
+                model_parameters: {}
             };
 
             const result = resolveModelWithProvider(model);
-            assert.strictEqual(result.context_length, 100000);
-            assert.strictEqual(result.temperature, 0.7);
-            assert.strictEqual(result.vision, true);
+            assert.strictEqual(result.model_properties.context_length, 100000);
+            assert.strictEqual(result.model_parameters.temperature, 0.7);
+            assert.strictEqual(result.model_properties.vision, true);
         });
 
         test('should not override explicit model values with provider defaults', () => {
@@ -444,37 +459,48 @@ suite('Utils Test Suite', () => {
                 key: 'test-provider',
                 baseUrl: 'https://test.com/v1',
                 defaults: {
-                    temperature: 0.7,
-                    vision: true
+                    model_properties: {
+                        vision: true
+                    },
+                    model_parameters: {
+                        temperature: 0.7
+                    }
                 }
             }];
 
             mockConfig.set('generic-copilot.providers', providers);
 
             const model: ModelItem = {
-                id: 'test-model',
-                provider: 'test-provider',
-                owned_by: 'temp',
-                temperature: 0.3,
-                vision: false
+                model_properties: {
+                    id: 'test-model',
+                    provider: 'test-provider',
+                    owned_by: 'temp',
+                    vision: false
+                },
+                model_parameters: {
+                    temperature: 0.3
+                }
             };
 
             const result = resolveModelWithProvider(model);
-            assert.strictEqual(result.temperature, 0.3);
-            assert.strictEqual(result.vision, false);
+            assert.strictEqual(result.model_parameters.temperature, 0.3);
+            assert.strictEqual(result.model_properties.vision, false);
         });
 
         test('should handle missing provider gracefully', () => {
             mockConfig.set('generic-copilot.providers', []);
 
             const model: ModelItem = {
-                id: 'test-model',
-                provider: 'nonexistent',
-                owned_by: 'test'
+                model_properties: {
+                    id: 'test-model',
+                    provider: 'nonexistent',
+                    owned_by: 'test'
+                },
+                model_parameters: {}
             };
 
             const result = resolveModelWithProvider(model);
-            assert.strictEqual(result.id, 'test-model');
+            assert.strictEqual(result.model_properties.id, 'test-model');
         });
     });
 
@@ -646,6 +672,72 @@ suite('Utils Test Suite', () => {
                     String(status)
                 );
             }
+        });
+    });
+
+    suite('getModelProperties', () => {
+        test('should extract properties from grouped structure', () => {
+            const model: ModelItem = {
+                model_properties: {
+                    id: 'test-model',
+                    owned_by: 'test-provider',
+                    context_length: 128000,
+                    vision: true,
+                    family: 'gpt-4',
+                },
+                model_parameters: {
+                    temperature: 0.7,
+                },
+            };
+
+            const props = getModelProperties(model);
+            assert.strictEqual(props.id, 'test-model');
+            assert.strictEqual(props.owned_by, 'test-provider');
+            assert.strictEqual(props.context_length, 128000);
+            assert.strictEqual(props.vision, true);
+            assert.strictEqual(props.family, 'gpt-4');
+        });
+    });
+
+    suite('getModelParameters', () => {
+        test('should extract parameters from grouped structure', () => {
+            const model: ModelItem = {
+                model_properties: {
+                    id: 'test-model',
+                    owned_by: 'test-provider',
+                },
+                model_parameters: {
+                    temperature: 0.7,
+                    max_tokens: 4096,
+                    top_p: 1,
+                    extra: {
+                        custom_param: 'value',
+                    },
+                },
+            };
+
+            const params = getModelParameters(model);
+            assert.strictEqual(params.temperature, 0.7);
+            assert.strictEqual(params.max_tokens, 4096);
+            assert.strictEqual(params.top_p, 1);
+            assert.deepStrictEqual(params.extra, { custom_param: 'value' });
+        });
+
+        test('should handle null values for temperature and top_p', () => {
+            const model: ModelItem = {
+                model_properties: {
+                    id: 'test-model',
+                    owned_by: 'test-provider',
+                },
+                model_parameters: {
+                    temperature: null,
+                    top_p: null,
+                },
+            };
+
+            const params = getModelParameters(model);
+            assert.strictEqual(params.temperature, null);
+            assert.strictEqual(params.top_p, null);
         });
     });
 });

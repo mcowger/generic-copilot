@@ -53,7 +53,40 @@ export interface Architecture {
 	output_modalities?: string[];
 }
 
-export interface ModelItem {
+/**
+ * Parameters sent to the model API in the request body
+ */
+export interface ModelParameters {
+	// Allow null so user can explicitly disable sending this parameter (fall back to provider default)
+	temperature?: number | null;
+	// Allow null so user can explicitly disable sending this parameter (fall back to provider default)
+	top_p?: number | null;
+	max_tokens?: number;
+	// OpenAI new standard parameter
+	max_completion_tokens?: number;
+	reasoning_effort?: string;
+	enable_thinking?: boolean;
+	thinking_budget?: number;
+	// New thinking configuration for Zai provider
+	thinking?: ThinkingConfig;
+	top_k?: number;
+	min_p?: number;
+	frequency_penalty?: number;
+	presence_penalty?: number;
+	repetition_penalty?: number;
+	reasoning?: ReasoningConfig;
+	/**
+	 * Extra configuration parameters sent to the API.
+	 * This allows users to add any additional parameters they might need
+	 * without modifying the core interface. Unknown keys are only allowed here.
+	 */
+	extra?: Record<string, unknown>;
+}
+
+/**
+ * Internal properties used by the extension, not sent to the API
+ */
+export interface ModelProperties {
 	id: string;
 	object?: string;
 	created?: number;
@@ -78,24 +111,6 @@ export interface ModelItem {
 	architecture?: Architecture;
 	context_length?: number;
 	vision?: boolean;
-	max_tokens?: number;
-	// OpenAI new standard parameter
-	max_completion_tokens?: number;
-	reasoning_effort?: string;
-	enable_thinking?: boolean;
-	thinking_budget?: number;
-	// New thinking configuration for Zai provider
-	thinking?: ThinkingConfig;
-	// Allow null so user can explicitly disable sending this parameter (fall back to provider default)
-	temperature?: number | null;
-	// Allow null so user can explicitly disable sending this parameter (fall back to provider default)
-	top_p?: number | null;
-	top_k?: number;
-	min_p?: number;
-	frequency_penalty?: number;
-	presence_penalty?: number;
-	repetition_penalty?: number;
-	reasoning?: ReasoningConfig;
 	/**
 	 * Optional family specification for the model. This allows users to specify
 	 * the model family (e.g., "gpt-4", "claude-3", "gemini") to enable family-specific
@@ -103,13 +118,17 @@ export interface ModelItem {
 	 * defaults to "generic".
 	 */
 	family?: string;
+	headers?: Record<string, string>;
+}
 
-	/**
-	 * Extra configuration parameters that can be used for custom functionality.
-	 * This allows users to add any additional parameters they might need
-	 * without modifying the core interface.
-	 */
-	extra?: Record<string, unknown>;
+/**
+ * Model configuration interface using grouped structure
+ * Properties and parameters are separated for clarity
+ */
+export interface ModelItem {
+	// Grouped structure - required
+	model_properties: ModelProperties;
+	model_parameters: ModelParameters;
 }
 
 /**
@@ -199,25 +218,9 @@ export interface ProviderConfig {
 	baseUrl: string;
 	/** Custom HTTP headers for all requests */
 	headers?: Record<string, string>;
-	/** Default parameters that models can inherit */
+	/** Default parameters that models can inherit - grouped structure only */
 	defaults?: {
-		context_length?: number;
-		max_tokens?: number;
-		max_completion_tokens?: number;
-		temperature?: number | null;
-		top_p?: number | null;
-		top_k?: number;
-		min_p?: number;
-		frequency_penalty?: number;
-		presence_penalty?: number;
-		repetition_penalty?: number;
-		vision?: boolean;
-		family?: string;
-		reasoning_effort?: string;
-		enable_thinking?: boolean;
-		thinking_budget?: number;
-		thinking?: ThinkingConfig;
-		reasoning?: ReasoningConfig;
-		extra?: Record<string, unknown>;
+		model_properties?: Partial<ModelProperties>;
+		model_parameters?: Partial<ModelParameters>;
 	};
 }

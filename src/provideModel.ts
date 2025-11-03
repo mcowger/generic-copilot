@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { CancellationToken, LanguageModelChatInformation } from "vscode";
 
 import type { ModelItem, ProviderConfig } from "./types";
-import { resolveModelWithProvider } from "./utils";
+import { resolveModelWithProvider, getModelProperties, getModelParameters } from "./utils";
 
 const DEFAULT_CONTEXT_LENGTH = 128000;
 const DEFAULT_MAX_TOKENS = 4096;
@@ -30,41 +30,45 @@ export async function prepareLanguageModelChatInformation(
 			// Resolve model configuration with provider inheritance
 			const resolved = resolveModelWithProvider(m);
 
-			const contextLen = resolved?.context_length ?? DEFAULT_CONTEXT_LENGTH;
-			const maxOutput = resolved?.max_completion_tokens ?? resolved?.max_tokens ?? DEFAULT_MAX_TOKENS;
+			// Get model properties and parameters using helper functions
+			const props = getModelProperties(resolved);
+			const params = getModelParameters(resolved);
+
+			const contextLen = props.context_length ?? DEFAULT_CONTEXT_LENGTH;
+			const maxOutput = params.max_completion_tokens ?? params.max_tokens ?? DEFAULT_MAX_TOKENS;
 			const maxInput = Math.max(1, contextLen - maxOutput);
 
 			// Build canonical ID using provider key and raw model id
-			const modelId = resolved.configId
-				? `${resolved.owned_by}/${resolved.id}::${resolved.configId}`
-				: `${resolved.owned_by}/${resolved.id}`;
+			const modelId = props.configId
+				? `${props.owned_by}/${props.id}::${props.configId}`
+				: `${props.owned_by}/${props.id}`;
 			// Compose human-friendly display name as providerDisplayName/modelDisplayName[::configId]
 			const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
-			const providerMeta = providers.find((p) => p.key === resolved.owned_by);
+			const providerMeta = providers.find((p) => p.key === props.owned_by);
 			const providerDn =
 				providerMeta?.displayName && providerMeta.displayName.trim().length > 0
 					? providerMeta.displayName
-					: resolved.owned_by;
+					: props.owned_by;
 			const modelDn =
-				resolved.displayName && resolved.displayName.trim().length > 0 ? resolved.displayName : resolved.id;
-			const modelName = resolved.configId
-				? `${providerDn}/${modelDn}::${resolved.configId}`
+				props.displayName && props.displayName.trim().length > 0 ? props.displayName : props.id;
+			const modelName = props.configId
+				? `${providerDn}/${modelDn}::${props.configId}`
 				: `${providerDn}/${modelDn}`;
 
 			return {
 				id: modelId,
 				name: modelName,
 				detail: providerDn,
-				tooltip: resolved.configId
-					? `${resolved.owned_by}/${resolved.id}::${resolved.configId}`
-					: `${resolved.owned_by}/${resolved.id}`,
-				family: resolved.family ?? "generic",
+				tooltip: props.configId
+					? `${props.owned_by}/${props.id}::${props.configId}`
+					: `${props.owned_by}/${props.id}`,
+				family: props.family ?? "generic",
 				version: "1.0.0",
 				maxInputTokens: maxInput,
 				maxOutputTokens: maxOutput,
 				capabilities: {
 					toolCalling: true,
-					imageInput: resolved?.vision ?? false,
+					imageInput: props.vision ?? false,
 				},
 			} satisfies LanguageModelChatInformation;
 		});

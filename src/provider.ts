@@ -20,6 +20,8 @@ import {
 	createRetryConfig,
 	executeWithRetry,
 	resolveModelWithProvider,
+	getModelParameters,
+	getModelProperties,
 } from "./utils";
 
 import { prepareLanguageModelChatInformation } from "./provideModel";
@@ -187,16 +189,20 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 				baseIdForMatch = baseIdForMatch.slice(slashIdx + 1);
 			}
 
-			const getDeclaredProviderKey = (m: ModelItem): string | undefined => (m.provider ?? m.owned_by)?.toLowerCase();
+			const getDeclaredProviderKey = (m: ModelItem): string | undefined => {
+				const props = getModelProperties(m);
+				return (props.provider ?? props.owned_by)?.toLowerCase();
+			};
 
 			// Find the matching user model configuration
 			// Prefer match: same model id AND same configId AND (if present) same provider key
 			let um: ModelItem | undefined = userModels.find((m) => {
-				if (m.id !== baseIdForMatch) {
+				const props = getModelProperties(m);
+				if (props.id !== baseIdForMatch) {
 					return false;
 				}
 				const configMatch =
-					(parsedModelId.configId && m.configId === parsedModelId.configId) || (!parsedModelId.configId && !m.configId);
+					(parsedModelId.configId && props.configId === parsedModelId.configId) || (!parsedModelId.configId && !props.configId);
 				if (!configMatch) {
 					return false;
 				}
@@ -210,18 +216,23 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 			// If not found, relax provider constraint (match by id and configId only)
 			if (!um) {
 				um = userModels.find(
-					(m) =>
-						m.id === baseIdForMatch &&
-						((parsedModelId.configId && m.configId === parsedModelId.configId) ||
-							(!parsedModelId.configId && !m.configId))
+					(m) => {
+						const props = getModelProperties(m);
+						return props.id === baseIdForMatch &&
+							((parsedModelId.configId && props.configId === parsedModelId.configId) ||
+								(!parsedModelId.configId && !props.configId));
+					}
 				);
 			}
 
 			// Resolve model configuration with provider inheritance
 			const resolvedModel = um ? resolveModelWithProvider(um) : um;
 
+			// Get model properties using helper function
+			const modelProps = resolvedModel ? getModelProperties(resolvedModel) : undefined;
+
 			// Get API key for the model's provider (provider-level keys only)
-			const provider = resolvedModel?.owned_by;
+			const provider = modelProps?.owned_by;
 			const modelApiKey = await this.ensureApiKey(provider);
 			if (!modelApiKey) {
 				throw new Error(
@@ -244,7 +255,7 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 			// console.log("[Generic Compatible Model Provider] RequestBody:", JSON.stringify(requestBody));
 
 			// send chat request
-			const BASE_URL = resolvedModel?.baseUrl || config.get<string>("generic-copilot.baseUrl", "");
+			const BASE_URL = modelProps?.baseUrl || config.get<string>("generic-copilot.baseUrl", "");
 			if (!BASE_URL || !BASE_URL.startsWith("http")) {
 				throw new Error(`Invalid base URL configuration.`);
 			}
@@ -301,59 +312,71 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 		um: ModelItem | undefined,
 		options: ProvideLanguageModelChatResponseOptions
 	) {
+		// If no model config, apply defaults from options
+		if (!um) {
+			const oTemperature = options.modelOptions?.temperature ?? 0;
+			rb.temperature = oTemperature;
+			const oTopP = options.modelOptions?.top_p ?? 1;
+			rb.top_p = oTopP;
+			return rb;
+		}
+
+		// Get model parameters using helper function (supports both flat and grouped structures)
+		const params = getModelParameters(um);
+
 		// temperature
 		const oTemperature = options.modelOptions?.temperature ?? 0;
-		const temperature = um?.temperature ?? oTemperature;
+		const temperature = params.temperature ?? oTemperature;
 		rb.temperature = temperature;
 
 		// top_p
 		const oTopP = options.modelOptions?.top_p ?? 1;
-		const topP = um?.top_p ?? oTopP;
+		const topP = params.top_p ?? oTopP;
 		rb.top_p = topP;
 
 		// If user model config explicitly sets sampling params to null, remove them so provider defaults apply
-		if (um && um.temperature === null) {
+		if (params.temperature === null) {
 			delete rb.temperature;
 		}
-		if (um && um.top_p === null) {
+		if (params.top_p === null) {
 			delete rb.top_p;
 		}
 
 		// max_tokens
-		if (um?.max_tokens !== undefined) {
-			rb.max_tokens = um.max_tokens;
+		if (params.max_tokens !== undefined) {
+			rb.max_tokens = params.max_tokens;
 		}
 
 		// max_completion_tokens (OpenAI new standard parameter)
-		if (um?.max_completion_tokens !== undefined) {
-			rb.max_completion_tokens = um.max_completion_tokens;
+		if (params.max_completion_tokens !== undefined) {
+			rb.max_completion_tokens = params.max_completion_tokens;
 		}
 
 		// OpenAI reasoning configuration
-		if (um?.reasoning_effort !== undefined) {
-			rb.reasoning_effort = um.reasoning_effort;
+		if (params.reasoning_effort !== undefined) {
+			rb.reasoning_effort = params.reasoning_effort;
 		}
 
 		// enable_thinking (non-OpenRouter only)
-		const enableThinking = um?.enable_thinking;
+		const enableThinking = params.enable_thinking;
 		if (enableThinking !== undefined) {
 			rb.enable_thinking = enableThinking;
 
-			if (um?.thinking_budget !== undefined) {
-				rb.thinking_budget = um.thinking_budget;
+			if (params.thinking_budget !== undefined) {
+				rb.thinking_budget = params.thinking_budget;
 			}
 		}
 
 		// thinking (Zai provider)
-		if (um?.thinking?.type !== undefined) {
+		if (params.thinking?.type !== undefined) {
 			rb.thinking = {
-				type: um.thinking.type,
+				type: params.thinking.type,
 			};
 		}
 
 		// OpenRouter reasoning configuration
-		if (um?.reasoning !== undefined) {
-			const reasoningConfig: ReasoningConfig = um.reasoning as ReasoningConfig;
+		if (params.reasoning !== undefined) {
+			const reasoningConfig: ReasoningConfig = params.reasoning as ReasoningConfig;
 			if (reasoningConfig.enabled !== false) {
 				const reasoningObj: Record<string, unknown> = {};
 				const effort = reasoningConfig.effort;
@@ -389,26 +412,26 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 		}
 
 		// Configure user-defined additional parameters
-		if (um?.top_k !== undefined) {
-			rb.top_k = um.top_k;
+		if (params.top_k !== undefined) {
+			rb.top_k = params.top_k;
 		}
-		if (um?.min_p !== undefined) {
-			rb.min_p = um.min_p;
+		if (params.min_p !== undefined) {
+			rb.min_p = params.min_p;
 		}
-		if (um?.frequency_penalty !== undefined) {
-			rb.frequency_penalty = um.frequency_penalty;
+		if (params.frequency_penalty !== undefined) {
+			rb.frequency_penalty = params.frequency_penalty;
 		}
-		if (um?.presence_penalty !== undefined) {
-			rb.presence_penalty = um.presence_penalty;
+		if (params.presence_penalty !== undefined) {
+			rb.presence_penalty = params.presence_penalty;
 		}
-		if (um?.repetition_penalty !== undefined) {
-			rb.repetition_penalty = um.repetition_penalty;
+		if (params.repetition_penalty !== undefined) {
+			rb.repetition_penalty = params.repetition_penalty;
 		}
 
 		// Process extra configuration parameters
-		if (um?.extra && typeof um.extra === "object") {
+		if (params.extra && typeof params.extra === "object") {
 			// Add all extra parameters directly to the request body
-			for (const [key, value] of Object.entries(um.extra)) {
+			for (const [key, value] of Object.entries(params.extra)) {
 				if (value !== undefined) {
 					rb[key] = value;
 				}

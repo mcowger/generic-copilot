@@ -7,6 +7,8 @@ import type {
 	RetryConfig,
 	ProviderConfig,
 	ModelItem,
+	ModelParameters,
+	ModelProperties,
 } from "./types";
 
 const RETRY_MAX_ATTEMPTS = 3;
@@ -509,8 +511,10 @@ export async function executeWithRetry<T>(
  * @returns Resolved model configuration with inherited values
  */
 export function resolveModelWithProvider(model: ModelItem): ModelItem {
+	const providerRef = model.model_properties.provider;
+
 	// If no provider reference, return model as-is
-	if (!model.provider) {
+	if (!providerRef) {
 		return model;
 	}
 
@@ -519,40 +523,70 @@ export function resolveModelWithProvider(model: ModelItem): ModelItem {
 	const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
 
 	// Find the referenced provider
-	const provider = providers.find((p) => p.key === model.provider);
+	const provider = providers.find((p) => p.key === providerRef);
 	if (!provider) {
-		console.warn(`[Generic Compatible Model Provider] Provider '${model.provider}' not found in configuration`);
+		console.warn(`[Generic Compatible Model Provider] Provider '${providerRef}' not found in configuration`);
 		return model;
 	}
-
-	// Create resolved model by merging provider defaults with model config
-	const resolved: ModelItem = {
-		...model,
-		// Inherit owned_by from provider key
-		owned_by: provider.key,
-		// Inherit baseUrl from provider if not explicitly set
-		baseUrl: model.baseUrl || provider.baseUrl,
-	};
 
 	// Helper to detect plain objects
 	const isPlainObject = (val: unknown): val is Record<string, unknown> =>
 		!!val && typeof val === "object" && !Array.isArray(val);
 
-	// Generic merge: apply provider.defaults into resolved without overwriting existing model values.
-	// If both values are plain objects, perform a shallow merge with model taking precedence.
+	// Create resolved model by merging provider defaults with model config
+	const resolved: ModelItem = {
+		model_properties: {
+			...model.model_properties,
+			owned_by: provider.key,
+			baseUrl: model.model_properties.baseUrl || provider.baseUrl,
+		},
+		model_parameters: { ...model.model_parameters },
+	};
+
+	// Merge provider defaults into resolved model
 	if (provider.defaults) {
-		for (const [key, defVal] of Object.entries(provider.defaults as Record<string, unknown>)) {
-			const curVal = (resolved as unknown as Record<string, unknown>)[key];
-			if (curVal === undefined) {
-				// Adopt default when model hasn't specified a value
-				(resolved as unknown as Record<string, unknown>)[key] = defVal;
-			} else if (isPlainObject(curVal) && isPlainObject(defVal)) {
-				// Shallow merge objects: defaults first, then model overrides
-				(resolved as unknown as Record<string, unknown>)[key] = { ...defVal, ...curVal };
+		// Merge model_properties defaults
+		if (provider.defaults.model_properties) {
+			for (const [key, defVal] of Object.entries(provider.defaults.model_properties)) {
+				const curVal = (resolved.model_properties as unknown as Record<string, unknown>)[key];
+				if (curVal === undefined) {
+					(resolved.model_properties as unknown as Record<string, unknown>)[key] = defVal;
+				} else if (isPlainObject(curVal) && isPlainObject(defVal)) {
+					(resolved.model_properties as unknown as Record<string, unknown>)[key] = { ...defVal, ...curVal };
+				}
 			}
-			// For non-object values that already exist, keep model's value
+		}
+
+		// Merge model_parameters defaults
+		if (provider.defaults.model_parameters) {
+			for (const [key, defVal] of Object.entries(provider.defaults.model_parameters)) {
+				const curVal = (resolved.model_parameters as unknown as Record<string, unknown>)[key];
+				if (curVal === undefined) {
+					(resolved.model_parameters as unknown as Record<string, unknown>)[key] = defVal;
+				} else if (isPlainObject(curVal) && isPlainObject(defVal)) {
+					(resolved.model_parameters as unknown as Record<string, unknown>)[key] = { ...defVal, ...curVal };
+				}
+			}
 		}
 	}
 
 	return resolved;
+}
+
+/**
+ * Get model properties from a ModelItem.
+ * @param model The model configuration
+ * @returns Model properties
+ */
+export function getModelProperties(model: ModelItem): ModelProperties {
+	return model.model_properties;
+}
+
+/**
+ * Get model parameters from a ModelItem.
+ * @param model The model configuration
+ * @returns Model parameters
+ */
+export function getModelParameters(model: ModelItem): ModelParameters {
+	return model.model_parameters;
 }

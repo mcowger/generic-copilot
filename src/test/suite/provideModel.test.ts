@@ -39,9 +39,12 @@ suite('ProvideModel Test Suite', () => {
 
         test('should create model info from user-configured models', async () => {
             const models: ModelItem[] = [{
-                id: 'gpt-4',
-                owned_by: 'openai',
-                baseUrl: 'https://api.openai.com/v1'
+                model_properties: {
+                    id: 'gpt-4',
+                    owned_by: 'openai',
+                    baseUrl: 'https://api.openai.com/v1',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -61,9 +64,12 @@ suite('ProvideModel Test Suite', () => {
 
         test('should use configId in model ID when present', async () => {
             const models: ModelItem[] = [{
-                id: 'gpt-4',
-                owned_by: 'openai',
-                configId: 'thinking'
+                model_properties: {
+                    id: 'gpt-4',
+                    owned_by: 'openai',
+                    configId: 'thinking',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -88,9 +94,12 @@ suite('ProvideModel Test Suite', () => {
             }];
 
             const models: ModelItem[] = [{
-                id: 'gpt-4',
-                owned_by: 'openai',
-                displayName: 'GPT-4'
+                model_properties: {
+                    id: 'gpt-4',
+                    owned_by: 'openai',
+                    displayName: 'GPT-4',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.providers', providers);
@@ -109,10 +118,14 @@ suite('ProvideModel Test Suite', () => {
 
         test('should set context length and max tokens correctly', async () => {
             const models: ModelItem[] = [{
-                id: 'test-model',
-                owned_by: 'test',
-                context_length: 100000,
-                max_tokens: 4096
+                model_properties: {
+                    id: 'test-model',
+                    owned_by: 'test',
+                    context_length: 100000,
+                },
+                model_parameters: {
+                    max_tokens: 4096,
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -132,11 +145,15 @@ suite('ProvideModel Test Suite', () => {
 
         test('should prefer max_completion_tokens over max_tokens', async () => {
             const models: ModelItem[] = [{
-                id: 'test-model',
-                owned_by: 'test',
-                context_length: 100000,
-                max_tokens: 2048,
-                max_completion_tokens: 4096
+                model_properties: {
+                    id: 'test-model',
+                    owned_by: 'test',
+                    context_length: 100000,
+                },
+                model_parameters: {
+                    max_tokens: 2048,
+                    max_completion_tokens: 4096,
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -154,8 +171,11 @@ suite('ProvideModel Test Suite', () => {
 
         test('should use default values when not specified', async () => {
             const models: ModelItem[] = [{
-                id: 'test-model',
-                owned_by: 'test'
+                model_properties: {
+                    id: 'test-model',
+                    owned_by: 'test',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -177,14 +197,20 @@ suite('ProvideModel Test Suite', () => {
         test('should set vision capability correctly', async () => {
             const models: ModelItem[] = [
                 {
-                    id: 'vision-model',
-                    owned_by: 'test',
-                    vision: true
+                    model_properties: {
+                        id: 'vision-model',
+                        owned_by: 'test',
+                        vision: true,
+                    },
+                    model_parameters: {}
                 },
                 {
-                    id: 'text-model',
-                    owned_by: 'test',
-                    vision: false
+                    model_properties: {
+                        id: 'text-model',
+                        owned_by: 'test',
+                        vision: false,
+                    },
+                    model_parameters: {}
                 }
             ];
 
@@ -204,8 +230,11 @@ suite('ProvideModel Test Suite', () => {
 
         test('should set tool calling capability', async () => {
             const models: ModelItem[] = [{
-                id: 'test-model',
-                owned_by: 'test'
+                model_properties: {
+                    id: 'test-model',
+                    owned_by: 'test',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -224,18 +253,27 @@ suite('ProvideModel Test Suite', () => {
         test('should set family correctly', async () => {
             const models: ModelItem[] = [
                 {
-                    id: 'gpt-4',
-                    owned_by: 'openai',
-                    family: 'gpt-4'
+                    model_properties: {
+                        id: 'gpt-4',
+                        owned_by: 'openai',
+                        family: 'gpt-4',
+                    },
+                    model_parameters: {}
                 },
                 {
-                    id: 'claude-3',
-                    owned_by: 'anthropic',
-                    family: 'claude-3'
+                    model_properties: {
+                        id: 'claude-3',
+                        owned_by: 'anthropic',
+                        family: 'claude-3',
+                    },
+                    model_parameters: {}
                 },
                 {
-                    id: 'generic',
-                    owned_by: 'test'
+                    model_properties: {
+                        id: 'generic',
+                        owned_by: 'test'
+                    },
+                    model_parameters: {}
                 }
             ];
 
@@ -257,16 +295,25 @@ suite('ProvideModel Test Suite', () => {
         test('should handle multiple models', async () => {
             const models: ModelItem[] = [
                 {
-                    id: 'model-1',
-                    owned_by: 'provider-1'
+                    model_properties: {
+                        id: 'model-1',
+                        owned_by: 'provider-1',
+                    },
+                    model_parameters: {}
                 },
                 {
-                    id: 'model-2',
-                    owned_by: 'provider-2'
+                    model_properties: {
+                        id: 'model-2',
+                        owned_by: 'provider-2',
+                    },
+                    model_parameters: {}
                 },
                 {
-                    id: 'model-3',
-                    owned_by: 'provider-1'
+                    model_properties: {
+                        id: 'model-3',
+                        owned_by: 'provider-1',
+                    },
+                    model_parameters: {}
                 }
             ];
 
@@ -292,16 +339,27 @@ suite('ProvideModel Test Suite', () => {
                 baseUrl: 'https://test.com/v1',
                 displayName: 'Test Provider',
                 defaults: {
-                    context_length: 200000,
-                    vision: true,
-                    family: 'test-family'
+
+                    model_properties: {
+
+                        context_length: 200000,
+
+                        vision: true,
+
+                        family: 'test-family'
+
+                    },
+
                 }
             }];
 
             const models: ModelItem[] = [{
-                id: 'test-model',
-                provider: 'test-provider',
-                owned_by: 'temp'
+                model_properties: {
+                    id: 'test-model',
+                    provider: 'test-provider',
+                    owned_by: 'temp',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.providers', providers);
@@ -326,17 +384,27 @@ suite('ProvideModel Test Suite', () => {
                 key: 'test-provider',
                 baseUrl: 'https://test.com/v1',
                 defaults: {
-                    vision: true,
-                    family: 'default-family'
+
+                    model_properties: {
+
+                        vision: true,
+
+                        family: 'default-family'
+
+                    },
+
                 }
             }];
 
             const models: ModelItem[] = [{
-                id: 'test-model',
-                provider: 'test-provider',
-                owned_by: 'temp',
-                vision: false,
-                family: 'custom-family'
+                model_properties: {
+                    id: 'test-model',
+                    provider: 'test-provider',
+                    owned_by: 'temp',
+                    vision: false,
+                    family: 'custom-family',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.providers', providers);
@@ -363,8 +431,11 @@ suite('ProvideModel Test Suite', () => {
             }];
 
             const models: ModelItem[] = [{
-                id: 'gpt-4',
-                owned_by: 'openai'
+                model_properties: {
+                    id: 'gpt-4',
+                    owned_by: 'openai',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.providers', providers);
@@ -384,9 +455,12 @@ suite('ProvideModel Test Suite', () => {
 
         test('should handle configId in tooltip', async () => {
             const models: ModelItem[] = [{
-                id: 'gpt-4',
-                owned_by: 'openai',
-                configId: 'thinking'
+                model_properties: {
+                    id: 'gpt-4',
+                    owned_by: 'openai',
+                    configId: 'thinking',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -405,8 +479,11 @@ suite('ProvideModel Test Suite', () => {
 
         test('should respect silent mode', async () => {
             const models: ModelItem[] = [{
-                id: 'test-model',
-                owned_by: 'test'
+                model_properties: {
+                    id: 'test-model',
+                    owned_by: 'test',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -425,8 +502,11 @@ suite('ProvideModel Test Suite', () => {
 
         test('should handle cancellation', async () => {
             const models: ModelItem[] = [{
-                id: 'test-model',
-                owned_by: 'test'
+                model_properties: {
+                    id: 'test-model',
+                    owned_by: 'test',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -448,10 +528,14 @@ suite('ProvideModel Test Suite', () => {
 
         test('should handle edge case with maxInputTokens calculation', async () => {
             const models: ModelItem[] = [{
-                id: 'test-model',
-                owned_by: 'test',
-                context_length: 1000,
-                max_tokens: 1000
+                model_properties: {
+                    id: 'test-model',
+                    owned_by: 'test',
+                    context_length: 1000,
+                },
+                model_parameters: {
+                    max_tokens: 1000,
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -470,8 +554,11 @@ suite('ProvideModel Test Suite', () => {
 
         test('should return required properties for each model', async () => {
             const models: ModelItem[] = [{
-                id: 'test-model',
-                owned_by: 'test'
+                model_properties: {
+                    id: 'test-model',
+                    owned_by: 'test',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.models', models);

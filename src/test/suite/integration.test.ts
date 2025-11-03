@@ -39,16 +39,30 @@ suite('End-to-End Integration Test Suite', () => {
                 baseUrl: 'https://test.com/v1',
                 displayName: 'Test Provider',
                 defaults: {
-                    context_length: 100000,
-                    temperature: 0.7
+
+                    model_properties: {
+
+                        context_length: 100000
+
+                    },
+
+                    model_parameters: {
+
+                        temperature: 0.7
+
+                    }
+
                 }
             }];
 
             const models: ModelItem[] = [{
-                id: 'test-model',
-                provider: 'test-provider',
-                owned_by: 'test-provider',
-                vision: false
+                model_properties: {
+                    id: 'test-model',
+                    provider: 'test-provider',
+                    owned_by: 'test-provider',
+                    vision: false,
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.providers', providers);
@@ -109,9 +123,12 @@ suite('End-to-End Integration Test Suite', () => {
             }];
 
             const models: ModelItem[] = [{
-                id: 'test-model',
-                provider: 'test-provider',
-                owned_by: 'test-provider'
+                model_properties: {
+                    id: 'test-model',
+                    provider: 'test-provider',
+                    owned_by: 'test-provider',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.providers', providers);
@@ -186,9 +203,12 @@ suite('End-to-End Integration Test Suite', () => {
             }];
 
             const models: ModelItem[] = [{
-                id: 'test-model',
-                provider: 'test-provider',
-                owned_by: 'test-provider'
+                model_properties: {
+                    id: 'test-model',
+                    provider: 'test-provider',
+                    owned_by: 'test-provider',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.providers', providers);
@@ -301,9 +321,12 @@ suite('End-to-End Integration Test Suite', () => {
             }];
 
             const models: ModelItem[] = [{
-                id: 'test-model',
-                provider: 'test-provider',
-                owned_by: 'test-provider'
+                model_properties: {
+                    id: 'test-model',
+                    provider: 'test-provider',
+                    owned_by: 'test-provider',
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.providers', providers);
@@ -365,16 +388,22 @@ suite('End-to-End Integration Test Suite', () => {
 
             const models: ModelItem[] = [
                 {
-                    id: 'gpt-4',
-                    provider: 'openai',
-                    owned_by: 'openai',
-                    family: 'gpt-4'
+                    model_properties: {
+                        id: 'gpt-4',
+                        provider: 'openai',
+                        owned_by: 'openai',
+                        family: 'gpt-4',
+                    },
+                    model_parameters: {}
                 },
                 {
-                    id: 'generic-model',
-                    provider: 'openai',
-                    owned_by: 'openai',
-                    family: 'generic'
+                    model_properties: {
+                        id: 'generic-model',
+                        provider: 'openai',
+                        owned_by: 'openai',
+                        family: 'generic',
+                    },
+                    model_parameters: {}
                 }
             ];
 
@@ -402,10 +431,13 @@ suite('End-to-End Integration Test Suite', () => {
             }];
 
             const models: ModelItem[] = [{
-                id: 'vision-model',
-                provider: 'test-provider',
-                owned_by: 'test-provider',
-                vision: true
+                model_properties: {
+                    id: 'vision-model',
+                    provider: 'test-provider',
+                    owned_by: 'test-provider',
+                    vision: true,
+                },
+                model_parameters: {}
             }];
 
             mockConfig.set('generic-copilot.providers', providers);
@@ -431,18 +463,26 @@ suite('End-to-End Integration Test Suite', () => {
 
             const models: ModelItem[] = [
                 {
-                    id: 'model',
-                    provider: 'test-provider',
-                    owned_by: 'test-provider',
-                    configId: 'thinking',
-                    enable_thinking: true
+                    model_properties: {
+                        id: 'model',
+                        provider: 'test-provider',
+                        owned_by: 'test-provider',
+                        configId: 'thinking',
+                    },
+                    model_parameters: {
+                        enable_thinking: true,
+                    }
                 },
                 {
-                    id: 'model',
-                    provider: 'test-provider',
-                    owned_by: 'test-provider',
-                    configId: 'standard',
-                    enable_thinking: false
+                    model_properties: {
+                        id: 'model',
+                        provider: 'test-provider',
+                        owned_by: 'test-provider',
+                        configId: 'standard',
+                    },
+                    model_parameters: {
+                        enable_thinking: false,
+                    }
                 }
             ];
 

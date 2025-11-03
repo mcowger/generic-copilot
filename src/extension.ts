@@ -36,7 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
 					userModels
 						.map((m) => {
 							const resolved = resolveModelWithProvider(m);
-							return resolved.owned_by?.toLowerCase();
+							return resolved.model_properties.owned_by?.toLowerCase();
 						})
 						.filter((p) => p && p.trim() !== "")
 				)
