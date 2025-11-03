@@ -131,7 +131,7 @@ export const Providers: React.FC<ProvidersProps> = ({ providers, onChange }) => 
   if (!providers || providers.length === 0) {
     return (
       <div>
-        <VscodeButton onClick={addProvider} secondary>
+        <VscodeButton onClick={addProvider} secondary style={{ marginTop: '12px', marginBottom: '12px' }}>
           + Add Provider
         </VscodeButton>
         <div className="empty-state">No providers configured. Click "Add Provider" to get started.</div>
@@ -141,7 +141,7 @@ export const Providers: React.FC<ProvidersProps> = ({ providers, onChange }) => 
 
   return (
     <div>
-      <VscodeButton onClick={addProvider} secondary>
+      <VscodeButton onClick={addProvider} secondary style={{ marginTop: '12px', marginBottom: '12px' }}>
         + Add Provider
       </VscodeButton>
       <div className="item-list">

@@ -109,7 +109,7 @@ export const Models: React.FC<ModelsProps> = ({ providers, models, onChange }) =
     if (!models || models.length === 0) {
         return (
             <div>
-                <VscodeButton onClick={addModel}>+ Add Model</VscodeButton>
+                <VscodeButton onClick={addModel} style={{ marginTop: '12px', marginBottom: '12px' }}>+ Add Model</VscodeButton>
                 <div className="empty-state">No models configured. Click "Add Model" to get started.</div>
             </div>
         );
@@ -117,7 +117,7 @@ export const Models: React.FC<ModelsProps> = ({ providers, models, onChange }) =
 
     return (
         <div>
-            <VscodeButton onClick={addModel} secondary>
+            <VscodeButton onClick={addModel} secondary style={{ marginTop: '12px', marginBottom: '12px' }}>
                 + Add Model
             </VscodeButton>
             <div className="item-list">
