@@ -64,7 +64,7 @@ export interface ModelParameters {
 	max_tokens?: number;
 	// OpenAI new standard parameter
 	max_completion_tokens?: number;
-	reasoning_effort?: string;
+	reasoning_effort?: 'minimal' | 'low' | 'medium' | 'high' | null;
 	thinking_budget?: number;
 	// New thinking configuration for Zai provider
 	thinking?: ThinkingConfig;

@@ -1,6 +1,8 @@
 {
     "search.exclude": {
-        "out": true
+        "out": true,
+        "node_modules": true,
+        "dist": true
     },
     "git.branchProtection": [
         "main"

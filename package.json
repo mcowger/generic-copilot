@@ -125,14 +125,24 @@
 										"type": "boolean",
 										"description": "Default vision capability for models."
 									},
-									"family": {
-										"type": "string",
-										"description": "Default model family for models."
-									},
-								"reasoning_effort": {
+								"family": {
 									"type": "string",
-									"description": "Default reasoning effort for models."
+									"description": "Default model family for models."
 								},
+								"reasoning_effort": {
+								"type": [
+									"string",
+									"null"
+								],
+								"enum": [
+									"minimal",
+									"low",
+									"medium",
+									"high",
+									null
+								],
+								"description": "Default reasoning effort for models."
+							},
 								"thinking_budget": {
 										"type": "number",
 										"description": "Default thinking budget for models."
@@ -216,13 +226,17 @@
 								"description": "Maximum number of tokens to generate (OpenAI new standard parameter)."
 							},
 							"reasoning_effort": {
-								"type": "string",
+								"type": [
+									"string",
+									"null"
+								],
 								"default": "medium",
 								"enum": [
-									"high",
-									"medium",
+									"minimal",
 									"low",
-									"minimal"
+									"medium",
+									"high",
+									null
 								],
 								"description": "Reasoning effort level (OpenAI reasoning configuration)"
 							},

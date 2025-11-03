@@ -6,6 +6,8 @@ import {
     VscodeTextfield,
     VscodeTextarea,
     VscodeFormHelper,
+    VscodeSingleSelect,
+    VscodeOption,
 } from '@vscode-elements/react-elements';
 
 export interface ModelParamsProps {
@@ -94,17 +96,23 @@ const ModelParamsForm: React.FC<ModelParamsProps> = ({ value, onChange }) => {
                     onInput={(e: any) => update('reasoning', tryParseJson(e.currentTarget.value))}
                 >
                 </VscodeTextarea>
-                <VscodeFormHelper>OpenAI-style reasoning: set enabled/effort or max_tokens</VscodeFormHelper>
             </div>
 
             <div className="form-field">
                 <VscodeFormHelper>Reasoning Effort (GPT-5 Only)</VscodeFormHelper>
-                <VscodeTextfield
-                    type="text"
+                <VscodeSingleSelect
                     value={(value?.reasoning_effort as unknown as string) ?? ''}
-                    onInput={(e: any) => update('reasoning_effort', e.currentTarget.value)}
+                    onInput={(e: any) => {
+                        const val = e.currentTarget.value;
+                        update('reasoning_effort', val === '' ? null : val);
+                    }}
                 >
-                </VscodeTextfield>
+                    <VscodeOption value="">Not set (null)</VscodeOption>
+                    <VscodeOption value="minimal">Minimal</VscodeOption>
+                    <VscodeOption value="low">Low</VscodeOption>
+                    <VscodeOption value="medium">Medium</VscodeOption>
+                    <VscodeOption value="high">High</VscodeOption>
+                </VscodeSingleSelect>
             </div>
 
             <div className="form-field">
