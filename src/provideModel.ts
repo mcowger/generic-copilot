@@ -40,8 +40,8 @@ export async function prepareLanguageModelChatInformation(
 
 			// Build canonical ID using provider key and raw model id
 			const modelId = props.configId
-				? `${props.owned_by}/${props.id}::${props.configId}`
-				: `${props.owned_by}/${props.id}`;
+				? `${props.owned_by}/${resolved.id}::${props.configId}`
+				: `${props.owned_by}/${resolved.id}`;
 			// Compose human-friendly display name as providerDisplayName/modelDisplayName[::configId]
 			const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
 			const providerMeta = providers.find((p) => p.key === props.owned_by);
@@ -50,7 +50,7 @@ export async function prepareLanguageModelChatInformation(
 					? providerMeta.displayName
 					: props.owned_by;
 			const modelDn =
-				props.displayName && props.displayName.trim().length > 0 ? props.displayName : props.id;
+				resolved.displayName && resolved.displayName.trim().length > 0 ? resolved.displayName : resolved.id;
 			const modelName = props.configId
 				? `${providerDn}/${modelDn}::${props.configId}`
 				: `${providerDn}/${modelDn}`;
@@ -60,8 +60,8 @@ export async function prepareLanguageModelChatInformation(
 				name: modelName,
 				detail: providerDn,
 				tooltip: props.configId
-					? `${props.owned_by}/${props.id}::${props.configId}`
-					: `${props.owned_by}/${props.id}`,
+					? `${props.owned_by}/${resolved.id}::${props.configId}`
+					: `${props.owned_by}/${resolved.id}`,
 				family: props.family ?? "generic",
 				version: "1.0.0",
 				maxInputTokens: maxInput,

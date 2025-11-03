@@ -38,7 +38,7 @@ export function activate(context: vscode.ExtensionContext) {
 							const resolved = resolveModelWithProvider(m);
 							return resolved.model_properties.owned_by?.toLowerCase();
 						})
-						.filter((p) => p && p.trim() !== "")
+						.filter((p): p is string => !!p && p.trim() !== "")
 				)
 			);
 

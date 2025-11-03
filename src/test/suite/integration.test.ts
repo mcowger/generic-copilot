@@ -41,10 +41,9 @@ suite('End-to-End Integration Test Suite', () => {
             }];
 
             const models: ModelItem[] = [{
+                id: 'test-model',
                 model_properties: {
-                    id: 'test-model',
-                    provider: 'test-provider',
-                    owned_by: 'test-provider',
+                    owned_by: 'test',
                 },
                 model_parameters: {}
             }];
@@ -107,10 +106,9 @@ suite('End-to-End Integration Test Suite', () => {
             }];
 
             const models: ModelItem[] = [{
+                id: 'test-model',
                 model_properties: {
-                    id: 'test-model',
-                    provider: 'test-provider',
-                    owned_by: 'test-provider',
+                    owned_by: 'test',
                 },
                 model_parameters: {}
             }];
@@ -187,9 +185,10 @@ suite('End-to-End Integration Test Suite', () => {
             }];
 
             const models: ModelItem[] = [{
+                id: 'test-model',
+                provider: 'test-provider',
                 model_properties: {
-                    id: 'test-model',
-                    provider: 'test-provider',
+
                     owned_by: 'test-provider',
                 },
                 model_parameters: {}
@@ -305,10 +304,9 @@ suite('End-to-End Integration Test Suite', () => {
             }];
 
             const models: ModelItem[] = [{
+                id: 'test-model',
                 model_properties: {
-                    id: 'test-model',
-                    provider: 'test-provider',
-                    owned_by: 'test-provider',
+                    owned_by: 'test',
                 },
                 model_parameters: {}
             }];
@@ -372,18 +370,20 @@ suite('End-to-End Integration Test Suite', () => {
 
             const models: ModelItem[] = [
                 {
+                    id: 'gpt-4',
+                    provider: 'openai',
                     model_properties: {
-                        id: 'gpt-4',
-                        provider: 'openai',
+
                         owned_by: 'openai',
                         family: 'gpt-4',
                     },
                     model_parameters: {}
                 },
                 {
+                    id: 'generic-model',
+                    provider: 'openai',
                     model_properties: {
-                        id: 'generic-model',
-                        provider: 'openai',
+
                         owned_by: 'openai',
                         family: 'generic',
                     },
@@ -408,35 +408,6 @@ suite('End-to-End Integration Test Suite', () => {
             assert.strictEqual(modelInfo[1].family, 'generic');
         });
 
-        test('should handle vision models', async () => {
-            const providers: ProviderConfig[] = [{
-                key: 'test-provider',
-                baseUrl: 'https://test.com/v1'
-            }];
-
-            const models: ModelItem[] = [{
-                model_properties: {
-                    id: 'vision-model',
-                    provider: 'test-provider',
-                    owned_by: 'test-provider'
-                },
-                model_parameters: {}
-            }];
-
-            mockConfig.set('generic-copilot.providers', providers);
-            mockConfig.set('generic-copilot.models', models);
-
-            await mockSecrets.store('generic-copilot.apiKey.test-provider', 'test-api-key');
-
-            const provider = new ChatModelProvider(mockSecrets, userAgent);
-            const modelInfo = await provider.provideLanguageModelChatInformation(
-                { silent: false },
-                new MockCancellationToken()
-            );
-
-            assertArrayMinLength(modelInfo, 1);
-            assert.strictEqual(modelInfo[0].capabilities.imageInput, true);
-        });
 
         test('should handle configId variants', async () => {
             const providers: ProviderConfig[] = [{
@@ -446,9 +417,10 @@ suite('End-to-End Integration Test Suite', () => {
 
             const models: ModelItem[] = [
                 {
+                    id: 'model',
+                    provider: 'test-provider',
                     model_properties: {
-                        id: 'model',
-                        provider: 'test-provider',
+
                         owned_by: 'test-provider',
                         configId: 'thinking',
                     },
@@ -456,9 +428,10 @@ suite('End-to-End Integration Test Suite', () => {
                     }
                 },
                 {
+                    id: 'model',
+                    provider: 'test-provider',
                     model_properties: {
-                        id: 'model',
-                        provider: 'test-provider',
+
                         owned_by: 'test-provider',
                         configId: 'standard'
                     },

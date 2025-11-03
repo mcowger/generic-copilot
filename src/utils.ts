@@ -511,7 +511,7 @@ export async function executeWithRetry<T>(
  * @returns Resolved model configuration with inherited values
  */
 export function resolveModelWithProvider(model: ModelItem): ModelItem {
-	const providerRef = model.model_properties.provider;
+	const providerRef = model.provider;
 
 	// If no provider reference, return model as-is
 	if (!providerRef) {
@@ -529,16 +529,14 @@ export function resolveModelWithProvider(model: ModelItem): ModelItem {
 		return model;
 	}
 
-	// Helper to detect plain objects
-	const isPlainObject = (val: unknown): val is Record<string, unknown> =>
-		!!val && typeof val === "object" && !Array.isArray(val);
-
 	// Create resolved model by merging provider defaults with model config
 	const resolved: ModelItem = {
+		id: model.id,
+		displayName: model.displayName ?? model.id,
+		provider: provider.key,
 		model_properties: {
 			...model.model_properties,
 			owned_by: provider.key,
-			baseUrl: model.model_properties.baseUrl || provider.baseUrl,
 		},
 		model_parameters: { ...model.model_parameters },
 	};

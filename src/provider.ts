@@ -9,7 +9,7 @@ import {
 	Progress,
 } from "vscode";
 
-import type { ModelItem, ReasoningDetail, ReasoningSummaryDetail, ReasoningTextDetail, ReasoningConfig } from "./types";
+import type { ModelItem, ReasoningDetail, ReasoningSummaryDetail, ReasoningTextDetail, ReasoningConfig, ProviderConfig } from "./types";
 
 import {
 	convertTools,
@@ -191,14 +191,14 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 
 			const getDeclaredProviderKey = (m: ModelItem): string | undefined => {
 				const props = getModelProperties(m);
-				return (props.provider ?? props.owned_by)?.toLowerCase();
+				return (m.provider ?? props.owned_by)?.toLowerCase();
 			};
 
 			// Find the matching user model configuration
 			// Prefer match: same model id AND same configId AND (if present) same provider key
 			let um: ModelItem | undefined = userModels.find((m) => {
 				const props = getModelProperties(m);
-				if (props.id !== baseIdForMatch) {
+				if (m.id !== baseIdForMatch) {
 					return false;
 				}
 				const configMatch =
@@ -218,7 +218,7 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 				um = userModels.find(
 					(m) => {
 						const props = getModelProperties(m);
-						return props.id === baseIdForMatch &&
+						return m.id === baseIdForMatch &&
 							((parsedModelId.configId && props.configId === parsedModelId.configId) ||
 								(!parsedModelId.configId && !props.configId));
 					}
@@ -232,12 +232,12 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 			const modelProps = resolvedModel ? getModelProperties(resolvedModel) : undefined;
 
 			// Get API key for the model's provider (provider-level keys only)
-			const provider = modelProps?.owned_by;
-			const modelApiKey = await this.ensureApiKey(provider);
+			const providerKey = modelProps?.owned_by;
+			const modelApiKey = await this.ensureApiKey(providerKey);
 			if (!modelApiKey) {
 				throw new Error(
-					provider && provider.trim()
-						? `API key for provider "${provider}" not found`
+					providerKey && providerKey.trim()
+						? `API key for provider "${providerKey}" not found`
 						: "No provider specified for model; please set 'owned_by' and configure its API key"
 				);
 			}
@@ -255,9 +255,18 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 			// console.log("[Generic Compatible Model Provider] RequestBody:", JSON.stringify(requestBody));
 
 			// send chat request
-			const BASE_URL = modelProps?.baseUrl || config.get<string>("generic-copilot.baseUrl", "");
+			// Resolve base URL from the provider configuration (not the model)
+			const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
+			const providerConfig = providers.find(
+				(p) => p.key.toLowerCase() === (providerKey ?? "").toLowerCase()
+			);
+			const BASE_URL = providerConfig?.baseUrl || "";
 			if (!BASE_URL || !BASE_URL.startsWith("http")) {
-				throw new Error(`Invalid base URL configuration.`);
+				throw new Error(
+					providerKey && providerKey.trim()
+						? `Invalid or missing base URL for provider "${providerKey}". Check generic-copilot.providers settings.`
+						: `Invalid base URL configuration.`
+				);
 			}
 
 			// get retry config
@@ -329,17 +338,10 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 		const temperature = params.temperature ?? oTemperature;
 		rb.temperature = temperature;
 
-		// top_p
-		const oTopP = options.modelOptions?.top_p ?? 1;
-		const topP = params.top_p ?? oTopP;
-		rb.top_p = topP;
 
 		// If user model config explicitly sets sampling params to null, remove them so provider defaults apply
 		if (params.temperature === null) {
 			delete rb.temperature;
-		}
-		if (params.top_p === null) {
-			delete rb.top_p;
 		}
 
 		// max_tokens
@@ -406,22 +408,7 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 			rb.tool_choice = toolConfig.tool_choice;
 		}
 
-		// Configure user-defined additional parameters
-		if (params.top_k !== undefined) {
-			rb.top_k = params.top_k;
-		}
-		if (params.min_p !== undefined) {
-			rb.min_p = params.min_p;
-		}
-		if (params.frequency_penalty !== undefined) {
-			rb.frequency_penalty = params.frequency_penalty;
-		}
-		if (params.presence_penalty !== undefined) {
-			rb.presence_penalty = params.presence_penalty;
-		}
-		if (params.repetition_penalty !== undefined) {
-			rb.repetition_penalty = params.repetition_penalty;
-		}
+
 
 		// Process extra configuration parameters
 		if (params.extra && typeof params.extra === "object") {

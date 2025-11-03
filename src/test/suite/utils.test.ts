@@ -387,10 +387,9 @@ suite('Utils Test Suite', () => {
 
         test('should return model as-is when no provider reference', () => {
             const model: ModelItem = {
+                id: 'test-model',
                 model_properties: {
-                    id: 'gpt-4',
                     owned_by: 'openai',
-                    baseUrl: 'https://api.openai.com/v1'
                 },
                 model_parameters: {}
             };
@@ -409,16 +408,17 @@ suite('Utils Test Suite', () => {
             mockConfig.set('generic-copilot.providers', providers);
 
             const model: ModelItem = {
+                id: 'test-model',
+                provider: 'test-provider',
                 model_properties: {
-                    id: 'test-model',
-                    provider: 'test-provider',
+
+
                     owned_by: 'temp'
                 },
                 model_parameters: {}
             };
 
             const result = resolveModelWithProvider(model);
-            assert.strictEqual(result.model_properties.baseUrl, 'https://test.com/v1');
             assert.strictEqual(result.model_properties.owned_by, 'test-provider');
         });
 
@@ -426,16 +426,18 @@ suite('Utils Test Suite', () => {
             mockConfig.set('generic-copilot.providers', []);
 
             const model: ModelItem = {
+                id: 'test-model',
+                provider: 'nonexistent',
                 model_properties: {
-                    id: 'test-model',
-                    provider: 'nonexistent',
+
+
                     owned_by: 'test'
                 },
                 model_parameters: {}
             };
 
             const result = resolveModelWithProvider(model);
-            assert.strictEqual(result.model_properties.id, 'test-model');
+            assert.strictEqual(result.id, 'test-model');
         });
     });
 
@@ -613,8 +615,9 @@ suite('Utils Test Suite', () => {
     suite('getModelProperties', () => {
         test('should extract properties from grouped structure', () => {
             const model: ModelItem = {
+                id: 'test-model',
                 model_properties: {
-                    id: 'test-model',
+
                     owned_by: 'test-provider',
                     context_length: 128000,
                     family: 'gpt-4',
@@ -625,7 +628,7 @@ suite('Utils Test Suite', () => {
             };
 
             const props = getModelProperties(model);
-            assert.strictEqual(props.id, 'test-model');
+            assert.strictEqual(model.id, 'test-model');
             assert.strictEqual(props.owned_by, 'test-provider');
             assert.strictEqual(props.context_length, 128000);
             assert.strictEqual(props.family, 'gpt-4');
@@ -635,14 +638,14 @@ suite('Utils Test Suite', () => {
     suite('getModelParameters', () => {
         test('should extract parameters from grouped structure', () => {
             const model: ModelItem = {
+                id: 'test-model',
                 model_properties: {
-                    id: 'test-model',
+
                     owned_by: 'test-provider',
                 },
                 model_parameters: {
                     temperature: 0.7,
                     max_tokens: 4096,
-                    top_p: 1,
                     extra: {
                         custom_param: 'value',
                     },
@@ -652,25 +655,25 @@ suite('Utils Test Suite', () => {
             const params = getModelParameters(model);
             assert.strictEqual(params.temperature, 0.7);
             assert.strictEqual(params.max_tokens, 4096);
-            assert.strictEqual(params.top_p, 1);
+
             assert.deepStrictEqual(params.extra, { custom_param: 'value' });
         });
 
         test('should handle null values for temperature and top_p', () => {
             const model: ModelItem = {
+                provider: 'test-provider',
+                id: 'test-model',
+
                 model_properties: {
-                    id: 'test-model',
                     owned_by: 'test-provider',
                 },
                 model_parameters: {
                     temperature: null,
-                    top_p: null,
                 },
             };
 
             const params = getModelParameters(model);
             assert.strictEqual(params.temperature, null);
-            assert.strictEqual(params.top_p, null);
         });
     });
 });

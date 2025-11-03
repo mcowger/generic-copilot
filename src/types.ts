@@ -38,25 +38,12 @@ export interface ChatMessageContent {
 }
 
 /**
- * A single underlying provider (e.g., together, groq) for a model.
- */
-export interface Provider {
-	provider: string;
-	status: string;
-	supports_tools?: boolean;
-	supports_structured_output?: boolean;
-	context_length?: number;
-}
-
-
-/**
  * Parameters sent to the model API in the request body
  */
 export interface ModelParameters {
 	// Allow null so user can explicitly disable sending this parameter (fall back to provider default)
 	temperature?: number | null;
-	// Allow null so user can explicitly disable sending this parameter (fall back to provider default)
-	top_p?: number | null;
+
 	max_tokens?: number;
 	// OpenAI new standard parameter
 	max_completion_tokens?: number;
@@ -64,8 +51,6 @@ export interface ModelParameters {
 	thinking_budget?: number;
 	// New thinking configuration for Zai provider
 	thinking?: ThinkingConfig;
-	top_k?: number;
-	min_p?: number;
 	frequency_penalty?: number;
 	presence_penalty?: number;
 	repetition_penalty?: number;
@@ -82,21 +67,10 @@ export interface ModelParameters {
  * Internal properties used by the extension, not sent to the API
  */
 export interface ModelProperties {
-	id: string;
 
-	displayName?: string;
-	/**
-	 * Model provider. Can be overridden by provider reference.
-	 * If 'provider' field is specified, this value is inherited from the provider.
-	 */
-	owned_by: string;
-	/**
-	 * Reference to a provider key for inheriting configuration.
-	 * When specified, the model inherits baseUrl, owned_by, and defaults from the provider.
-	 */
-	provider?: string;
+	owned_by?: string;
+
 	configId?: string;
-	baseUrl?: string;
 	context_length?: number;
 	/**
 	 * Optional family specification for the model. This allows users to specify
@@ -112,7 +86,14 @@ export interface ModelProperties {
  * Properties and parameters are separated for clarity
  */
 export interface ModelItem {
-	// Grouped structure - required
+	id: string;
+
+	displayName?: string;
+	/**
+	 * Model provider. Can be overridden by provider reference.
+	 * If 'provider' field is specified, this value is inherited from the provider.
+	 */
+	provider?: string;
 	model_properties: ModelProperties;
 	model_parameters: ModelParameters;
 }
@@ -125,11 +106,6 @@ export interface ReasoningConfig {
 	exclude?: boolean;
 	max_tokens?: number;
 	enabled?: boolean;
-}
-
-export interface ExtraModelInfo {
-	id: string;
-	pipeline_tag?: string;
 }
 
 /**

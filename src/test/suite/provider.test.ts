@@ -44,13 +44,14 @@ suite('ChatModelProvider Test Suite', () => {
     suite('provideLanguageModelChatInformation', () => {
         test('should return model information', async () => {
             const models: ModelItem[] = [{
-                    model_properties: {
-                        id: 'test-model',
-                        owned_by: 'test',
-                        baseUrl: 'https://test.com/v1',
-                    },
-                    model_parameters: {
-                    }
+                id: 'test-model',
+                model_properties: {
+
+                    owned_by: 'test',
+
+                },
+                model_parameters: {
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -68,12 +69,13 @@ suite('ChatModelProvider Test Suite', () => {
 
         test('should handle silent mode', async () => {
             const models: ModelItem[] = [{
-                    model_properties: {
-                        id: 'test-model',
-                        owned_by: 'test',
-                    },
-                    model_parameters: {
-                    }
+                id: 'test-model',
+                model_properties: {
+
+                    owned_by: 'test',
+                },
+                model_parameters: {
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -144,13 +146,12 @@ suite('ChatModelProvider Test Suite', () => {
 
         test('should handle simple text response', async () => {
             const models: ModelItem[] = [{
-                    model_properties: {
-                        id: 'test-model',
-                        owned_by: 'test',
-                        baseUrl: 'https://test.com/v1',
-                    },
-                    model_parameters: {
-                    }
+                id: 'test-model',
+                model_properties: {
+                    owned_by: 'test',
+                },
+                model_parameters: {
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -192,13 +193,14 @@ suite('ChatModelProvider Test Suite', () => {
 
         test('should handle tool calls in response', async () => {
             const models: ModelItem[] = [{
-                    model_properties: {
-                        id: 'test-model',
-                        owned_by: 'test',
-                        baseUrl: 'https://test.com/v1',
-                    },
-                    model_parameters: {
-                    }
+                id: 'test-model',
+                model_properties: {
+
+                    owned_by: 'test',
+
+                },
+                model_parameters: {
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -248,13 +250,12 @@ suite('ChatModelProvider Test Suite', () => {
 
         test('should handle thinking content', async () => {
             const models: ModelItem[] = [{
-                    model_properties: {
-                        id: 'test-model',
-                        owned_by: 'test',
-                    baseUrl: 'https://test.com/v1',
-                    },
+                id: 'test-model',
+                model_properties: {
+                    owned_by: 'test',
+                },
                 model_parameters: {
-                    }
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -296,13 +297,12 @@ suite('ChatModelProvider Test Suite', () => {
 
         test('should throw error when API key not found', async () => {
             const models: ModelItem[] = [{
-                    model_properties: {
-                        id: 'test-model',
-                        owned_by: 'test',
-                        baseUrl: 'https://test.com/v1',
-                    },
-                    model_parameters: {
-                    }
+                id: 'test-model',
+                model_properties: {
+                    owned_by: 'test',
+                },
+                model_parameters: {
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -338,13 +338,12 @@ suite('ChatModelProvider Test Suite', () => {
 
         test('should throw error when base URL invalid', async () => {
             const models: ModelItem[] = [{
-                    model_properties: {
-                        id: 'test-model',
-                        owned_by: 'test',
-                        baseUrl: 'invalid-url',
-                    },
-                    model_parameters: {
-                    }
+                id: 'test-model',
+                model_properties: {
+                    owned_by: 'test',
+                },
+                model_parameters: {
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -375,13 +374,12 @@ suite('ChatModelProvider Test Suite', () => {
 
         test('should handle API error response', async () => {
             const models: ModelItem[] = [{
-                    model_properties: {
-                        id: 'test-model',
-                        owned_by: 'test',
-                        baseUrl: 'https://test.com/v1',
-                    },
-                    model_parameters: {
-                    }
+                id: 'test-model',
+                model_properties: {
+                    owned_by: 'test',
+                },
+                model_parameters: {
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -417,13 +415,12 @@ suite('ChatModelProvider Test Suite', () => {
 
         test('should handle cancellation', async () => {
             const models: ModelItem[] = [{
-                    model_properties: {
-                        id: 'test-model',
-                        owned_by: 'test',
-                        baseUrl: 'https://test.com/v1',
-                    },
-                    model_parameters: {
-                    }
+                id: 'test-model',
+                model_properties: {
+                    owned_by: 'test',
+                },
+                model_parameters: {
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -465,15 +462,13 @@ suite('ChatModelProvider Test Suite', () => {
 
         test('should apply temperature and top_p from model config', async () => {
             const models: ModelItem[] = [{
-                    model_properties: {
-                        id: 'test-model',
-                        owned_by: 'test',
-                        baseUrl: 'https://test.com/v1',
-                    },
-                    model_parameters: {
-                        temperature: 0.7,
-                        top_p: 0.9,
-                    }
+                id: 'test-model',
+                model_properties: {
+                    owned_by: 'test',
+                },
+                model_parameters: {
+                    temperature: 0.7,
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -511,14 +506,13 @@ suite('ChatModelProvider Test Suite', () => {
 
         test('should apply max_tokens from model config', async () => {
             const models: ModelItem[] = [{
-                    model_properties: {
-                        id: 'test-model',
-                        owned_by: 'test',
-                        baseUrl: 'https://test.com/v1',
-                    },
-                    model_parameters: {
-                        max_tokens: 2048,
-                    }
+                id: 'test-model',
+                model_properties: {
+                    owned_by: 'test',
+                },
+                model_parameters: {
+                    max_tokens: 2048,
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -555,13 +549,12 @@ suite('ChatModelProvider Test Suite', () => {
 
         test('should include tools in request when provided', async () => {
             const models: ModelItem[] = [{
-                    model_properties: {
-                        id: 'test-model',
-                        owned_by: 'test',
-                        baseUrl: 'https://test.com/v1',
-                    },
-                    model_parameters: {
-                    }
+                id: 'test-model',
+                model_properties: {
+                    owned_by: 'test',
+                },
+                model_parameters: {
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -605,13 +598,12 @@ suite('ChatModelProvider Test Suite', () => {
 
         test('should handle XML think blocks', async () => {
             const models: ModelItem[] = [{
-                    model_properties: {
-                        id: 'test-model',
-                        owned_by: 'test',
-                        baseUrl: 'https://test.com/v1',
-                    },
-                    model_parameters: {
-                    }
+                id: 'test-model',
+                model_properties: {
+                    owned_by: 'test',
+                },
+                model_parameters: {
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
@@ -653,13 +645,14 @@ suite('ChatModelProvider Test Suite', () => {
 
         test('should respect delay configuration', async () => {
             const models: ModelItem[] = [{
-                    model_properties: {
-                        id: 'test-model',
-                        owned_by: 'test',
-                        baseUrl: 'https://test.com/v1',
-                    },
-                    model_parameters: {
-                    }
+                id: 'test-model',
+                model_properties: {
+
+                    owned_by: 'test',
+
+                },
+                model_parameters: {
+                }
             }];
 
             mockConfig.set('generic-copilot.models', models);
