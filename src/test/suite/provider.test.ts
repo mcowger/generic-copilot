@@ -720,4 +720,194 @@ suite('ChatModelProvider Test Suite', () => {
             assert.ok(elapsed >= 100);
         });
     });
+
+    suite('Custom Headers', () => {
+        let mockModel: vscode.LanguageModelChatInformation;
+
+        setup(() => {
+            mockModel = {
+                id: 'test/test-model',
+                vendor: 'generic-copilot',
+                family: 'generic',
+                version: '',
+                maxInputTokens: 4096,
+                maxOutputTokens: 4096,
+            } as vscode.LanguageModelChatInformation;
+        });
+
+        test('should include static custom headers in request', async () => {
+            const models: ModelItem[] = [{
+                id: 'test-model',
+                provider: 'test',
+                model_properties: {
+                    owned_by: 'test',
+                },
+                model_parameters: {}
+            }];
+
+            mockConfig.set('generic-copilot.models', models);
+            mockConfig.set('generic-copilot.providers', [{
+                key: 'test',
+                baseUrl: 'https://test.api/v1',
+                headers: {
+                    'X-Custom-Header': 'custom-value',
+                    'X-Another-Header': 'another-value'
+                }
+            }]);
+            await mockSecrets.store('generic-copilot.apiKey.test', 'test-key');
+
+            let capturedHeaders: Record<string, string> = {};
+            global.fetch = async (_url, init) => {
+                capturedHeaders = (init?.headers as Record<string, string>) || {};
+                return createMockStreamingResponse(['data: [DONE]\n']);
+            };
+
+            const provider = new ChatModelProvider(mockSecrets, userAgent);
+            const messages = [{
+                role: vscode.LanguageModelChatMessageRole.User,
+                content: [new vscode.LanguageModelTextPart('Hi')],
+                name: ''
+            }];
+
+            const progress = new MockProgress<vscode.LanguageModelResponsePart2>();
+            const token = new MockCancellationToken();
+            const options = {} as vscode.ProvideLanguageModelChatResponseOptions;
+
+            await provider.provideLanguageModelChatResponse(
+                mockModel,
+                messages,
+                options,
+                progress,
+                token
+            );
+
+            // Verify custom headers are included
+            assert.strictEqual(capturedHeaders['X-Custom-Header'], 'custom-value');
+            assert.strictEqual(capturedHeaders['X-Another-Header'], 'another-value');
+            // Verify default headers are still present
+            assert.ok(capturedHeaders['Authorization']);
+            assert.ok(capturedHeaders['Content-Type']);
+            assert.ok(capturedHeaders['User-Agent']);
+        });
+
+        test('should replace RANDOM with UUID in custom headers', async () => {
+            const models: ModelItem[] = [{
+                id: 'test-model',
+                provider: 'test',
+                model_properties: {
+                    owned_by: 'test',
+                },
+                model_parameters: {}
+            }];
+
+            mockConfig.set('generic-copilot.models', models);
+            mockConfig.set('generic-copilot.providers', [{
+                key: 'test',
+                baseUrl: 'https://test.api/v1',
+                headers: {
+                    'X-Request-ID': 'RANDOM',
+                    'X-Static-Header': 'static-value'
+                }
+            }]);
+            await mockSecrets.store('generic-copilot.apiKey.test', 'test-key');
+
+            let capturedHeaders: Record<string, string> = {};
+            global.fetch = async (_url, init) => {
+                capturedHeaders = (init?.headers as Record<string, string>) || {};
+                return createMockStreamingResponse(['data: [DONE]\n']);
+            };
+
+            const provider = new ChatModelProvider(mockSecrets, userAgent);
+            const messages = [{
+                role: vscode.LanguageModelChatMessageRole.User,
+                content: [new vscode.LanguageModelTextPart('Hi')],
+                name: ''
+            }];
+
+            const progress = new MockProgress<vscode.LanguageModelResponsePart2>();
+            const token = new MockCancellationToken();
+            const options = {} as vscode.ProvideLanguageModelChatResponseOptions;
+
+            await provider.provideLanguageModelChatResponse(
+                mockModel,
+                messages,
+                options,
+                progress,
+                token
+            );
+
+            // Verify RANDOM was replaced with UUID
+            assert.ok(capturedHeaders['X-Request-ID']);
+            assert.notStrictEqual(capturedHeaders['X-Request-ID'], 'RANDOM');
+            // UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+            assert.match(capturedHeaders['X-Request-ID'], /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+            
+            // Verify static header was preserved
+            assert.strictEqual(capturedHeaders['X-Static-Header'], 'static-value');
+        });
+
+        test('should generate different UUIDs for each request', async () => {
+            const models: ModelItem[] = [{
+                id: 'test-model',
+                provider: 'test',
+                model_properties: {
+                    owned_by: 'test',
+                },
+                model_parameters: {}
+            }];
+
+            mockConfig.set('generic-copilot.models', models);
+            mockConfig.set('generic-copilot.providers', [{
+                key: 'test',
+                baseUrl: 'https://test.api/v1',
+                headers: {
+                    'X-Request-ID': 'RANDOM'
+                }
+            }]);
+            await mockSecrets.store('generic-copilot.apiKey.test', 'test-key');
+
+            const capturedRequestIds: string[] = [];
+            global.fetch = async (_url, init) => {
+                const headers = (init?.headers as Record<string, string>) || {};
+                capturedRequestIds.push(headers['X-Request-ID']);
+                return createMockStreamingResponse(['data: [DONE]\n']);
+            };
+
+            const provider = new ChatModelProvider(mockSecrets, userAgent);
+            const messages = [{
+                role: vscode.LanguageModelChatMessageRole.User,
+                content: [new vscode.LanguageModelTextPart('Hi')],
+                name: ''
+            }];
+
+            const progress = new MockProgress<vscode.LanguageModelResponsePart2>();
+            const token = new MockCancellationToken();
+            const options = {} as vscode.ProvideLanguageModelChatResponseOptions;
+
+            // Make two requests
+            await provider.provideLanguageModelChatResponse(
+                mockModel,
+                messages,
+                options,
+                progress,
+                token
+            );
+
+            await provider.provideLanguageModelChatResponse(
+                mockModel,
+                messages,
+                options,
+                progress,
+                token
+            );
+
+            // Verify both are valid UUIDs
+            assert.strictEqual(capturedRequestIds.length, 2);
+            assert.match(capturedRequestIds[0], /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+            assert.match(capturedRequestIds[1], /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+            
+            // Verify they are different
+            assert.notStrictEqual(capturedRequestIds[0], capturedRequestIds[1]);
+        });
+    });
 });
