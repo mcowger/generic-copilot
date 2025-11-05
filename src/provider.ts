@@ -22,6 +22,7 @@ import {
 	resolveModelWithProvider,
 	getModelParameters,
 	getModelProperties,
+	processHeaders,
 } from "./utils";
 
 import { prepareLanguageModelChatInformation } from "./provideModel";
@@ -268,6 +269,9 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 			// get retry config
 			const retryConfig = createRetryConfig();
 
+			// Process custom headers from provider config
+			const customHeaders = processHeaders(providerConfig?.headers);
+
 			// send chat request with retry
 			const response = await executeWithRetry(
 				async () => {
@@ -277,6 +281,7 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 							Authorization: `Bearer ${modelApiKey}`,
 							"Content-Type": "application/json",
 							"User-Agent": this.userAgent,
+							...customHeaders,
 						},
 						body: JSON.stringify(requestBody),
 					});

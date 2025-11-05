@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { randomUUID } from "crypto";
 import type {
 	OpenAIChatMessage,
 	OpenAIChatRole,
@@ -563,4 +564,25 @@ export function getModelProperties(model: ModelItem): ModelProperties {
  */
 export function getModelParameters(model: ModelItem): ModelParameters {
 	return model.model_parameters;
+}
+
+/**
+ * Process headers and replace "RANDOM" values with UUIDv4.
+ * @param headers The headers object from provider configuration
+ * @returns Processed headers with RANDOM values replaced by UUIDs
+ */
+export function processHeaders(headers?: Record<string, string>): Record<string, string> {
+	if (!headers) {
+		return {};
+	}
+
+	const processed: Record<string, string> = {};
+	for (const [key, value] of Object.entries(headers)) {
+		if (value === "RANDOM") {
+			processed[key] = randomUUID();
+		} else {
+			processed[key] = value;
+		}
+	}
+	return processed;
 }
