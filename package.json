@@ -15,7 +15,7 @@
 		"type": "git",
 		"url": "https://github.com/mcowger/generic-copilot-providers"
 	},
-	"version": "0.9.1",
+	"version": "0.9.2",
 	"engines": {
 		"vscode": "^1.105.0"
 	},
