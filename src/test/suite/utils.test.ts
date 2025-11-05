@@ -12,6 +12,7 @@ import {
     executeWithRetry,
     getModelProperties,
     getModelParameters,
+    processHeaders,
 } from '../../utils';
 import type { ModelItem, ProviderConfig } from '../../types';
 import { MockCancellationToken, MockConfiguration } from '../helpers/mocks';
@@ -674,6 +675,76 @@ suite('Utils Test Suite', () => {
 
             const params = getModelParameters(model);
             assert.strictEqual(params.temperature, null);
+        });
+    });
+
+    suite('processHeaders', () => {
+        test('should return empty object for undefined headers', () => {
+            const result = processHeaders(undefined);
+            assert.deepStrictEqual(result, {});
+        });
+
+        test('should return headers as-is when no RANDOM values', () => {
+            const headers = {
+                'X-Custom-Header': 'value1',
+                'X-Another-Header': 'value2'
+            };
+            const result = processHeaders(headers);
+            assert.strictEqual(result['X-Custom-Header'], 'value1');
+            assert.strictEqual(result['X-Another-Header'], 'value2');
+        });
+
+        test('should replace RANDOM with UUIDv4', () => {
+            const headers = {
+                'X-Request-ID': 'RANDOM',
+                'X-Static-Header': 'static-value'
+            };
+            const result = processHeaders(headers);
+            
+            // Check that RANDOM was replaced with a UUID-like string
+            assert.ok(result['X-Request-ID']);
+            assert.notStrictEqual(result['X-Request-ID'], 'RANDOM');
+            // UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+            assert.match(result['X-Request-ID'], /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+            
+            // Check that static header was preserved
+            assert.strictEqual(result['X-Static-Header'], 'static-value');
+        });
+
+        test('should replace multiple RANDOM values with different UUIDs', () => {
+            const headers = {
+                'X-Request-ID': 'RANDOM',
+                'X-Trace-ID': 'RANDOM'
+            };
+            const result = processHeaders(headers);
+            
+            // Both should be valid UUIDs
+            assert.match(result['X-Request-ID'], /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+            assert.match(result['X-Trace-ID'], /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+            
+            // They should be different UUIDs
+            assert.notStrictEqual(result['X-Request-ID'], result['X-Trace-ID']);
+        });
+
+        test('should only replace exact "RANDOM" string', () => {
+            const headers = {
+                'X-Header-1': 'RANDOM',
+                'X-Header-2': 'random',
+                'X-Header-3': 'RANDOM_PREFIX',
+                'X-Header-4': 'PREFIX_RANDOM'
+            };
+            const result = processHeaders(headers);
+            
+            // Only exact RANDOM should be replaced
+            assert.match(result['X-Header-1'], /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+            assert.strictEqual(result['X-Header-2'], 'random');
+            assert.strictEqual(result['X-Header-3'], 'RANDOM_PREFIX');
+            assert.strictEqual(result['X-Header-4'], 'PREFIX_RANDOM');
+        });
+
+        test('should handle empty headers object', () => {
+            const result = processHeaders({});
+            assert.deepStrictEqual(result, {});
         });
     });
 });
