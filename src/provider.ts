@@ -269,20 +269,36 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 			// get retry config
 			const retryConfig = createRetryConfig();
 
+
 			// Process custom headers from provider config
 			const customHeaders = processHeaders(providerConfig?.headers);
 
 			// send chat request with retry
 			const response = await executeWithRetry(
 				async () => {
+					// Build headers using the WHATWG Headers API to ensure proper override behavior
+					const headers = new Headers();
+					headers.set("Authorization", `Bearer ${modelApiKey}`);
+					headers.set("Content-Type", "application/json");
+					headers.set("User-Agent", this.userAgent);
+					for (const [k, v] of Object.entries(customHeaders)) {
+						try { headers.set(k, v); } catch { /* ignore invalid header names */ }
+					}
+
+					// Optional debug: allow users to log final headers
+					try {
+						const cfg = vscode.workspace.getConfiguration();
+						const debugHeaders = cfg.get<boolean>("generic-copilot.debug.logHeaders", false);
+						if (debugHeaders) {
+							const snapshot: Record<string, string> = {};
+							headers.forEach((v, k) => { snapshot[k] = v; });
+							console.log("[Generic Compatible Model Provider] Request headers:", snapshot);
+						}
+					} catch { /* ignore */ }
+
 					const res = await fetch(`${BASE_URL}/chat/completions`, {
 						method: "POST",
-						headers: {
-							Authorization: `Bearer ${modelApiKey}`,
-							"Content-Type": "application/json",
-							"User-Agent": this.userAgent,
-							...customHeaders,
-						},
+						headers,
 						body: JSON.stringify(requestBody),
 					});
 

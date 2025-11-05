@@ -727,11 +727,16 @@ suite('ChatModelProvider Test Suite', () => {
         setup(() => {
             mockModel = {
                 id: 'test/test-model',
+                name: 'Test Model',
                 vendor: 'generic-copilot',
                 family: 'generic',
-                version: '',
+                version: '1.0',
                 maxInputTokens: 4096,
                 maxOutputTokens: 4096,
+                capabilities: {
+                    toolCalling: true,
+                    imageInput: false,
+                },
             } as vscode.LanguageModelChatInformation;
         });
 
@@ -841,7 +846,7 @@ suite('ChatModelProvider Test Suite', () => {
             assert.notStrictEqual(capturedHeaders['X-Request-ID'], 'RANDOM');
             // UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
             assert.match(capturedHeaders['X-Request-ID'], /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
-            
+
             // Verify static header was preserved
             assert.strictEqual(capturedHeaders['X-Static-Header'], 'static-value');
         });
@@ -905,7 +910,7 @@ suite('ChatModelProvider Test Suite', () => {
             assert.strictEqual(capturedRequestIds.length, 2);
             assert.match(capturedRequestIds[0], /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
             assert.match(capturedRequestIds[1], /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
-            
+
             // Verify they are different
             assert.notStrictEqual(capturedRequestIds[0], capturedRequestIds[1]);
         });
