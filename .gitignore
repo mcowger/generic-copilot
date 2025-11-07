@@ -7,4 +7,4 @@ node_modules
 CLAUDE.md
 .doc
 .clinerules
-# **/vscode.proposed.*.d.ts
+**/vscode.proposed.*.d.ts
