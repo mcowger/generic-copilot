@@ -22,13 +22,25 @@ jobs:
           node-version: '22.x'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install base dependencies
+        working-directory: ./
         run: |
           npm ci
           npm run download-api
-          npm run compile:extension
-          cd webview-ui && npm ci
-          npm run compile:webview
+
+
+      - name: Install webview dependencies
+        working-directory: ./webview-ui
+        run: |
+          npm ci
+
+      - name: Build extension
+        run: npm run compile:extension
+        working-directory: ./
+
+      - name: Build webview
+        run: npm run compile
+        working-directory: ./webview-ui
 
       - name: Package VS Code extension
         run: npx vsce package --out generic-copilot-providers.vsix
