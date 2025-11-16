@@ -26,6 +26,7 @@ import {
 
 import { prepareLanguageModelChatInformation } from "./provideModel";
 import { prepareTokenCount } from "./provideToken";
+import { updateContextStatusBar } from "./statusBar";
 
 const MAX_TOOLS_PER_REQUEST = 128;
 const LOG_PREFIX_REQUEST_HEADERS = "[Generic Compatible Model Provider] Request headers:";
@@ -79,36 +80,6 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 		private readonly userAgent: string,
 		private readonly statusBarItem: vscode.StatusBarItem
 	) {}
-
-	/**
-	 * Format number to thousands (K, M, B) format
-	 * @param value The number to format
-	 * @returns Formatted string (e.g., "2.3K", "168.0K")
-	 */
-	private formatTokenCount(value: number): string {
-		if (value >= 1_000_000_000) {
-			return (value / 1_000_000_000).toFixed(1) + 'B';
-		} else if (value >= 1_000_000) {
-			return (value / 1_000_000).toFixed(1) + 'M';
-		} else if (value >= 1_000) {
-			return (value / 1_000).toFixed(1) + 'K';
-		}
-		return value.toLocaleString();
-	}
-
-	/**
-	 * Create a visual progress bar showing token usage
-	 * @param usedTokens Tokens used
-	 * @param maxTokens Maximum tokens available
-	 * @returns Progress bar string (e.g., "▆ 75%")
-	 */
-	private createProgressBar(usedTokens: number, maxTokens: number): string {
-		const blocks = ["▁","▂","▃","▄","▅","▆","▇","█"];
-		const usagePercentage = Math.min((usedTokens / maxTokens) * 100, 100);
-		const blockIndex = Math.min(Math.floor((usagePercentage / 100) * blocks.length), blocks.length - 1);
-
-		return `${blocks[blockIndex]} ${Math.round(usagePercentage)}%`;
-	}
 
 	/**
 	 * Get the list of available language models contributed by this provider
@@ -312,7 +283,7 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 			// Process custom headers from provider config
 			const customHeaders = processHeaders(providerConfig?.headers);
 
-			await this.updateContextStatusBar(messages, model);
+			await updateContextStatusBar(messages, model, this.statusBarItem, (m, msg) => this.provideTokenCount(m, msg, new CancellationTokenSource().token));
 
 			// send chat request with retry
 			const response = await executeWithRetry(
@@ -881,35 +852,4 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 		return { emittedAny };
 	}
 
-	private async updateContextStatusBar(messages: readonly LanguageModelChatRequestMessage[], model: LanguageModelChatInformation ): Promise<void> {
-		// Loop through each message and count tokens
-		let totalTokenCount = 0;
-
-		for (const message of messages) {
-			const tokenCount = await this.provideTokenCount(model, message, new CancellationTokenSource().token);
-			totalTokenCount += tokenCount;
-		}
-
-		// Update status bar with token count and model context window
-		const maxTokens = model.maxInputTokens;
-
-		// Create visual progress bar with single progressive block
-		const progressBar = this.createProgressBar(totalTokenCount, maxTokens);
-		const displayText = `$(symbol-parameter) ${progressBar}`;
-		console.log(displayText)
-		this.statusBarItem.text = displayText;
-		this.statusBarItem.tooltip = `Token Usage: ${totalTokenCount} / ${this.formatTokenCount(maxTokens)}\n\n${progressBar}\n\nClick to open configuration`;
-
-		// Add color coding based on token usage
-		const usagePercentage = (totalTokenCount / maxTokens) * 100;
-		if (usagePercentage > 90) {
-			this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
-		} else if (usagePercentage > 70) {
-			this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
-		} else {
-			this.statusBarItem.backgroundColor = undefined;
-		}
-
-		this.statusBarItem.show();
-	}
 }
