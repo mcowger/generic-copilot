@@ -33,6 +33,7 @@
 		"languageModelThinkingPart"
 	],
 	"activationEvents": [
+		"onStartupFinished",
 		"onLanguageModelChatProvider:generic-copilot"
 	],
 	"contributes": {

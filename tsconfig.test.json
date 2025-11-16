@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noUnusedParameters": false,   // optional: tests often have unused params
+    "noImplicitReturns": false     // optional: tests often omit returns
+  },
+  "include": [
+    "src/**/*.ts"     // includes test files again
+  ],
+  "exclude": []
+}

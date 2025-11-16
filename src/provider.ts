@@ -7,6 +7,7 @@ import {
 	ProvideLanguageModelChatResponseOptions,
 	LanguageModelResponsePart2,
 	Progress,
+	CancellationTokenSource
 } from "vscode";
 
 import type { ModelItem, ReasoningDetail, ReasoningSummaryDetail, ReasoningTextDetail, ProviderConfig } from "./types";
@@ -70,11 +71,30 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 	/**
 	 * Create a provider using the given secret storage for the API key.
 	 * @param secrets VS Code secret storage.
+	 * @param userAgent User agent string for API requests.
+	 * @param statusBarItem Status bar item for displaying token count.
 	 */
 	constructor(
 		private readonly secrets: vscode.SecretStorage,
-		private readonly userAgent: string
+		private readonly userAgent: string,
+		private readonly statusBarItem: vscode.StatusBarItem
 	) {}
+
+	/**
+	 * Format number to thousands (K, M, B) format
+	 * @param value The number to format
+	 * @returns Formatted string (e.g., "2.3K", "168.0K")
+	 */
+	private formatTokenCount(value: number): string {
+		if (value >= 1_000_000_000) {
+			return (value / 1_000_000_000).toFixed(1) + 'B';
+		} else if (value >= 1_000_000) {
+			return (value / 1_000_000).toFixed(1) + 'M';
+		} else if (value >= 1_000) {
+			return (value / 1_000).toFixed(1) + 'K';
+		}
+		return value.toLocaleString();
+	}
 
 	/**
 	 * Get the list of available language models contributed by this provider
@@ -106,7 +126,12 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 		text: string | LanguageModelChatRequestMessage,
 		_token: CancellationToken
 	): Promise<number> {
-		return prepareTokenCount(model, text, _token);
+		try {
+			const tokenCount = await prepareTokenCount(model, text, _token);
+			return tokenCount;
+		} catch (error) {
+			throw error;
+		}
 	}
 
 	/**
@@ -272,6 +297,8 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 
 			// Process custom headers from provider config
 			const customHeaders = processHeaders(providerConfig?.headers);
+
+			await this.updateContextStatusBar(messages, model);
 
 			// send chat request with retry
 			const response = await executeWithRetry(
@@ -838,5 +865,34 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 		}
 
 		return { emittedAny };
+	}
+
+	private async updateContextStatusBar(messages: readonly LanguageModelChatRequestMessage[], model: LanguageModelChatInformation ): Promise<void> {
+		// Loop through each message and count tokens
+		let totalTokenCount = 0;
+
+		for (const message of messages) {
+			const tokenCount = await this.provideTokenCount(model, message, new CancellationTokenSource().token);
+			totalTokenCount += tokenCount;
+		}
+
+		// Update status bar with token count and model context window
+		const maxTokens = model.maxInputTokens;
+		const displayText = `$(symbol-parameter) ${this.formatTokenCount(totalTokenCount)} / ${this.formatTokenCount(maxTokens)}`;
+		console.log(displayText)
+		this.statusBarItem.text = displayText;
+		this.statusBarItem.tooltip = `Token Usage: ${this.formatTokenCount(totalTokenCount)} / ${this.formatTokenCount(maxTokens)}\n\nClick to open configuration`;
+
+		// Add color coding based on token usage
+		const usagePercentage = (totalTokenCount / maxTokens) * 100;
+		if (usagePercentage > 90) {
+			this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+		} else if (usagePercentage > 70) {
+			this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+		} else {
+			this.statusBarItem.backgroundColor = undefined;
+		}
+
+		this.statusBarItem.show();
 	}
 }

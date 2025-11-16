@@ -12,7 +12,21 @@ export function activate(context: vscode.ExtensionContext) {
 	const vscodeVersion = vscode.version;
 	// Keep UA minimal: only extension version and VS Code version
 	const ua = `generic-copilot/${extVersion} VSCode/${vscodeVersion}`;
-	const provider = new ChatModelProvider(context.secrets, ua);
+
+	// Create status bar item for token count display
+	const tokenCountStatusBarItem = vscode.window.createStatusBarItem(
+		vscode.StatusBarAlignment.Right,
+		100
+	);
+	tokenCountStatusBarItem.name = "Token Count";
+	tokenCountStatusBarItem.text = "$(symbol-numeric) Ready";
+	tokenCountStatusBarItem.tooltip = "Current model token usage - Click to open configuration";
+	tokenCountStatusBarItem.command = "generic-copilot.openConfiguration";
+	context.subscriptions.push(tokenCountStatusBarItem);
+	// Show the status bar item initially
+	tokenCountStatusBarItem.show();
+
+	const provider = new ChatModelProvider(context.secrets, ua, tokenCountStatusBarItem);
 
 	let providerRegistration = vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
 	context.subscriptions.push(providerRegistration);
