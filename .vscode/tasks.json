@@ -33,7 +33,7 @@
 				},
 				"background": {
 					"beginsPattern": "^.",
-					"endsPattern": "\\[watch\\] build finished"
+					"endsPattern": "\\[watch\\] build finished, watching for changes"
 				}
 			},
 			"presentation": {
