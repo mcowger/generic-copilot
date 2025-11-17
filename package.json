@@ -72,7 +72,8 @@
 				{
 					"id": "generic-copilot-models",
 					"name": "Models & Providers",
-					"when": "true"
+					"when": "true",
+					"icon": "assets/sidebar-icon.svg"
 				}
 			]
 		},

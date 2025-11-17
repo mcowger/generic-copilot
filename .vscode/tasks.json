@@ -16,8 +16,26 @@
 			"type": "npm",
 			"label": "watch:webview",
 			"script": "watch:webview",
-			"problemMatcher": [],
 			"isBackground": true,
+			"problemMatcher": {
+				"owner": "esbuild",
+				"fileLocation": [
+					"relative",
+					"${workspaceFolder}"
+				],
+				"pattern": {
+					"regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(error|warning|note):\\s+(.*)$",
+					"file": 1,
+					"line": 2,
+					"column": 3,
+					"severity": 4,
+					"message": 5
+				},
+				"background": {
+					"beginsPattern": "^.",
+					"endsPattern": "\\[watch\\] build finished, watching for changes"
+				}
+			},
 			"presentation": {
 				"reveal": "always",
 				"group": "watchers"
