@@ -1,42 +1,4 @@
-/**
- * OpenAI function-call entry emitted by assistant messages.
- */
-export interface OpenAIToolCall {
-	id: string;
-	type: "function";
-	function: { name: string; arguments: string };
-}
-
-/**
- * OpenAI function tool definition used to advertise tools.
- */
-export interface OpenAIFunctionToolDef {
-	type: "function";
-	function: { name: string; description?: string; parameters?: object };
-}
-
-/**
- * OpenAI-style chat message used for router requests.
- */
-export interface OpenAIChatMessage {
-	role: OpenAIChatRole;
-	content?: string | ChatMessageContent[];
-	name?: string;
-	tool_calls?: OpenAIToolCall[];
-	tool_call_id?: string;
-}
-
-/**
- * Chat message content interface (supports multimodal)
- */
-export interface ChatMessageContent {
-	type: "text" | "image_url";
-	text?: string;
-	image_url?: {
-		url: string;
-	};
-}
-
+import OpenAI from 'openai';
 /**
  * Parameters sent to the model API in the request body
  */
@@ -56,7 +18,7 @@ export interface ModelParameters {
  * Internal properties used by the extension, not sent to the API
  */
 export interface ModelProperties {
-	owned_by?: string;
+	owned_by: string;
 	context_length?: number;
 	/**
 	 * Optional family specification for the model. This allows users to specify
@@ -107,35 +69,6 @@ export interface ToolCallBuffer {
 	args: string;
 }
 
-/** OpenAI-style chat roles. */
-export type OpenAIChatRole = "system" | "user" | "assistant" | "tool";
-
-export interface ReasoningDetailCommon {
-	id: string | null;
-	format: string; // e.g., "anthropic-claude-v1", "openai-responses-v1"
-	index?: number;
-}
-
-export interface ReasoningSummaryDetail extends ReasoningDetailCommon {
-	type: "reasoning.summary";
-	summary: string;
-}
-
-export interface ReasoningEncryptedDetail extends ReasoningDetailCommon {
-	type: "reasoning.encrypted";
-	data: string; // Base64 encoded
-}
-
-export interface ReasoningTextDetail extends ReasoningDetailCommon {
-	type: "reasoning.text";
-	text: string;
-	signature?: string | null;
-}
-
-export type ReasoningDetail = ReasoningSummaryDetail | ReasoningEncryptedDetail | ReasoningTextDetail;
-
-
-
 /**
  * Provider configuration that can be inherited by models
  */
@@ -149,4 +82,36 @@ export interface ProviderConfig {
 	/** Custom HTTP headers for all requests */
 	headers?: Record<string, string>;
 
+}
+
+export interface ExtendedDelta extends OpenAI.Chat.Completions.ChatCompletionChunk.Choice.Delta {
+	reasoning_content?: string,
+	reasoning?: string,
+	reasoning_details?: [
+		{
+			type: string,
+			text: string,
+			id: string,
+			format: string,
+			index: number
+		},
+	],
+}
+
+export interface ToolCallAccumulator {
+	id?: string;
+	name?: string;
+	argumentsBuffer: string;
+	emitted: boolean;
+}
+
+export type ThinkSegment =
+	| { kind: "text"; value: string }
+	| { kind: "thinking"; value: string };
+
+export type ModelDetails = {
+	modelApiKey: string | undefined
+	modelItem: ModelItem
+	baseUrl: string
+	headers?: Record<string, string>
 }

@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 import { CancellationToken, LanguageModelChatInformation } from "vscode";
 
 import type { ModelItem, ProviderConfig } from "./types";
-import { resolveModelWithProvider } from "./utils";
 
 const DEFAULT_CONTEXT_LENGTH = 128000;
 const DEFAULT_MAX_TOKENS = 8000;
@@ -22,9 +21,9 @@ export async function prepareLanguageModelChatInformation(
 	// Check for user-configured models first
 	const config = vscode.workspace.getConfiguration();
 	const userModels = config.get<ModelItem[]>("generic-copilot.models", []);
-
+	const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
 	let infos: LanguageModelChatInformation[];
-	if (userModels && userModels.length > 0) {
+	if (userModels.length > 0) {
 		// Return user-provided models directly
 		infos = userModels.map((m) => {
 			// Resolve model configuration with provider inheritance
@@ -44,22 +43,18 @@ export async function prepareLanguageModelChatInformation(
 				? `${props.owned_by}/${resolved.id}::${resolved.configId}`
 				: `${props.owned_by}/${resolved.id}`;
 			// Compose human-friendly display name as providerDisplayName/modelDisplayName[::configId]
-			const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
+
 			const providerMeta = providers.find((p) => p.key === props.owned_by);
-			const providerDn =
-				providerMeta?.displayName && providerMeta.displayName.trim().length > 0
-					? providerMeta.displayName
-					: props.owned_by;
-			const modelDn =
-				resolved.displayName && resolved.displayName.trim().length > 0 ? resolved.displayName : resolved.id;
-			const modelName = resolved.configId
-				? `${providerDn}/${modelDn}::${resolved.configId}`
-				: `${providerDn}/${modelDn}`;
+			const providerDisplayName = providerMeta?.displayName || providerMeta?.key
+			const modelDisplayName = resolved.displayName || resolved.id;
+			const modelFullName = resolved.configId
+				? `${providerDisplayName}/${modelDisplayName}::${resolved.configId}`
+				: `${providerDisplayName}/${modelDisplayName}`;
 
 			return {
 				id: modelId,
-				name: modelName,
-				detail: providerDn,
+				name: modelFullName,
+				detail: providerDisplayName,
 				tooltip: resolved.configId
 					? `${props.owned_by}/${resolved.id}::${resolved.configId}`
 					: `${props.owned_by}/${resolved.id}`,
@@ -74,13 +69,50 @@ export async function prepareLanguageModelChatInformation(
 			} satisfies LanguageModelChatInformation;
 		});
 	} else {
-		// No user-provided models and no generic API key fallback; return empty list
+		// No user-provided models
 		infos = [];
 	}
-
-	// debug log
-	// console.log("[Generic Compatible Model Provider] Loaded models:", infos);
 	return infos;
 }
 
-// No generic API key helpers; provider-level keys only
+/**
+ * Resolve model configuration with provider inheritance.
+ * If a model references a provider, inherits baseUrl, owned_by, and defaults from the provider.
+ * Model-specific values always override inherited values.
+ * @param model The model configuration to resolve
+ * @returns Resolved model configuration with inherited values
+ */
+export function resolveModelWithProvider(model: ModelItem): ModelItem {
+	const providerRef = model.provider;
+
+	// If no provider reference, return model as-is
+	if (!providerRef) {
+		return model;
+	}
+
+	// Get providers from configuration
+	const config = vscode.workspace.getConfiguration();
+	const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
+
+	// Find the referenced provider
+	const provider = providers.find((p) => p.key === providerRef);
+	if (!provider) {
+		console.error(`[Generic Compatible Model Provider] Provider '${providerRef}' not found in configuration`);
+		return model;
+	}
+
+	// Create resolved model by merging provider defaults with model config
+	const resolved: ModelItem = {
+		id: model.id,
+		displayName: model.displayName ?? model.id,
+		provider: provider.key,
+		configId: model.configId,
+		model_properties: {
+			...model.model_properties,
+			owned_by: provider.key,
+		},
+		model_parameters: { ...model.model_parameters },
+	};
+
+	return resolved;
+}

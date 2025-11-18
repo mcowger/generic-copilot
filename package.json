@@ -314,6 +314,7 @@
 		"typescript-eslint": "^8.46.2"
 	},
 	"dependencies": {
+		"openai": "^6.9.1",
 		"tiktoken": "^1.0.22"
 	}
 }

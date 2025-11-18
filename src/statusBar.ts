@@ -1,6 +1,24 @@
 import * as vscode from "vscode";
 import { LanguageModelChatInformation, LanguageModelChatRequestMessage, CancellationTokenSource } from "vscode";
 
+
+export function initStatusBar(context: vscode.ExtensionContext): vscode.StatusBarItem {
+
+	// Create status bar item for token count display
+	const tokenCountStatusBarItem = vscode.window.createStatusBarItem(
+		vscode.StatusBarAlignment.Right,
+		100
+	);
+	tokenCountStatusBarItem.name = "Token Count";
+	tokenCountStatusBarItem.text = "$(symbol-numeric) Ready";
+	tokenCountStatusBarItem.tooltip = "Current model token usage - Click to open configuration";
+	tokenCountStatusBarItem.command = "generic-copilot.openConfiguration";
+	context.subscriptions.push(tokenCountStatusBarItem);
+	// Show the status bar item initially
+	tokenCountStatusBarItem.show();
+	return tokenCountStatusBarItem
+}
+
 /**
  * Format number to thousands (K, M, B) format
  * @param value The number to format

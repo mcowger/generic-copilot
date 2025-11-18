@@ -1,13 +1,27 @@
 import * as vscode from "vscode";
 import { randomUUID } from "crypto";
 import type {
-	OpenAIChatMessage,
-	OpenAIChatRole,
-	OpenAIFunctionToolDef,
-	OpenAIToolCall,
 	ProviderConfig,
-	ModelItem
+	ModelItem,
+	ModelDetails
 } from "./types";
+
+
+import OpenAI from 'openai';
+import {
+	LanguageModelChatInformation,
+	LanguageModelChatProvider,
+	LanguageModelChatRequestMessage,
+	LanguageModelChatTool,
+	ProvideLanguageModelChatResponseOptions,
+	LanguageModelToolCallPart,
+	LanguageModelTextPart,
+	LanguageModelChatMessageRole,
+	LanguageModelResponsePart,
+	LanguageModelToolResultPart,
+	Progress,
+} from "vscode";
+import { resolveModelWithProvider } from "./provideModel"
 
 // Model ID parsing helper
 export interface ParsedModelId {
@@ -32,426 +46,55 @@ export function parseModelId(modelId: string): ParsedModelId {
 	};
 }
 
-// Tool calling sanitization helpers
-
-function isIntegerLikePropertyName(propertyName: string | undefined): boolean {
-	if (!propertyName) {
-		return false;
-	}
-	const lowered = propertyName.toLowerCase();
-	const integerMarkers = [
-		"id",
-		"limit",
-		"count",
-		"index",
-		"size",
-		"offset",
-		"length",
-		"results_limit",
-		"maxresults",
-		"debugsessionid",
-		"cellid",
-	];
-	return integerMarkers.some((m) => lowered.includes(m)) || lowered.endsWith("_id");
-}
-
-function sanitizeFunctionName(name: unknown): string {
-	if (typeof name !== "string" || !name) {
-		return "tool";
-	}
-	let sanitized = name.replace(/[^a-zA-Z0-9_-]/g, "_");
-	if (!/^[a-zA-Z]/.test(sanitized)) {
-		sanitized = `tool_${sanitized}`;
-	}
-	sanitized = sanitized.replace(/_+/g, "_");
-	return sanitized.slice(0, 64);
-}
-
-function pruneUnknownSchemaKeywords(schema: unknown): Record<string, unknown> {
-	if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
-		return {};
-	}
-	const allow = new Set([
-		"type",
-		"properties",
-		"required",
-		"additionalProperties",
-		"description",
-		"enum",
-		"default",
-		"items",
-		"minLength",
-		"maxLength",
-		"minimum",
-		"maximum",
-		"pattern",
-		"format",
-	]);
-	const out: Record<string, unknown> = {};
-	for (const [k, v] of Object.entries(schema as Record<string, unknown>)) {
-		if (allow.has(k)) {
-			out[k] = v as unknown;
-		}
-	}
-	return out;
-}
-
-function sanitizeSchema(input: unknown, propName?: string): Record<string, unknown> {
-	if (!input || typeof input !== "object" || Array.isArray(input)) {
-		return { type: "object", properties: {} } as Record<string, unknown>;
-	}
-
-	let schema = input as Record<string, unknown>;
-
-	for (const composite of ["anyOf", "oneOf", "allOf"]) {
-		const branch = (schema as Record<string, unknown>)[composite] as unknown;
-		if (Array.isArray(branch) && branch.length > 0) {
-			let preferred: Record<string, unknown> | undefined;
-			for (const b of branch) {
-				if (b && typeof b === "object" && (b as Record<string, unknown>).type === "string") {
-					preferred = b as Record<string, unknown>;
-					break;
-				}
-			}
-			schema = { ...(preferred ?? (branch[0] as Record<string, unknown>)) };
-			break;
-		}
-	}
-
-	schema = pruneUnknownSchemaKeywords(schema);
-
-	let t = schema.type as string | undefined;
-	if (t == null) {
-		t = "object";
-		schema.type = t;
-	}
-
-	if (t === "number" && propName && isIntegerLikePropertyName(propName)) {
-		schema.type = "integer";
-		t = "integer";
-	}
-
-	if (t === "object") {
-		const props = (schema.properties as Record<string, unknown> | undefined) ?? {};
-		const newProps: Record<string, unknown> = {};
-		if (props && typeof props === "object") {
-			for (const [k, v] of Object.entries(props)) {
-				newProps[k] = sanitizeSchema(v, k);
-			}
-		}
-		schema.properties = newProps;
-
-		const req = schema.required as unknown;
-		if (Array.isArray(req)) {
-			schema.required = req.filter((r) => typeof r === "string");
-		} else if (req !== undefined) {
-			schema.required = [];
-		}
-
-		const ap = schema.additionalProperties as unknown;
-		if (ap !== undefined && typeof ap !== "boolean") {
-			delete schema.additionalProperties;
-		}
-	} else if (t === "array") {
-		const items = schema.items as unknown;
-		if (Array.isArray(items) && items.length > 0) {
-			schema.items = sanitizeSchema(items[0]);
-		} else if (items && typeof items === "object") {
-			schema.items = sanitizeSchema(items);
-		} else {
-			schema.items = { type: "string" } as Record<string, unknown>;
-		}
-	}
-
-	return schema;
-}
-
-/**
- * Convert VS Code chat request messages into OpenAI-compatible message objects.
- * @param messages The VS Code chat messages to convert.
- * @returns OpenAI-compatible messages array.
- */
-export function convertMessages(messages: readonly vscode.LanguageModelChatRequestMessage[]): OpenAIChatMessage[] {
-	const out: OpenAIChatMessage[] = [];
-	for (const m of messages) {
-		const role = mapRole(m);
-		const textParts: string[] = [];
-		const toolCalls: OpenAIToolCall[] = [];
-		const toolResults: { callId: string; content: string }[] = [];
-
-		for (const part of m.content ?? []) {
-			if (part instanceof vscode.LanguageModelTextPart) {
-				textParts.push(part.value);
-			} else if (part instanceof vscode.LanguageModelToolCallPart) {
-				const id = part.callId || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-				let args = "{}";
-				try {
-					args = JSON.stringify(part.input ?? {});
-				} catch {
-					args = "{}";
-				}
-				toolCalls.push({ id, type: "function", function: { name: part.name, arguments: args } });
-			} else if (isToolResultPart(part)) {
-				const callId = (part as { callId?: string }).callId ?? "";
-				const content = collectToolResultText(part as { content?: ReadonlyArray<unknown> });
-				toolResults.push({ callId, content });
-			}
-		}
-
-		let emittedAssistantToolCall = false;
-		if (toolCalls.length > 0) {
-			out.push({ role: "assistant", content: textParts.join("") || undefined, tool_calls: toolCalls });
-			emittedAssistantToolCall = true;
-		}
-
-		for (const tr of toolResults) {
-			out.push({ role: "tool", tool_call_id: tr.callId, content: tr.content || "" });
-		}
-
-		if (textParts.length > 0) {
-			if (role === "user") {
-				out.push({ role, content: textParts.join("\n") });
-			} else if (role === "system" || (role === "assistant" && !emittedAssistantToolCall)) {
-				out.push({ role, content: textParts.join("\n") });
-			}
-		}
-	}
-	return out;
-}
 
 /**
  * Convert VS Code tool definitions to OpenAI function tool definitions.
- * @param options Request options containing tools and toolMode.
+ * @param tools Array of VS Code LanguageModelChatTool objects
  */
-export function convertTools(options: vscode.ProvideLanguageModelChatResponseOptions): {
-	tools?: OpenAIFunctionToolDef[];
-	tool_choice?: "auto" | { type: "function"; function: { name: string } };
-} {
-	const tools = options.tools ?? [];
+export function convertTools(tools: LanguageModelChatTool[]): OpenAI.ChatCompletionCustomTool[] {
 	if (!tools || tools.length === 0) {
-		return {};
+		return [];
 	}
 
-	const toolDefs: OpenAIFunctionToolDef[] = tools
-		.filter((t) => t && typeof t === "object")
-		.map((t) => {
-			const name = sanitizeFunctionName(t.name);
-			const description = typeof t.description === "string" ? t.description : "";
-			const params = sanitizeSchema(t.inputSchema ?? { type: "object", properties: {} });
-			return {
-				type: "function" as const,
-				function: {
-					name,
-					description,
-					parameters: params,
-				},
-			} satisfies OpenAIFunctionToolDef;
-		});
+	return [];
+	// const toolDefs = tools
+	// 	.filter((t) => t && typeof t === "object")
+	// 	.map((t) => {
+	// 		const name = t.name;
+	// 		const description = typeof t.description === "string" ? t.description : "";
+	// 		const params = t.inputSchema ?? {
+	// 			type: "object",
+	// 			properties: {}
+	// 		};
 
-	let tool_choice: "auto" | { type: "function"; function: { name: string } } = "auto";
-	if (options.toolMode === vscode.LanguageModelChatToolMode.Required) {
-		if (tools.length !== 1) {
-			console.error("[Generic Compatible Model Provider] ToolMode.Required but multiple tools:", tools.length);
-			throw new Error("LanguageModelChatToolMode.Required is not supported with more than one tool");
-		}
-		tool_choice = { type: "function", function: { name: sanitizeFunctionName(tools[0].name) } };
-	}
+	// 		// Special case: if there are no properties, don't include additionalProperties
+	// 		const paramsWithSchema = params as any;
+	// 		if (Object.keys(paramsWithSchema.properties || {}).length === 0 && paramsWithSchema.additionalProperties === undefined) {
+	// 			delete paramsWithSchema.additionalProperties;
+	// 		}
 
-	return { tools: toolDefs, tool_choice };
+	// 		return {
+	// 			type: "function" as const,
+	// 			function: {
+	// 				name,
+	// 				description,
+	// 				parameters: params,
+	// 			},
+	// 		};
+	// 	});
+
+	// const tool_choice: "auto" | { type: "function"; function: { name: string } } = "auto";
+
+	// return { tools: toolDefs, tool_choice };
 }
 
-/**
- * Validate tool names to ensure they contain only word chars, hyphens, or underscores.
- * @param tools Tools to validate.
- */
-export function validateTools(tools: readonly vscode.LanguageModelChatTool[]): void {
-	for (const tool of tools) {
-		if (!tool.name.match(/^[\w-]+$/)) {
-			console.error("[Generic Compatible Model Provider] Invalid tool name detected:", tool.name);
-			throw new Error(
-				`Invalid tool name "${tool.name}": only alphanumeric characters, hyphens, and underscores are allowed.`
-			);
-		}
-	}
-}
-
-/**
- * Validate the request message sequence for correct tool call/result pairing.
- * @param messages The full request message list.
- */
-export function validateRequest(messages: readonly vscode.LanguageModelChatRequestMessage[]): void {
-	const lastMessage = messages[messages.length - 1];
-	if (!lastMessage) {
-		console.error("[Generic Compatible Model Provider] No messages in request");
-		throw new Error("Invalid request: no messages.");
-	}
-
-	messages.forEach((message, i) => {
-		if (message.role === vscode.LanguageModelChatMessageRole.Assistant) {
-			const toolCallIds = new Set(
-				message.content
-					.filter((part) => part instanceof vscode.LanguageModelToolCallPart)
-					.map((part) => (part as unknown as vscode.LanguageModelToolCallPart).callId)
-			);
-			if (toolCallIds.size === 0) {
-				return;
-			}
-
-			let nextMessageIdx = i + 1;
-			const errMsg =
-				"Invalid request: Tool call part must be followed by a User message with a LanguageModelToolResultPart with a matching callId.";
-			while (toolCallIds.size > 0) {
-				const nextMessage = messages[nextMessageIdx++];
-				if (!nextMessage || nextMessage.role !== vscode.LanguageModelChatMessageRole.User) {
-					console.error(
-						"[Generic Compatible Model Provider] Validation failed: missing tool result for call IDs:",
-						Array.from(toolCallIds)
-					);
-					throw new Error(errMsg);
-				}
-
-				nextMessage.content.forEach((part) => {
-					if (!isToolResultPart(part)) {
-						const ctorName =
-							(Object.getPrototypeOf(part as object) as { constructor?: { name?: string } } | undefined)?.constructor
-								?.name ?? typeof part;
-						console.error(
-							"[Generic Compatible Model Provider] Validation failed: expected tool result part, got:",
-							ctorName
-						);
-						throw new Error(errMsg);
-					}
-					const callId = (part as { callId: string }).callId;
-					toolCallIds.delete(callId);
-				});
-			}
-		}
-	});
-}
-
-/**
- * Type guard for LanguageModelToolResultPart-like values.
- * @param value Unknown value to test.
- */
-export function isToolResultPart(value: unknown): value is { callId: string; content?: ReadonlyArray<unknown> } {
-	if (!value || typeof value !== "object") {
-		return false;
-	}
-	const obj = value as Record<string, unknown>;
-	const hasCallId = typeof obj.callId === "string";
-	const hasContent = "content" in obj;
-	return hasCallId && hasContent;
-}
-
-/**
- * Map VS Code message role to OpenAI message role string.
- * @param message The message whose role is mapped.
- */
-function mapRole(message: vscode.LanguageModelChatRequestMessage): Exclude<OpenAIChatRole, "tool"> {
-	const USER = vscode.LanguageModelChatMessageRole.User as unknown as number;
-	const ASSISTANT = vscode.LanguageModelChatMessageRole.Assistant as unknown as number;
-	const r = message.role as unknown as number;
-	if (r === USER) {
-		return "user";
-	}
-	if (r === ASSISTANT) {
-		return "assistant";
-	}
-	return "system";
-}
-
-/**
- * Concatenate tool result content into a single text string.
- * @param pr Tool result-like object with content array.
- */
-function collectToolResultText(pr: { content?: ReadonlyArray<unknown> }): string {
-	let text = "";
-	for (const c of pr.content ?? []) {
-		if (c instanceof vscode.LanguageModelTextPart) {
-			text += c.value;
-		} else if (typeof c === "string") {
-			text += c;
-		} else {
-			try {
-				text += JSON.stringify(c);
-			} catch {
-				/* ignore */
-			}
-		}
-	}
-	return text;
-}
-
-/**
- * Try to parse a JSON object from a string.
- * @param text The input string.
- * @returns Parsed object or ok:false.
- */
-export function tryParseJSONObject(text: string): { ok: true; value: Record<string, unknown> } | { ok: false } {
-	try {
-		if (!text || !/[{]/.test(text)) {
-			return { ok: false };
-		}
-		const value = JSON.parse(text);
-		if (value && typeof value === "object" && !Array.isArray(value)) {
-			return { ok: true, value };
-		}
-		return { ok: false };
-	} catch {
-		return { ok: false };
-	}
-}
-
-/**
- * Resolve model configuration with provider inheritance.
- * If a model references a provider, inherits baseUrl, owned_by, and defaults from the provider.
- * Model-specific values always override inherited values.
- * @param model The model configuration to resolve
- * @returns Resolved model configuration with inherited values
- */
-export function resolveModelWithProvider(model: ModelItem): ModelItem {
-	const providerRef = model.provider;
-
-	// If no provider reference, return model as-is
-	if (!providerRef) {
-		return model;
-	}
-
-	// Get providers from configuration
-	const config = vscode.workspace.getConfiguration();
-	const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
-
-	// Find the referenced provider
-	const provider = providers.find((p) => p.key === providerRef);
-	if (!provider) {
-		console.warn(`[Generic Compatible Model Provider] Provider '${providerRef}' not found in configuration`);
-		return model;
-	}
-
-	// Create resolved model by merging provider defaults with model config
-	const resolved: ModelItem = {
-		id: model.id,
-		displayName: model.displayName ?? model.id,
-		provider: provider.key,
-		configId: model.configId,
-		model_properties: {
-			...model.model_properties,
-			owned_by: provider.key,
-		},
-		model_parameters: { ...model.model_parameters },
-	};
-
-
-
-	return resolved;
-}
 
 /**
  * Process headers and replace "RANDOM" values with UUIDv4.
  * @param headers The headers object from provider configuration
  * @returns Processed headers with RANDOM values replaced by UUIDs
  */
-export function processHeaders(headers?: Record<string, string>): Record<string, string> {
+function processHeaders(headers?: Record<string, string>): Record<string, string> {
 	if (!headers) {
 		return {};
 	}
@@ -465,4 +108,212 @@ export function processHeaders(headers?: Record<string, string>): Record<string,
 		}
 	}
 	return processed;
+}
+
+
+export function convertRequestToOpenAI(messages: LanguageModelChatRequestMessage[], tools?: LanguageModelChatTool[]): OpenAI.ChatCompletionCreateParamsStreaming {
+	const openaiMessages: OpenAI.ChatCompletionMessageParam[] = [];
+
+	for (const message of messages) {
+		// Convert role
+		let openaiRole: 'system' | 'user' | 'assistant' | 'tool';
+		switch (message.role) {
+			case LanguageModelChatMessageRole.User:
+				openaiRole = 'user';
+				break;
+			case LanguageModelChatMessageRole.Assistant:
+				openaiRole = 'assistant';
+				break;
+			default:
+				openaiRole = 'user'; // Default to user for unknown roles
+		}
+
+		// Convert content
+		const contentParts: string[] = [];
+		const toolCalls: OpenAI.ChatCompletionMessageToolCall[] = [];
+		let toolCallId: string | undefined;
+		let toolResult: string | undefined;
+
+		for (const part of message.content) {
+			if (part instanceof LanguageModelTextPart) {
+				contentParts.push(part.value);
+			} else if (part instanceof LanguageModelToolCallPart) {
+				// Convert tool call parts
+				toolCalls.push({
+					id: part.callId,
+					type: 'function',
+					function: {
+						name: part.name,
+						arguments: JSON.stringify(part.input)
+					}
+				} as OpenAI.ChatCompletionMessageToolCall);
+			} else if (part instanceof LanguageModelToolResultPart) {
+				// Tool result parts become tool messages
+				const toolResultContent: string[] = [];
+				for (const resultPart of part.content) {
+					if (resultPart instanceof LanguageModelTextPart) {
+						toolResultContent.push(resultPart.value);
+					}
+				}
+				toolCallId = part.callId;
+				toolResult = toolResultContent.join('');
+			}
+		}
+
+		// Create the OpenAI message based on content type
+		if (contentParts.length > 0) {
+			const messageContent = contentParts.join('');
+
+			if (openaiRole === 'assistant' && toolCalls.length > 0) {
+				// Assistant message with tool calls
+				openaiMessages.push({
+					role: openaiRole,
+					content: messageContent,
+					name: message.name || undefined,
+					tool_calls: toolCalls
+				} as OpenAI.ChatCompletionAssistantMessageParam);
+			} else if (toolCallId && toolResult) {
+				// Tool result message
+				openaiMessages.push({
+					role: 'tool',
+					content: toolResult,
+					tool_call_id: toolCallId
+				} as OpenAI.ChatCompletionToolMessageParam);
+			} else {
+				// Standard message (user, assistant, or system)
+				openaiMessages.push({
+					role: openaiRole,
+					content: messageContent,
+					name: message.name || undefined
+				});
+			}
+		} else if (toolCallId && toolResult) {
+			// Tool result message without text content
+			openaiMessages.push({
+				role: 'tool',
+				content: toolResult,
+				tool_call_id: toolCallId
+			} as OpenAI.ChatCompletionToolMessageParam);
+		}
+	}
+
+	const result: any = {
+		stream: true,
+		messages: openaiMessages
+	};
+
+	// Include tool definitions if provided
+	if (tools && tools.length > 0) {
+		const toolDefs = convertTools(tools);
+		// if (toolDefs.tools) {
+		// 	result.tools = toolDefs.tools;
+		// }
+		// if (toolDefs.tool_choice) {
+		// 	result.tool_choice = toolDefs.tool_choice;
+		// }
+	}
+
+	return result;
+}
+
+
+export function convertLmModeltoModelItem(model: LanguageModelChatInformation): ModelItem | undefined {
+	const config = vscode.workspace.getConfiguration();
+	const userModels = config.get<ModelItem[]>("generic-copilot.models", []);
+	// Parse the model ID to handle a potential provider prefix and config ID suffix
+	const parsedModelId = parseModelId(model.id);
+	let providerHint: string | undefined;
+	let baseIdForMatch = parsedModelId.baseId;
+	const slashIdx = baseIdForMatch.indexOf("/");
+	if (slashIdx !== -1) {
+		providerHint = baseIdForMatch.slice(0, slashIdx).toLowerCase();
+		baseIdForMatch = baseIdForMatch.slice(slashIdx + 1);
+	}
+
+	const getDeclaredProviderKey = (m: ModelItem): string | undefined => {
+		const props = m.model_properties;
+		return (m.provider ?? props.owned_by)?.toLowerCase();
+	};
+	let um: ModelItem | undefined = userModels.find((m) => {
+		if (m.id !== baseIdForMatch) {
+			return false;
+		}
+		const configMatch =
+			(parsedModelId.configId && m.configId === parsedModelId.configId) || (!parsedModelId.configId && !m.configId);
+		if (!configMatch) {
+			return false;
+		}
+		if (!providerHint) {
+			return true;
+		}
+		const decl = getDeclaredProviderKey(m);
+		return decl ? decl === providerHint : false;
+	});
+
+	const resolvedModel = um ? resolveModelWithProvider(um) : um;
+	return resolvedModel
+
+}
+
+async function ensureApiKey(provider: string, secrets: vscode.SecretStorage): Promise<string | undefined> {
+	// Provider-level keys only; no generic key fallback
+	const normalizedProvider = provider.toLowerCase();
+	const providerKey = `generic-copilot.apiKey.${normalizedProvider}`;
+	let apiKey = await secrets.get(providerKey);
+	if (!apiKey) {
+		const entered = await vscode.window.showInputBox({
+			title: `API key for ${normalizedProvider}`,
+			prompt: `Enter API key for ${normalizedProvider}`,
+			ignoreFocusOut: true,
+			password: true,
+		});
+		if (entered && entered.trim()) {
+			apiKey = entered.trim();
+			await secrets.store(providerKey, apiKey);
+		}
+	}
+	return apiKey || undefined;
+}
+
+export async function getCoreDataForModel(modelInfo: LanguageModelChatInformation, secrets: vscode.SecretStorage): Promise<ModelDetails> {
+	// Convert LanguageModelChatInformation to ModelItem
+	const modelItem = convertLmModeltoModelItem(modelInfo);
+	if (!modelItem) {
+		throw new Error(`Model "${modelInfo.id}" not found in configuration`);
+	}
+
+	// Get model properties
+	const modelProps = modelItem.model_properties;
+
+	// Get API key for the model's provider (provider-level keys only)
+	const providerKey = modelProps.owned_by;
+	const modelApiKey = await ensureApiKey(providerKey, secrets);
+	if (!modelApiKey) {
+		throw new Error(
+			providerKey && providerKey.trim()
+				? `API key for provider "${providerKey}" not found`
+				: "No provider specified for model; please set 'owned_by' and configure its API key"
+		);
+	}
+
+	// Look up the provider configuration to get baseUrl
+	const config = vscode.workspace.getConfiguration();
+	const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
+	const provider = providers.find((p) => p.key === providerKey);
+
+	if (!provider) {
+		throw new Error(`Provider "${providerKey}" not found in configuration`);
+	}
+	const baseUrl = provider.baseUrl;
+	const headers = processHeaders(provider.headers)
+	return {
+		modelApiKey,
+		modelItem,
+		baseUrl,
+		headers
+	};
+}
+
+export function stripDoubleNewlines(input:string): string {
+	return input.replace(/\n\n+/g, '\n');
 }

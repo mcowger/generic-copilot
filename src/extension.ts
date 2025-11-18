@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
 import { ChatModelProvider } from "./provider";
 import type { ModelItem, ProviderConfig } from "./types";
-import { resolveModelWithProvider } from "./utils";
+import { resolveModelWithProvider } from "./provideModel";
 import { ConfigurationPanel } from "./configurationPanel";
 import { SidebarTreeDataProvider } from "./sidebarProvider";
+import { initStatusBar } from "./statusBar"
 
 export function activate(context: vscode.ExtensionContext) {
 	// Build a descriptive User-Agent to help quantify API usage
@@ -13,19 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Keep UA minimal: only extension version and VS Code version
 	const ua = `generic-copilot/${extVersion} VSCode/${vscodeVersion}`;
 
-	// Create status bar item for token count display
-	const tokenCountStatusBarItem = vscode.window.createStatusBarItem(
-		vscode.StatusBarAlignment.Right,
-		100
-	);
-	tokenCountStatusBarItem.name = "Token Count";
-	tokenCountStatusBarItem.text = "$(symbol-numeric) Ready";
-	tokenCountStatusBarItem.tooltip = "Current model token usage - Click to open configuration";
-	tokenCountStatusBarItem.command = "generic-copilot.openConfiguration";
-	context.subscriptions.push(tokenCountStatusBarItem);
-	// Show the status bar item initially
-	tokenCountStatusBarItem.show();
-
+	const tokenCountStatusBarItem: vscode.StatusBarItem = initStatusBar(context)
 	const provider = new ChatModelProvider(context.secrets, ua, tokenCountStatusBarItem);
 
 	let providerRegistration = vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
@@ -48,17 +37,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand("generic-copilot.refresh", async () => {
 			try {
-				const lm: unknown = vscode.lm as unknown;
-				const maybe = lm as { refreshLanguageModelChatProviders?: (vendor: string) => void };
-				if (typeof maybe.refreshLanguageModelChatProviders === "function") {
-					// @ts-expect-error - Proposed API method not in current types
-					vscode.lm.refreshLanguageModelChatProviders("generic-copilot");
-				} else {
-					// Fallback for older API: force re-register the provider
-					try { providerRegistration.dispose(); } catch { /* ignore */ }
-					providerRegistration = vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
-					context.subscriptions.push(providerRegistration);
-				}
+				vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
 				// Also refresh the sidebar
 				sidebarProvider.refresh();
 				vscode.window.showInformationMessage("GenericCopilot model configurations refreshed.");
@@ -78,23 +57,13 @@ export function activate(context: vscode.ExtensionContext) {
 			const configuredProviders = config.get<ProviderConfig[]>("generic-copilot.providers", []);
 
 			// Extract unique providers from models (with resolution) and configured providers
-			const providersFromModels = Array.from(
-				new Set(
-					userModels
-						.map((m) => {
-							const resolved = resolveModelWithProvider(m);
-							return resolved.model_properties.owned_by?.toLowerCase();
-						})
-						.filter((p): p is string => !!p && p.trim() !== "")
-				)
-			);
 
 			const providersFromConfig = configuredProviders
 				.map((p) => p.key.toLowerCase())
 				.filter((p) => p && p.trim() !== "");
 
 			// Combine and deduplicate all providers
-			const providers = Array.from(new Set([...providersFromModels, ...providersFromConfig])).sort();
+			const providers = Array.from(new Set([...providersFromConfig])).sort();
 
 			if (providers.length === 0) {
 				vscode.window.showErrorMessage(
