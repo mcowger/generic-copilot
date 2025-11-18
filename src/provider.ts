@@ -12,7 +12,7 @@ import {
 } from "vscode";
 import OpenAI from 'openai';
 import { ThinkTagParser } from "./thinkParser"
-import { ExtendedDelta } from "./types"
+import { ExtendedDelta, ExtendedOpenAIRequest } from "./types"
 import { ToolCallAccumulator, type ThinkSegment } from "./types"
 import {
 	convertRequestToOpenAI,
@@ -37,7 +37,7 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 	constructor(
 		private readonly secrets: vscode.SecretStorage,
 		private readonly userAgent: string,
-		private readonly statusBarItem?: vscode.StatusBarItem
+		private readonly statusBarItem: vscode.StatusBarItem
 	) { }
 
 	/**
@@ -97,17 +97,24 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 	): Promise<void> {
 
 		const { modelApiKey, modelItem, baseUrl, headers } = await getCoreDataForModel(model, this.secrets)
+		updateContextStatusBar(messages,model,this.statusBarItem)
 
-		// Apply custom temperature if configured
-		// const customTemperature = getModelTemperature(model.id);
-		// if (customTemperature !== undefined) {
-		// 	openAIRequest.temperature = customTemperature;
-		// }
-
-		const openAIRequest: OpenAI.ChatCompletionCreateParamsStreaming = {
+		const openAIRequest: ExtendedOpenAIRequest = {
 			...convertRequestToOpenAI(messages, options.tools as vscode.LanguageModelChatTool[]),
-			model: modelItem.id
+			model: modelItem.id,
+			temperature: modelItem.model_parameters.temperature
 		};
+
+		if (modelItem.model_parameters.extra && typeof modelItem.model_parameters.extra === "object") {
+			// Add all extra parameters directly to the request body
+			for (const [key, value] of Object.entries(modelItem.model_parameters.extra)) {
+				if (value !== undefined) {
+					openAIRequest[key] = value;
+				}
+			}
+		}
+
+
 
 		const openai = new OpenAI({
 			baseURL: baseUrl,
@@ -120,7 +127,7 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 			const stream = await openai.chat.completions.create(openAIRequest);
 			// const thinkParser = new ThinkTagParser();
 			// const toolCallStates = new Map<number, ToolCallAccumulator>();
-
+			const toolCallStates = new Map<number, ToolCallAccumulator>();
 			for await (const chunk of stream) {
 				if (token.isCancellationRequested) {
 					break;
@@ -130,10 +137,19 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 					continue;
 				}
 				const delta = choice.delta;
-				const toolCallStates = new Map<number, ToolCallAccumulator>();
+
 
 				reportThinkingParts(delta,progress)
 				reportTextParts(delta, progress)
+				assembleToolCalls(delta,toolCallStates)
+				const { finish_reason: finishReason } = choice as {
+					finish_reason?: string;
+				};
+				if (finishReason === "tool_calls") {
+					for (const [index, state] of toolCallStates.entries()) {
+						emitToolCallIfReady(index, state, progress);
+					}
+				}
 
 			}
 
@@ -154,7 +170,6 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 
 
 }
-
 
 function reportThinkingParts(delta: ExtendedDelta, progress: Progress<LanguageModelThinkingPart>): void {
 	let contentToEmit: string = ""
@@ -187,7 +202,42 @@ function reportTextParts(delta: ExtendedDelta, progress: Progress<LanguageModelT
 	}
 }
 
+function assembleToolCalls(delta: ExtendedDelta, toolCallStates: Map<number, ToolCallAccumulator>) {
+	const toolCalls = (delta as { tool_calls?: unknown }).tool_calls;
+	if (Array.isArray(toolCalls) && toolCalls.length > 0) {
+		for (const toolCall of toolCalls) {
+			if (!toolCall || typeof toolCall !== "object") {
+				console.warn("[Generic Model Provider] Skipping malformed tool call payload:", toolCall);
+				continue;
+			}
 
+			const toolCallRecord = toolCall as {
+				id?: string | null;
+				index?: number;
+				type?: string;
+				function?: { name?: string; arguments?: string };
+			};
+
+			const index = Number.isInteger(toolCallRecord.index) ? toolCallRecord.index! : 0;
+			const state = toolCallStates.get(index) ?? { argumentsBuffer: "", emitted: false };
+			if (!toolCallStates.has(index)) {
+				toolCallStates.set(index, state);
+			}
+
+			if (typeof toolCallRecord.id === "string" && toolCallRecord.id.length > 0) {
+				state.id = toolCallRecord.id;
+			}
+
+			const functionRecord = toolCallRecord.function;
+			if (functionRecord?.name) {
+				state.name = functionRecord.name;
+			}
+			if (typeof functionRecord?.arguments === "string" && functionRecord.arguments.length > 0) {
+				state.argumentsBuffer += functionRecord.arguments;
+			}
+		}
+	}
+}
 
 function emitToolCallIfReady(index: number, state: ToolCallAccumulator, progress: vscode.Progress<LanguageModelResponsePart2>): void {
 	if (state.emitted) {

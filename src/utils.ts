@@ -3,23 +3,20 @@ import { randomUUID } from "crypto";
 import type {
 	ProviderConfig,
 	ModelItem,
-	ModelDetails
+	ModelDetails,
+	OpenAITool
 } from "./types";
 
 
 import OpenAI from 'openai';
 import {
 	LanguageModelChatInformation,
-	LanguageModelChatProvider,
 	LanguageModelChatRequestMessage,
 	LanguageModelChatTool,
-	ProvideLanguageModelChatResponseOptions,
 	LanguageModelToolCallPart,
 	LanguageModelTextPart,
 	LanguageModelChatMessageRole,
-	LanguageModelResponsePart,
 	LanguageModelToolResultPart,
-	Progress,
 } from "vscode";
 import { resolveModelWithProvider } from "./provideModel"
 
@@ -51,41 +48,43 @@ export function parseModelId(modelId: string): ParsedModelId {
  * Convert VS Code tool definitions to OpenAI function tool definitions.
  * @param tools Array of VS Code LanguageModelChatTool objects
  */
-export function convertTools(tools: LanguageModelChatTool[]): OpenAI.ChatCompletionCustomTool[] {
+export function convertTools(tools: LanguageModelChatTool[]): { tools?: OpenAITool[]; tool_choice: string } {
 	if (!tools || tools.length === 0) {
-		return [];
+		return {
+			tools: [],
+			tool_choice: "auto"
+		};
 	}
 
-	return [];
-	// const toolDefs = tools
-	// 	.filter((t) => t && typeof t === "object")
-	// 	.map((t) => {
-	// 		const name = t.name;
-	// 		const description = typeof t.description === "string" ? t.description : "";
-	// 		const params = t.inputSchema ?? {
-	// 			type: "object",
-	// 			properties: {}
-	// 		};
+	const toolDefs = tools
+		.filter((t) => t && typeof t === "object")
+		.map((t) => {
+			const name = t.name;
+			const description = typeof t.description === "string" ? t.description : "";
+			const params = t.inputSchema ?? {
+				type: "object",
+				properties: {}
+			};
 
-	// 		// Special case: if there are no properties, don't include additionalProperties
-	// 		const paramsWithSchema = params as any;
-	// 		if (Object.keys(paramsWithSchema.properties || {}).length === 0 && paramsWithSchema.additionalProperties === undefined) {
-	// 			delete paramsWithSchema.additionalProperties;
-	// 		}
+			// Special case: if there are no properties, don't include additionalProperties
+			const paramsWithSchema = params as any;
+			if (Object.keys(paramsWithSchema.properties || {}).length === 0 && paramsWithSchema.additionalProperties === undefined) {
+				delete paramsWithSchema.additionalProperties;
+			}
 
-	// 		return {
-	// 			type: "function" as const,
-	// 			function: {
-	// 				name,
-	// 				description,
-	// 				parameters: params,
-	// 			},
-	// 		};
-	// 	});
+			return {
+				type: "function" as const,
+				function: {
+					name,
+					description,
+					parameters: params,
+				},
+			};
+		});
 
-	// const tool_choice: "auto" | { type: "function"; function: { name: string } } = "auto";
+	const tool_choice = "auto"
 
-	// return { tools: toolDefs, tool_choice };
+	return { tools: toolDefs, tool_choice };
 }
 
 
@@ -205,12 +204,12 @@ export function convertRequestToOpenAI(messages: LanguageModelChatRequestMessage
 	// Include tool definitions if provided
 	if (tools && tools.length > 0) {
 		const toolDefs = convertTools(tools);
-		// if (toolDefs.tools) {
-		// 	result.tools = toolDefs.tools;
-		// }
-		// if (toolDefs.tool_choice) {
-		// 	result.tool_choice = toolDefs.tool_choice;
-		// }
+		if (toolDefs.tools) {
+			result.tools = toolDefs.tools;
+		}
+		if (toolDefs.tool_choice) {
+			result.tool_choice = toolDefs.tool_choice;
+		}
 	}
 
 	return result;

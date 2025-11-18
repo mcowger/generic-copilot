@@ -98,6 +98,15 @@ export interface ExtendedDelta extends OpenAI.Chat.Completions.ChatCompletionChu
 	],
 }
 
+export interface ExtendedOpenAIRequest extends OpenAI.ChatCompletionCreateParamsStreaming {
+	[key: string]: any;
+}
+
+export interface OpenAITool {
+	type: "function";
+	function: { name: string; description?: string; parameters?: object };
+}
+
 export interface ToolCallAccumulator {
 	id?: string;
 	name?: string;

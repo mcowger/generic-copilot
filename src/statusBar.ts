@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { LanguageModelChatInformation, LanguageModelChatRequestMessage, CancellationTokenSource } from "vscode";
-
+import { prepareTokenCount } from "./provideToken";
 
 export function initStatusBar(context: vscode.ExtensionContext): vscode.StatusBarItem {
 
@@ -60,13 +60,12 @@ export async function updateContextStatusBar(
 	messages: readonly LanguageModelChatRequestMessage[],
 	model: LanguageModelChatInformation,
 	statusBarItem: vscode.StatusBarItem,
-	provideTokenCount: (model: LanguageModelChatInformation, message: LanguageModelChatRequestMessage) => Promise<number>
 ): Promise<void> {
 	// Loop through each message and count tokens
 	let totalTokenCount = 0;
 
 	for (const message of messages) {
-		const tokenCount = await provideTokenCount(model, message);
+		const tokenCount = await prepareTokenCount(model, message, new CancellationTokenSource().token);
 		totalTokenCount += tokenCount;
 	}
 
