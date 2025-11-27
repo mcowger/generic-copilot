@@ -11,9 +11,8 @@ import {
 	Progress,
 } from "vscode";
 import OpenAI from 'openai';
-import { ThinkTagParser } from "./thinkParser"
 import { ExtendedDelta, ExtendedOpenAIRequest } from "./types"
-import { ToolCallAccumulator, type ThinkSegment } from "./types"
+import { ToolCallAccumulator } from "./types"
 import {
 	convertRequestToOpenAI,
 	getCoreDataForModel,
@@ -23,8 +22,6 @@ import {
 import { prepareLanguageModelChatInformation } from "./provideModel";
 import { prepareTokenCount } from "./provideToken";
 import { updateContextStatusBar } from "./statusBar";
-
-const COMPLETIONS_ENDPOINT = "/chat/completions";
 
 export class ChatModelProvider implements LanguageModelChatProvider {
 

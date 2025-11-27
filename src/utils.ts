@@ -19,6 +19,7 @@ import {
 	LanguageModelToolResultPart,
 } from "vscode";
 import { resolveModelWithProvider } from "./provideModel"
+import { match } from "assert";
 
 // Model ID parsing helper
 export interface ParsedModelId {
@@ -274,9 +275,25 @@ async function ensureApiKey(provider: string, secrets: vscode.SecretStorage): Pr
 	return apiKey || undefined;
 }
 
-export async function getCoreDataForModel(modelInfo: LanguageModelChatInformation, secrets: vscode.SecretStorage): Promise<ModelDetails> {
-	// Convert LanguageModelChatInformation to ModelItem
-	const modelItem = convertLmModeltoModelItem(modelInfo);
+export function getModelItemFromString(modelId: string): ModelItem {
+	const config = vscode.workspace.getConfiguration();
+	const userModels = config.get<ModelItem[]>("generic-copilot.models", []);
+	const matchingModel = userModels.find(m => m.id === modelId) || null;
+	if (!matchingModel) {
+		throw new Error("Model not found from ID")
+	}
+	return matchingModel
+}
+
+export async function getCoreDataForModel(modelInfo: LanguageModelChatInformation|ModelItem, secrets: vscode.SecretStorage): Promise<ModelDetails> {
+	let newModelItem: ModelItem | undefined
+	if (!("configId" in modelInfo)) { // We have a LanguageModelChatInformation
+		newModelItem = convertLmModeltoModelItem(modelInfo as LanguageModelChatInformation);
+	} else {
+		newModelItem = modelInfo
+	}
+
+	const modelItem = newModelItem
 	if (!modelItem) {
 		throw new Error(`Model "${modelInfo.id}" not found in configuration`);
 	}
@@ -313,6 +330,6 @@ export async function getCoreDataForModel(modelInfo: LanguageModelChatInformatio
 	};
 }
 
-export function stripDoubleNewlines(input:string): string {
+export function stripDoubleNewlines(input: string): string {
 	return input.replace(/\n\n+/g, '\n');
 }
