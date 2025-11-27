@@ -40,7 +40,7 @@ export interface ModelItem {
 	 * Model provider. Can be overridden by provider reference.
 	 * If 'provider' field is specified, this value is inherited from the provider.
 	 */
-	provider?: string;
+	provider: string;
 	/**
 	 * Configuration variant identifier for models that share the same base id.
 	 * This is a configuration-level attribute and not a model property.

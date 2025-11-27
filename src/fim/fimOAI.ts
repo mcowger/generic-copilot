@@ -5,8 +5,8 @@ import OpenAI from 'openai';
 
 
 export async function openAICompatibleFillInMiddle(
-    context: vscode.ExtensionContext,
-    token: vscode.CancellationToken,
+    _context: vscode.ExtensionContext,
+    _token: vscode.CancellationToken,
     filename: string,
     programmingLanguage: string,
     prefix: string,
@@ -16,17 +16,6 @@ export async function openAICompatibleFillInMiddle(
     model: string,
     headers?: Record<string, string>
 ): Promise<string | null> {
-
-    try {
-        // Cancel on change
-        if (token.isCancellationRequested) {
-            console.debug('Cancel on change - OAI FIM');
-            return null;
-        }
-
-    } catch (error) {
-        console.error('openAICompatibleFillInMiddle', error);
-    }
 
     try {
 
@@ -56,6 +45,7 @@ export async function openAICompatibleFillInMiddle(
             defaultHeaders: headers ? headers : {}
         });
 
+        //console.debug("FIM LLM. Req: ", JSON.stringify(openAIrequest, ))
         const fimResponse: OpenAI.Chat.Completions.ChatCompletion = await openai.chat.completions.create(openAIrequest);
 
         // if (!response.ok && models?.length < 1) {
@@ -64,8 +54,9 @@ export async function openAICompatibleFillInMiddle(
         //     return null;
         // }
 
-        const content = fimResponse.choices[0].message.content || undefined
 
+        const content = fimResponse.choices[0].message.content || undefined
+        //console.debug("FIM LLM. Got: ", JSON.stringify(content))
 
         if (content === '<fim_middle></fim_middle>') {
             return null;
@@ -73,21 +64,6 @@ export async function openAICompatibleFillInMiddle(
 
         const insertText =
             content?.trim()?.match(/^<fim_middle>([\s\S]*?)<\/fim_middle>$/s)?.[1] || null;
-
-        if (!insertText) { //recusively try again for a bad response.
-            vscode.window.showErrorMessage(`Got bad inline completion response, trying again...`);
-            return await openAICompatibleFillInMiddle(
-                context,
-                token,
-                filename,
-                programmingLanguage,
-                prefix,
-                suffix,
-                baseURL,
-                apiKey,
-                model
-            );
-        }
 
         console.debug({
             model,

@@ -15,17 +15,13 @@ interface InlineCompletionContext {
 }
 
 
-
-
 async function registerInlineCompletionItemProvider(context: vscode.ExtensionContext): Promise<void> {
     try {
         const inlineCompletionItemDocumentSelector: vscode.DocumentSelector = { pattern: '**' };
-        const secrets: vscode.SecretStorage = context.secrets
-        const modelId = "gemini/gemini-2.5-flash"
-        const modelItem: ModelItem = getModelItemFromString(modelId)
-        const modelDetails: ModelDetails = await getCoreDataForModel(modelItem, secrets)
+
 
         const inlineCompletionItemProvider: vscode.InlineCompletionItemProvider = {
+
             provideInlineCompletionItems: async (
                 document: vscode.TextDocument,
                 position: vscode.Position,
@@ -33,9 +29,12 @@ async function registerInlineCompletionItemProvider(context: vscode.ExtensionCon
                 token: vscode.CancellationToken
             ): Promise<vscode.InlineCompletionItem[] | null> => {
                 try {
+                    const secrets: vscode.SecretStorage = context.secrets
+                    const modelId = "mistralai/codestral-2508"
+                    const modelItem: ModelItem = getModelItemFromString(modelId)
+                    const modelDetails: ModelDetails = await getCoreDataForModel(modelItem, secrets)
                     // Using getText for multi lines
                     // Using substring for single line for better performance
-
                     const currentLine = document.lineAt(position.line);
                     const linePrefix = currentLine.text.substring(0, position.character);
 
@@ -70,12 +69,6 @@ async function registerInlineCompletionItemProvider(context: vscode.ExtensionCon
 
                     // Debounce
                     await new Promise(resolve => setTimeout(resolve, 500 * delayRatio));
-
-                    // Cancel on change
-                    if (token.isCancellationRequested) {
-                        console.debug('Cancel on change after delay');
-                        return null;
-                    }
 
                     // Allow tab
                     if (linePrefix?.trim()?.length === 0) {

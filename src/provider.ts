@@ -34,7 +34,8 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 	constructor(
 		private readonly secrets: vscode.SecretStorage,
 		private readonly userAgent: string,
-		private readonly statusBarItem: vscode.StatusBarItem
+		private readonly statusBarItem: vscode.StatusBarItem,
+		private readonly context: vscode.ExtensionContext
 	) { }
 
 	/**
@@ -51,7 +52,8 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 			{ silent: options.silent ?? false },
 			_token,
 			this.secrets,
-			this.userAgent
+			this.userAgent,
+			this.context
 		);
 	}
 

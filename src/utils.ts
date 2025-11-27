@@ -287,10 +287,10 @@ export function getModelItemFromString(modelId: string): ModelItem {
 
 export async function getCoreDataForModel(modelInfo: LanguageModelChatInformation|ModelItem, secrets: vscode.SecretStorage): Promise<ModelDetails> {
 	let newModelItem: ModelItem | undefined
-	if (!("configId" in modelInfo)) { // We have a LanguageModelChatInformation
-		newModelItem = convertLmModeltoModelItem(modelInfo as LanguageModelChatInformation);
-	} else {
+	if ("provider" in modelInfo) { // We have a LanguageModelChatInformation
 		newModelItem = modelInfo
+	} else {
+		newModelItem = convertLmModeltoModelItem(modelInfo as LanguageModelChatInformation);
 	}
 
 	const modelItem = newModelItem
@@ -299,10 +299,9 @@ export async function getCoreDataForModel(modelInfo: LanguageModelChatInformatio
 	}
 
 	// Get model properties
-	const modelProps = modelItem.model_properties;
+	const providerKey: string = modelItem.provider
 
 	// Get API key for the model's provider (provider-level keys only)
-	const providerKey = modelProps.owned_by;
 	const modelApiKey = await ensureApiKey(providerKey, secrets);
 	if (!modelApiKey) {
 		throw new Error(

@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
 import { ChatModelProvider } from "./provider";
 import type { ModelItem, ProviderConfig } from "./types";
-import { resolveModelWithProvider } from "./provideModel";
 import { ConfigurationPanel } from "./configurationPanel";
 import { SidebarTreeDataProvider } from "./sidebarProvider";
 import { initStatusBar } from "./statusBar"
+
 
 export function activate(context: vscode.ExtensionContext) {
 	// Build a descriptive User-Agent to help quantify API usage
@@ -15,10 +15,10 @@ export function activate(context: vscode.ExtensionContext) {
 	const ua = `generic-copilot/${extVersion} VSCode/${vscodeVersion}`;
 
 	const tokenCountStatusBarItem: vscode.StatusBarItem = initStatusBar(context)
-	const provider = new ChatModelProvider(context.secrets, ua, tokenCountStatusBarItem);
-
+	const provider = new ChatModelProvider(context.secrets, ua, tokenCountStatusBarItem, context);
 	let providerRegistration = vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
 	context.subscriptions.push(providerRegistration);
+
 
 	// Command to open configuration GUI
 	context.subscriptions.push(
@@ -27,11 +27,11 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
-	// Register sidebar view
-	const sidebarProvider = new SidebarTreeDataProvider(context);
-	context.subscriptions.push(
-		vscode.window.registerTreeDataProvider("generic-copilot-models", sidebarProvider)
-	);
+	// // Register sidebar view
+	// const sidebarProvider = new SidebarTreeDataProvider(context);
+	// context.subscriptions.push(
+	// 	vscode.window.registerTreeDataProvider("generic-copilot-models", sidebarProvider)
+	// );
 
 	// Command to refresh model configurations
 	context.subscriptions.push(
@@ -39,7 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
 			try {
 				vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
 				// Also refresh the sidebar
-				sidebarProvider.refresh();
+				//sidebarProvider.refresh();
 				vscode.window.showInformationMessage("GenericCopilot model configurations refreshed.");
 			} catch (err) {
 				const msg = err instanceof Error ? err.message : String(err);

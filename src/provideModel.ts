@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { CancellationToken, LanguageModelChatInformation } from "vscode";
-
+import { registerInlineCompletionItemProvider } from "./fim/fimProvider";
 import type { ModelItem, ProviderConfig } from "./types";
 
 const DEFAULT_CONTEXT_LENGTH = 128000;
@@ -16,12 +16,14 @@ export async function prepareLanguageModelChatInformation(
 	_options: { silent: boolean },
 	_token: CancellationToken,
 	_secrets: vscode.SecretStorage,
-	_userAgent: string
+	_userAgent: string,
+	context: vscode.ExtensionContext
 ): Promise<LanguageModelChatInformation[]> {
 	// Check for user-configured models first
 	const config = vscode.workspace.getConfiguration();
 	const userModels = config.get<ModelItem[]>("generic-copilot.models", []);
 	const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
+	registerInlineCompletionItemProvider(context)
 	let infos: LanguageModelChatInformation[];
 	if (userModels.length > 0) {
 		// Return user-provided models directly
