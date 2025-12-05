@@ -1,9 +1,8 @@
 import * as vscode from "vscode";
 import { ChatModelProvider } from "./provider";
-import type { ModelItem, ProviderConfig } from "./types";
+import type { ProviderConfig } from "./types";
 import { ConfigurationPanel } from "./configurationPanel";
-import { SidebarTreeDataProvider } from "./sidebarProvider";
-import { initStatusBar } from "./statusBar"
+import { initStatusBar } from "./statusBar";
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -14,12 +13,12 @@ export function activate(context: vscode.ExtensionContext) {
 	// Keep UA minimal: only extension version and VS Code version
 	const ua = `generic-copilot/${extVersion} VSCode/${vscodeVersion}`;
 
-	const tokenCountStatusBarItem: vscode.StatusBarItem = initStatusBar(context)
+	const tokenCountStatusBarItem: vscode.StatusBarItem = initStatusBar(context);
 	const provider = new ChatModelProvider(context.secrets, ua, tokenCountStatusBarItem, context);
-	let providerRegistration = vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
+	const providerRegistration = vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
 	context.subscriptions.push(providerRegistration);
 
-
+	console.debug("GenericCopilot extension activated.");
 	// Command to open configuration GUI
 	context.subscriptions.push(
 		vscode.commands.registerCommand("generic-copilot.openConfiguration", () => {
@@ -27,11 +26,6 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
-	// // Register sidebar view
-	// const sidebarProvider = new SidebarTreeDataProvider(context);
-	// context.subscriptions.push(
-	// 	vscode.window.registerTreeDataProvider("generic-copilot-models", sidebarProvider)
-	// );
 
 	// Command to refresh model configurations
 	context.subscriptions.push(
@@ -53,7 +47,6 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand("generic-copilot.setProviderApikey", async () => {
 			// Get provider list from configuration
 			const config = vscode.workspace.getConfiguration();
-			const userModels = config.get<ModelItem[]>("generic-copilot.models", []);
 			const configuredProviders = config.get<ProviderConfig[]>("generic-copilot.providers", []);
 
 			// Extract unique providers from models (with resolution) and configured providers

@@ -8,3 +8,7 @@ CLAUDE.md
 .doc
 .clinerules
 **/vscode.proposed.*.d.ts
+.vscode/.vscode*
+testspace/user-data
+testspace/code
+testspace/extensions

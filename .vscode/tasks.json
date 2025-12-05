@@ -52,6 +52,22 @@
 				"kind": "build",
 				"isDefault": true
 			}
+		},
+		{
+			"label": "Prepare Env",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-c",
+				"cd ${workspaceFolder} && npm install && cd webview-ui && npm install && cd ${workspaceFolder} && npm run download-api && echo NOTE: YOU MUST CREATE A NEW PROFILE CALLED ExtensionDebugging TO USE THE DEBUGGER"
+			],
+			"presentation": {
+				"reveal": "always",
+				"focus": true
+			},
+			"group": {
+				"kind": "none"
+			}
 		}
 	]
 }

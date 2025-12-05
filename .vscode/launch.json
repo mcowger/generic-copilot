@@ -7,13 +7,16 @@
 			"request": "launch",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--profile=ExtensionDebugging",
+				"--folder-uri",
+				"file://${workspaceFolder}/testspace/code"
 			],
 			"outFiles": [
 				"${workspaceFolder}/out/**/*.js"
 			],
 			"env": {
 				"NODE_ENV": "development",
-				"VSCODE_DEBUG_MODE": "true"
+				"VSCODE_DEBUG_MODE": "true",
 			},
 			"preLaunchTask": "tasks:watchall",
 			"sourceMaps": true,
