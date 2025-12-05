@@ -8,11 +8,10 @@ Heavily inspired (and then extended) by https://github.com/JohnnyZ93/oai-compati
 
 ## ✨ Features
 
-- **Configuration GUI**: Intuitive webview-based interface for managing providers and models with validation and error handling
+- **Configuration GUI**: Intuitive webview-based interface for managing providers and models with validation and error handling.  Access this with the quick picker entry "GenericCopilot: Open Configuration GUI"
 - **Provider-First Configuration**: Define providers once with shared settings (baseUrl, headers, API keys) that are automatically inherited by models
-- **Multiple Provider Support**: Manage API keys for unlimited providers with automatic per-provider key storage
+- **Multiple Provider Support**: Manage API keys for unlimited providers with automatic per-provider key storage using vscode secret storage.
 - **Multiple Configurations per Model**: Define the same model with different settings using `configId` (e.g., thinking vs. no-thinking modes)
-- **Auto-Retry**: Built-in retry mechanism for handling API errors (429, 500, 502, 503, 504)
 - **Flexible Headers & parameters**: Set custom parameters for any model.
 
 ---
@@ -227,33 +226,6 @@ When making requests to the model provider:
 4. **Unknown Keys**: Custom parameters can be added via `model_parameters.extra` and will be passed through to the API
 
 
-### Retry Configuration
-
-Configure automatic retries for transient errors:
-
-```json
-{
-  "generic-copilot.retry": {
-    "enabled": true,
-    "max_attempts": 3,
-    "interval_ms": 1000
-  }
-}
-```
-
-Retries apply to HTTP status codes: 429, 500, 502, 503, 504.
-
-### Request Delay
-
-Add fixed delay between consecutive requests:
-
-```json
-{
-  "generic-copilot.delay": 500  // milliseconds
-}
-```
----
-
 ## 💡 Tips & Best Practices
 
 ### Use family and model names carefully.  Copilot changes behavior based on these names:
@@ -283,7 +255,6 @@ Use lowercase provider keys that match the service name for consistency:
 Use descriptive `configId` values:
 - `"thinking"` / `"no-thinking"`
 - `"fast"` / `"accurate"`
-- `"vision"` / `"text-only"`
 
 ### Headers for Custom Auth
 
@@ -320,4 +291,5 @@ Use `configId` to disambiguate models with the same `id`. See the Configuration 
 
 ## 📄 License
 
-- **License**: MIT License Copyright (c) 2025
+- **License**:
+MIT License Copyright (c) 2025
