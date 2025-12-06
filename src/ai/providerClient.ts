@@ -1,5 +1,5 @@
 import { LanguageModelChatRequestMessage } from "vscode";
-import { GenerateTextResult, ToolSet } from "ai";
+import { GenerateTextResult, ToolSet, generateText } from "ai";
 import { ModelItem, ProviderConfig, VercelType } from "../types.js";
 import { LM2VercelMessage } from "./conversion.js";
 import { ModelMessage, LanguageModel, Provider } from "ai";
@@ -38,16 +38,24 @@ export abstract class ProviderClient {
 
 	/**
 	 * Generates a response from the language model provider based on the given request and model configuration.
-	 * Must be implemented by subclasses.
 	 * @param request Array of chat request messages.
 	 * @param config Model configuration item.
 	 * @returns A promise resolving to the generated text result.
 	 */
-	abstract generateResponse(
+	async generateResponse(
 		request: LanguageModelChatRequestMessage[],
 		config: ModelItem
-	): Promise<GenerateTextResult<ToolSet, never>>;
+	): Promise<GenerateTextResult<ToolSet, never>> {
+		const languageModel = this.getLanguageModel(config.slug);
+		const messages = this.convertMessages(request);
+		const result = await generateText({
+			model: languageModel,
+			messages: messages,
+		});
+		return result;
 
+		//return {} as unknown as GenerateTextResult<ToolSet, never>;
+	}
 	/**
 	 * Retrieves a language model by its slug identifier from the provider instance.
 	 * @param slug The model slug identifier.
