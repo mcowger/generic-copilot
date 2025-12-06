@@ -20,8 +20,8 @@ import { prepareLanguageModelChatInformation } from "./provideModel";
 import { prepareTokenCount } from "./provideToken";
 import { updateContextStatusBar } from "./statusBar";
 import { convertLmModeltoModelItem, getExecutionDataForModel} from "./utils";
-import {ProviderClientFactory} from "./ai/index";
-import {generateText} from "ai";
+import {ProviderClientFactory} from "./ai/providerClient.js";
+
 
 export class ChatModelProvider implements LanguageModelChatProvider {
 

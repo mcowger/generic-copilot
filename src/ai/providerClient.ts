@@ -3,6 +3,7 @@ import { GenerateTextResult, ToolSet, generateText } from "ai";
 import { ModelItem, ProviderConfig, VercelType } from "../types.js";
 import { LM2VercelMessage } from "./conversion.js";
 import { ModelMessage, LanguageModel, Provider } from "ai";
+import { OpenRouterProviderClient } from './openrouter.js';
 
 /**
  * Abstract base class for provider clients that interact with language model providers.
@@ -73,4 +74,37 @@ export abstract class ProviderClient {
 	convertMessages(messages: readonly LanguageModelChatRequestMessage[]): ModelMessage[] {
 		return LM2VercelMessage(messages);
 	}
+}
+
+export class ProviderClientFactory {
+  private static instances: Map<string, ProviderClient> = new Map();
+
+  static getClient(config: ProviderConfig): ProviderClient {
+	const key = `${config.vercelType}-${config.id}`;
+
+	if (this.instances.has(key)) {
+	  return this.instances.get(key)!;
+	}
+
+	let client: ProviderClient;
+
+	switch (config.vercelType as VercelType) {
+	  case 'openrouter':
+		client = new OpenRouterProviderClient(config);
+		break;
+	  default:
+		throw new Error(`Unsupported provider type: ${config.vercelType}`);
+	}
+
+	this.instances.set(key, client);
+	return client;
+  }
+
+  static clearCache(): void {
+	this.instances.clear();
+  }
+
+  static getCachedClients(): ProviderClient[] {
+	return Array.from(this.instances.values());
+  }
 }
