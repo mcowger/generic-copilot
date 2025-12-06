@@ -10,12 +10,10 @@ import {
 	LanguageModelResponsePart2,
 	Progress,
 } from "vscode";
-import OpenAI from 'openai';
-import { ExtendedDelta, ExtendedOpenAIRequest } from "./types"
 import { ToolCallAccumulator } from "./types"
 import {
 	convertRequestToOpenAI,
-	getCoreDataForModel,
+	getModelItemForModel,
 	stripDoubleNewlines
 } from "./utils";
 
@@ -95,7 +93,7 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 		token: CancellationToken
 	): Promise<void> {
 
-		const { modelApiKey, modelItem, baseUrl, headers } = await getCoreDataForModel(model, this.secrets)
+		const { modelApiKey, modelItem, baseUrl, headers, vercelType } = await getModelItemForModel(model, this.secrets)
 		updateContextStatusBar(messages,model,this.statusBarItem)
 
 		const openAIRequest: ExtendedOpenAIRequest = {

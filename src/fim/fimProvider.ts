@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 import {FILENAME_SENSITIVE_KEYWORDS} from "./constants"
 import { openAICompatibleFillInMiddle } from './fimOAI';
-import { getModelItemFromString, getCoreDataForModel } from '../utils'
+import { getModelItemFromString, getModelItemForModel } from '../utils'
 import { ModelItem, ModelDetails } from '../types';
 
 // Constants
@@ -32,7 +32,7 @@ async function registerInlineCompletionItemProvider(context: vscode.ExtensionCon
                     const secrets: vscode.SecretStorage = context.secrets
                     const modelId = "mistralai/codestral-2508"
                     const modelItem: ModelItem = getModelItemFromString(modelId)
-                    const modelDetails: ModelDetails = await getCoreDataForModel(modelItem, secrets)
+                    const modelDetails: ModelDetails = await getModelItemForModel(modelItem, secrets)
                     // Using getText for multi lines
                     // Using substring for single line for better performance
                     const currentLine = document.lineAt(position.line);

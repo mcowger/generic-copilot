@@ -263,7 +263,7 @@ export function getModelItemFromString(modelId: string): ModelItem {
 	return matchingModel
 }
 
-export async function getCoreDataForModel(modelInfo: LanguageModelChatInformation|ModelItem, secrets: vscode.SecretStorage): Promise<ModelDetails> {
+export async function getModelItemForModel(modelInfo: LanguageModelChatInformation|ModelItem, secrets: vscode.SecretStorage): Promise<ModelDetails> {
 	let newModelItem: ModelItem | undefined
 	if ("provider" in modelInfo) { // We have a LanguageModelChatInformation
 		newModelItem = modelInfo
@@ -303,7 +303,8 @@ export async function getCoreDataForModel(modelInfo: LanguageModelChatInformatio
 		modelApiKey,
 		modelItem,
 		baseUrl,
-		headers
+		headers,
+		vercelType: provider.vercelType,
 	};
 }
 

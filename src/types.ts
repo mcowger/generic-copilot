@@ -65,6 +65,7 @@ export interface ToolCallBuffer {
 	args: string;
 }
 
+export type VercelType = "openai" | "anthropic" | "gemini" | "custom";
 /**
  * Provider configuration that can be inherited by models
  */
@@ -77,6 +78,8 @@ export interface ProviderConfig {
 	baseUrl: string;
 	/** Custom HTTP headers for all requests */
 	headers?: Record<string, string>;
+	/** Type of the provider for vercel handling */
+	vercelType: VercelType
 
 }
 
@@ -120,4 +123,5 @@ export type ModelDetails = {
 	modelItem: ModelItem
 	baseUrl: string
 	headers?: Record<string, string>
+	vercelType: VercelType
 }
