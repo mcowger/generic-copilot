@@ -1,4 +1,4 @@
-import { LanguageModelChatRequestMessage } from "vscode";
+import { LanguageModelChatMessageRole, LanguageModelChatRequestMessage } from "vscode";
 import { GenerateTextResult, ToolSet } from "ai";
 /**
  * Parameters sent to the model API in the request body
@@ -59,5 +59,3 @@ export interface ProviderModelConfig {
 	modelItem: ModelItem
 	apiKey: string;
 }
-
-

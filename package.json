@@ -29,7 +29,8 @@
 	"license": "MIT",
 	"enabledApiProposals": [
 		"chatProvider",
-		"languageModelThinkingPart"
+		"languageModelThinkingPart",
+		"languageModelSystem"
 	],
 	"activationEvents": [
 		"onStartupFinished",

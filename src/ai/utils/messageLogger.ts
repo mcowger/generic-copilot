@@ -17,8 +17,7 @@ import { ModelItem } from "../../types";
  * Represents a request sent to the language model
  */
 export interface LoggedRequest {
-
-    type: "request";
+	type: "request";
 	/** Original VS Code messages */
 	vscodeMessages: readonly LanguageModelChatRequestMessage[];
 
@@ -42,8 +41,7 @@ export interface LoggedRequest {
  * Represents a response received from the language model
  */
 export interface LoggedResponse {
-
-    type: "response";
+	type: "response";
 	// /** Vercel SDK streaming response, if applicable */
 	vercelStreamingResponse?: StreamTextResult<Record<string, any>, never>;
 
@@ -80,22 +78,24 @@ export class MessageLogger {
 	 */
 	private constructor() {}
 
-
 	public addRequestResponse(incoming: LoggedRequest | LoggedResponse, id?: string): string {
 		if (!id) {
 			id = MessageLogger.generateId();
 		}
-        let log: LoggedInteraction = { id};
-        let maybeLog: LoggedInteraction | undefined = this.logs.find((log) => log.id === id)
-		log = maybeLog ? maybeLog : {id} as LoggedInteraction;
-        if (incoming.type === "request") {
-            log.request = incoming;
-            log.request!.timestamp = new Date();
-        } else if (incoming.type === "response") {
-            log.response = incoming;
-            log.response!.timestamp = new Date();
-        }
-
+		let log: LoggedInteraction = { id };
+		let maybeLog: LoggedInteraction | undefined = this.logs.find((log) => log.id === id);
+		if (maybeLog) {
+			log = maybeLog;
+		} else {
+			log = { id } as LoggedInteraction;
+		}
+		if (incoming.type === "request") {
+			log.request = incoming;
+			log.request!.timestamp = new Date();
+		} else if (incoming.type === "response") {
+			log.response = incoming;
+			log.response!.timestamp = new Date();
+		}
 
 		// Add to the beginning of the array (most recent first)
 		this.logs.unshift(log);
@@ -107,7 +107,7 @@ export class MessageLogger {
 		return log.id;
 	}
 
-    	/**
+	/**
 	 * Get the singleton instance
 	 */
 	public static getInstance(): MessageLogger {

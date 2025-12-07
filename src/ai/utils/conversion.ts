@@ -18,7 +18,9 @@ import {
 	UserModelMessage,
 	tool,
 	jsonSchema,
+	SystemModelMessage,
 } from "ai";
+//import { LanguageModelChatMessageRoleExtended, LanguageModelChatMessageRoleExtended as LanguageModelChatMessageRoleExtendedType } from "../../types";
 
 // Converts VS Code tools to AI SDK tool format
 // borrowed and adapted from https://github.com/jaykv/modelbridge/blob/main/src/provider.ts (MIT License)
@@ -117,6 +119,12 @@ export function LM2VercelMessage(messages: readonly LanguageModelChatRequestMess
 	const messagesPayload: ModelMessage[] = [];
 
 	for (const message of messages) {
+		if (message.role === LanguageModelChatMessageRole.System) {
+			messagesPayload.push({
+				role: "system",
+				content: (message.content[0] as LanguageModelTextPart).value,
+			} as SystemModelMessage);
+		}
 		if (message.role === LanguageModelChatMessageRole.User) {
 			const textParts: string[] = [];
 			const toolResults: ToolResultPart[] = [];
@@ -139,7 +147,9 @@ export function LM2VercelMessage(messages: readonly LanguageModelChatRequestMess
 			} else {
 				messagesPayload.push({ role: "user", content: textParts.join("\n") } as UserModelMessage);
 			}
-		} else {
+		}
+
+		if (message.role === LanguageModelChatMessageRole.Assistant) {
 			const contentParts: (TextPart | ToolCallPart | ReasoningOutput)[] = [];
 
 			for (const part of message.content) {

@@ -76,8 +76,7 @@ export abstract class ProviderClient {
 			});
 
 			const responseLog: LoggedResponse = {
-				type: "response",
-				vercelStreamingResponse: result,
+				type: "response"
 			};
 
 			// We need to handle fullStream to get tool calls
