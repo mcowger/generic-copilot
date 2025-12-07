@@ -7,7 +7,7 @@ import {
 	ProvideLanguageModelChatResponseOptions,
 } from "vscode";
 import { ModelMessage, StreamTextResult } from "ai";
-import { ModelItem, ProviderConfig } from "../../types";
+import { ModelItem } from "../../types";
 
 /**
  * Types for logging request and response data
@@ -33,9 +33,6 @@ export interface LoggedRequest {
 
 	/** Model configuration */
 	modelConfig: ModelItem;
-
-	/** Provider type */
-	providerConfig: ProviderConfig;
 
 	/** Timestamp of the request */
 	timestamp?: Date;
@@ -84,7 +81,7 @@ export class MessageLogger {
 	private constructor() {}
 
 
-	public addRequest(incoming: LoggedRequest | LoggedResponse, id?: string): string {
+	public addRequestResponse(incoming: LoggedRequest | LoggedResponse, id?: string): string {
 		if (!id) {
 			id = MessageLogger.generateId();
 		}
@@ -93,9 +90,12 @@ export class MessageLogger {
 		log = maybeLog ? maybeLog : {id} as LoggedInteraction;
         if (incoming.type === "request") {
             log.request = incoming;
+            log.request!.timestamp = new Date();
         } else if (incoming.type === "response") {
             log.response = incoming;
+            log.response!.timestamp = new Date();
         }
+
 
 		// Add to the beginning of the array (most recent first)
 		this.logs.unshift(log);
