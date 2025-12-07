@@ -17,12 +17,12 @@
 		],
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
-		"noUnusedParameters": true
+		"noUnusedParameters": false
 	},
 	"exclude": [
 		"node_modules",
 		".vscode-test",
 		"webview-ui",
-		"src/test" // ⬅️ Add this here
+		"src/test"
 	]
 }

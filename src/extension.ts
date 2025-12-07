@@ -70,8 +70,6 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand("generic-copilot.refresh", async () => {
 			try {
 				vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
-				// Also refresh the sidebar
-				//sidebarProvider.refresh();
 				vscode.window.showInformationMessage("GenericCopilot model configurations refreshed.");
 			} catch (err) {
 				const msg = err instanceof Error ? err.message : String(err);
@@ -90,7 +88,7 @@ export function activate(context: vscode.ExtensionContext) {
 			// Extract unique providers from models (with resolution) and configured providers
 
 			const providersFromConfig = configuredProviders
-				.map((p) => p.key.toLowerCase())
+				.map((p) => p.id.toLowerCase())
 				.filter((p) => p && p.trim() !== "");
 
 			// Combine and deduplicate all providers

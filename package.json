@@ -29,7 +29,6 @@
 	"license": "MIT",
 	"enabledApiProposals": [
 		"chatProvider",
-		"languageModelCapabilities",
 		"languageModelThinkingPart"
 	],
 	"activationEvents": [
@@ -58,25 +57,6 @@
 				"title": "GenericCopilot: Refresh Model Configs"
 			}
 		],
-		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "generic-copilot-sidebar",
-					"title": "Generic Copilot",
-					"icon": "assets/sidebar-icon.svg"
-				}
-			]
-		},
-		"views": {
-			"generic-copilot-sidebar": [
-				{
-					"id": "generic-copilot-models",
-					"name": "Models & Providers",
-					"when": "true",
-					"icon": "assets/sidebar-icon.svg"
-				}
-			]
-		},
 		"menus": {
 			"view/title": [
 				{
@@ -100,7 +80,7 @@
 					"items": {
 						"type": "object",
 						"properties": {
-							"key": {
+							"id": {
 								"type": "string",
 								"description": "Canonical provider key (lowercase, used as owned_by and for API key storage)."
 							},
@@ -110,16 +90,20 @@
 							},
 							"baseUrl": {
 								"type": "string",
-								"description": "Base URL for the provider's API endpoint."
+								"description": "(Optional) Base URL for the provider's API endpoint.  Override built-in defaults."
 							},
 							"headers": {
 								"type": "object",
 								"description": "(Optional) Custom HTTP headers to include in requests to this provider."
+							},
+							"vercelType": {
+								"type": "string",
+								"description": "(Required) The type of Vercel provider."
 							}
 						},
 						"required": [
-							"key",
-							"baseUrl"
+							"id",
+							"vercelType"
 						]
 					},
 					"description": "A list of provider configurations. Models can reference providers to inherit baseUrl"
@@ -134,6 +118,10 @@
 								"type": "string",
 								"description": "Model ID (e.g., 'glm-4.6')."
 							},
+							"slug": {
+								"type": "string",
+								"description": "(Required) Slug for the model as defined by the provider (e.g., 'gpt-4o', 'claude-3')."
+							},
 							"provider": {
 								"type": "string",
 								"description": "(Required) Reference to a provider key. Allows inheriting key and baseURL and headers"
@@ -141,10 +129,6 @@
 							"displayName": {
 								"type": "string",
 								"description": "(Optional) Display name for the model."
-							},
-							"configId": {
-								"type": "string",
-								"description": "(Optional) Configuration ID for this model. Allows defining the same model with different settings (e.g. 'glm-4.6::thinking', 'glm-4.6::no-thinking')."
 							},
 							"model_properties": {
 								"type": "object",
@@ -178,93 +162,6 @@
 										"maximum": 2,
 										"description": "Sampling temperature (range: [0, 2]). Lower values make output more deterministic, higher values make it more creative. Default is 1."
 									},
-									"max_tokens": {
-										"type": "number",
-										"default": 4096,
-										"minimum": 1,
-										"maximum": 10000000,
-										"description": "Maximum number of tokens to generate (range: [1, context_length)). Default is 4096."
-									},
-									"max_completion_tokens": {
-										"type": "number",
-										"default": 4096,
-										"minimum": 1,
-										"maximum": 10000000,
-										"description": "Maximum number of tokens to generate (OpenAI new standard parameter)."
-									},
-									"reasoning_effort": {
-										"type": [
-											"string",
-											"null"
-										],
-										"default": "medium",
-										"enum": [
-											"minimal",
-											"low",
-											"medium",
-											"high",
-											null
-										],
-										"description": "Reasoning effort level (OpenAI reasoning configuration)"
-									},
-									"thinking": {
-										"type": "object",
-										"description": "Thinking configuration for Zai provider",
-										"properties": {
-											"type": {
-												"type": "string",
-												"enum": [
-													"enabled",
-													"disabled"
-												],
-												"description": "Set to 'enabled' to enable thinking, 'disabled' to disable thinking"
-											}
-										}
-									},
-									"thinking_budget": {
-										"type": "number",
-										"default": 128,
-										"minimum": 128,
-										"maximum": 10000000,
-										"description": "Maximum number of tokens for chain-of-thought output. Primarily respected by anthropic models. "
-									},
-									"reasoning": {
-										"type": "object",
-										"default": {
-											"effort": "medium"
-										},
-										"properties": {
-											"effort": {
-												"type": "string",
-												"default": "medium",
-												"enum": [
-													"high",
-													"medium",
-													"low",
-													"minimal",
-													"auto"
-												],
-												"description": "Reasoning effort level for OpenRouter/xAI (high, medium, low, minimal, auto)"
-											},
-											"exclude": {
-												"type": "boolean",
-												"default": false,
-												"description": "Exclude reasoning tokens from the final response"
-											},
-											"max_tokens": {
-												"type": "number",
-												"default": 2000,
-												"minimum": 1,
-												"description": "Specific token limit for reasoning (Anthropic-style, alternative to effort)"
-											},
-											"enabled": {
-												"type": "boolean",
-												"default": true,
-												"description": "Enable reasoning (inferred from effort or max_tokens if not specified)"
-											}
-										},
-										"description": "Reasoning configuration for OpenRouter-compatible providers"
-									},
 									"extra": {
 										"type": "object",
 										"description": "Extra request parameters that will be used in /chat/completions."
@@ -274,6 +171,7 @@
 						},
 						"required": [
 							"id",
+							"slug",
 							"provider"
 						]
 					}
@@ -299,7 +197,6 @@
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.39.0",
-		"@stylistic/eslint-plugin": "^5.5.0",
 		"@types/mocha": "^10.0.10",
 		"@types/node": "^22",
 		"@types/vscode": "^1.105.0",
@@ -314,6 +211,10 @@
 		"typescript-eslint": "^8.46.2"
 	},
 	"dependencies": {
+		"@ai-sdk/openai": "^2.0.77",
+		"@ai-sdk/openai-compatible": "^1.0.28",
+		"@openrouter/ai-sdk-provider": "^1.4.0",
+		"ai": "^5.0.107",
 		"openai": "^6.9.1",
 		"tiktoken": "^1.0.22"
 	}

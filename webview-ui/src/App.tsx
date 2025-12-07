@@ -11,28 +11,28 @@ declare function acquireVsCodeApi(): {
     getState: () => any;
 };
 
+
 interface InMessage { command: 'loadConfiguration'; providers: ProviderConfig[]; models: any[] }
 
 const toGrouped = (m: any): ModelItem => {
-    if (m?.model_properties && m?.model_parameters) {
-        return m as ModelItem;
-    }
-    const mp: Partial<ModelProperties> = {
+    const mp: ModelProperties = m?.model_properties ?? {
         owned_by: m?.owned_by,
         family: m?.family,
         context_length: m?.context_length,
     };
-    const par: Partial<ModelParameters> = {
+
+    const par: ModelParameters = m?.model_parameters ?? {
         temperature: m?.temperature ?? undefined,
         extra: m?.extra,
     };
+
     return {
         id: m?.id ?? '',
         displayName: m?.displayName,
-        provider: m?.provider,
-        configId: m?.configId,
-        model_properties: mp as ModelProperties,
-        model_parameters: par as ModelParameters
+        provider: m?.provider ?? '',
+        slug: m?.slug ?? '',
+        model_properties: mp,
+        model_parameters: par,
     } as ModelItem;
 };
 
@@ -66,15 +66,15 @@ const App: React.FC = () => {
 
     const onSave = useCallback(() => {
         // Validate providers
-        const invalidProviders = providers.filter((p) => !p.key || !p.baseUrl);
+        const invalidProviders = providers.filter((p) => !p.id || !p.vercelType);
         if (invalidProviders.length > 0) {
-            alert('Please fill in required fields (key and baseUrl) for all providers.');
+            alert('Please fill in required fields (key and vercel type) for all providers.');
             return;
         }
         // Validate models
-        const invalidModels = models.filter((m) => !(m && m.id));
+        const invalidModels = models.filter((m) => !(m && m.id && m.slug));
         if (invalidModels.length > 0) {
-            alert('Please fill in required field (id) for all models.');
+            alert('Please fill in required fields (id and slug) for all models.');
             return;
         }
 

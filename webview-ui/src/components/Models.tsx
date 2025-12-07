@@ -31,7 +31,7 @@ const ModelItemCard: React.FC<{
 }> = ({ value, index, providers, onUpdate, onRemove }) => {
     const updateField = (field: keyof ModelItem | keyof ModelProperties, v: any) => {
         const next: any = { ...value };
-        if (['id', 'displayName', 'provider', 'configId'].includes(field as string)) {
+        if (['id', 'slug', 'displayName', 'provider'].includes(field as string)) {
             if (v === '' || v === undefined) {
                 delete next[field];
             } else {
@@ -77,7 +77,19 @@ const ModelItemCard: React.FC<{
                                     Model ID is required
                                 </VscodeFormHelper>
                             </div>
-
+                            <div className="form-field">
+                                <VscodeFormHelper>Model Slug(required, sent to provider) *</VscodeFormHelper>
+                                <VscodeTextfield
+                                    type="text"
+                                    placeholder="e.g., gpt-4, claude-3-opus"
+                                    value={value?.slug ?? ''}
+                                    onInput={(e: any) => updateField('slug', e.currentTarget.value)}
+                                >
+                                </VscodeTextfield>
+                                <VscodeFormHelper style={{ color: 'var(--vscode-errorForeground)', display: value?.slug ? 'none' : 'block' }}>
+                                    Model Slug is required
+                                </VscodeFormHelper>
+                            </div>
                             <div className="form-field">
                                 <VscodeFormHelper>Display Name</VscodeFormHelper>
                                 <VscodeTextfield
@@ -99,23 +111,12 @@ const ModelItemCard: React.FC<{
                                         Select a provider
                                     </VscodeOption>
                                     {providers.map((p) => (
-                                        <VscodeOption key={p.key} value={p.key}>
-                                            {p.displayName || p.key}
+                                        <VscodeOption key={p.id} value={p.id}>
+                                            {p.displayName || p.id }
                                         </VscodeOption>
                                     ))}
                                 </VscodeSingleSelect>
                                 <VscodeFormHelper>Select a provider to inherit baseUrl and defaults (optional)</VscodeFormHelper>
-                            </div>
-                            <div className="form-field">
-                                <VscodeFormHelper>Config ID</VscodeFormHelper>
-                                <VscodeTextfield
-                                    type="text"
-                                    placeholder="Optional: e.g., None, Low, Med, High"
-                                    value={value?.configId ?? ''}
-                                    onInput={(e: any) => updateField('configId' as keyof ModelItem, e.currentTarget.value)}
-                                >
-                                </VscodeTextfield>
-                                <VscodeFormHelper>Used to distinguish variants with the same model id</VscodeFormHelper>
                             </div>
                             <VscodeDivider></VscodeDivider>
                             <ModelPropertiesForm value={props} providers={providers} onChange={updateField} />
@@ -131,9 +132,10 @@ const ModelItemCard: React.FC<{
     );
 };
 
+
 export const Models: React.FC<ModelsProps> = ({ providers, models, onChange }) => {
     const addModel = () => {
-        const base: ModelItem = { id: '', model_properties: {}, model_parameters: {} };
+        const base: ModelItem = { id: '', slug: '', provider: '', model_properties: {}, model_parameters: {} };
         onChange([...(models ?? []), base]);
     };
 
