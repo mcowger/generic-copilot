@@ -45,8 +45,6 @@ export type VercelType = "openrouter";
 export interface ProviderConfig {
 	/** Canonical provider id (lowercase, used as owned_by and for API key storage) */
 	id: string;
-	/** API key for authenticating with the provider */
-	apiKey: string;
 	/** Display name for the provider */
 	displayName?: string;
 	/** Base URL for the provider's API endpoint */
@@ -59,6 +57,7 @@ export interface ProviderConfig {
 export interface ProviderModelConfig {
 	providerConfig: ProviderConfig;
 	modelItem: ModelItem
+	apiKey: string;
 }
 
 

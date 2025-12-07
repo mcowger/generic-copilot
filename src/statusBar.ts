@@ -75,7 +75,6 @@ export async function updateContextStatusBar(
 	// Create visual progress bar with single progressive block
 	const progressBar = createProgressBar(totalTokenCount, maxTokens);
 	const displayText = `$(symbol-parameter) ${progressBar}`;
-	console.log(displayText)
 	statusBarItem.text = displayText;
 	statusBarItem.tooltip = `Token Usage: ${totalTokenCount} / ${formatTokenCount(maxTokens)}\n\n${progressBar}\n\nClick to open configuration`;
 

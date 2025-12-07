@@ -7,15 +7,8 @@ import type {
 } from "./types";
 
 
-import OpenAI from 'openai';
 import {
-	LanguageModelChatInformation,
-	LanguageModelChatRequestMessage,
-	LanguageModelChatTool,
-	LanguageModelToolCallPart,
-	LanguageModelTextPart,
-	LanguageModelChatMessageRole,
-	LanguageModelToolResultPart,
+	LanguageModelChatInformation
 } from "vscode";
 import { resolveModelWithProvider } from "./provideModel";
 
@@ -23,7 +16,6 @@ import { resolveModelWithProvider } from "./provideModel";
 export interface ParsedModelId {
 	baseId: string;
 }
-
 
 
 /**
@@ -46,112 +38,6 @@ function processHeaders(headers?: Record<string, string>): Record<string, string
 	}
 	return processed;
 }
-
-
-// export function convertRequestToOpenAI(messages: LanguageModelChatRequestMessage[], tools?: LanguageModelChatTool[]): OpenAI.ChatCompletionCreateParamsStreaming {
-// 	const openaiMessages: OpenAI.ChatCompletionMessageParam[] = [];
-
-// 	for (const message of messages) {
-// 		// Convert role
-// 		let openaiRole: 'system' | 'user' | 'assistant' | 'tool';
-// 		switch (message.role) {
-// 			case LanguageModelChatMessageRole.User:
-// 				openaiRole = 'user';
-// 				break;
-// 			case LanguageModelChatMessageRole.Assistant:
-// 				openaiRole = 'assistant';
-// 				break;
-// 			default:
-// 				openaiRole = 'user'; // Default to user for unknown roles
-// 		}
-
-// 		// Convert content
-// 		const contentParts: string[] = [];
-// 		const toolCalls: OpenAI.ChatCompletionMessageToolCall[] = [];
-// 		let toolCallId: string | undefined;
-// 		let toolResult: string | undefined;
-
-// 		for (const part of message.content) {
-// 			if (part instanceof LanguageModelTextPart) {
-// 				contentParts.push(part.value);
-// 			} else if (part instanceof LanguageModelToolCallPart) {
-// 				// Convert tool call parts
-// 				toolCalls.push({
-// 					id: part.callId,
-// 					type: 'function',
-// 					function: {
-// 						name: part.name,
-// 						arguments: JSON.stringify(part.input)
-// 					}
-// 				} as OpenAI.ChatCompletionMessageToolCall);
-// 			} else if (part instanceof LanguageModelToolResultPart) {
-// 				// Tool result parts become tool messages
-// 				const toolResultContent: string[] = [];
-// 				for (const resultPart of part.content) {
-// 					if (resultPart instanceof LanguageModelTextPart) {
-// 						toolResultContent.push(resultPart.value);
-// 					}
-// 				}
-// 				toolCallId = part.callId;
-// 				toolResult = toolResultContent.join('');
-// 			}
-// 		}
-
-// 		// Create the OpenAI message based on content type
-// 		if (contentParts.length > 0) {
-// 			const messageContent = contentParts.join('');
-
-// 			if (openaiRole === 'assistant' && toolCalls.length > 0) {
-// 				// Assistant message with tool calls
-// 				openaiMessages.push({
-// 					role: openaiRole,
-// 					content: messageContent,
-// 					name: message.name || undefined,
-// 					tool_calls: toolCalls
-// 				} as OpenAI.ChatCompletionAssistantMessageParam);
-// 			} else if (toolCallId && toolResult) {
-// 				// Tool result message
-// 				openaiMessages.push({
-// 					role: 'tool',
-// 					content: toolResult,
-// 					tool_call_id: toolCallId
-// 				} as OpenAI.ChatCompletionToolMessageParam);
-// 			} else {
-// 				// Standard message (user, assistant, or system)
-// 				openaiMessages.push({
-// 					role: openaiRole,
-// 					content: messageContent,
-// 					name: message.name || undefined
-// 				});
-// 			}
-// 		} else if (toolCallId && toolResult) {
-// 			// Tool result message without text content
-// 			openaiMessages.push({
-// 				role: 'tool',
-// 				content: toolResult,
-// 				tool_call_id: toolCallId
-// 			} as OpenAI.ChatCompletionToolMessageParam);
-// 		}
-// 	}
-
-// 	const result: any = {
-// 		stream: true,
-// 		messages: openaiMessages
-// 	};
-
-// 	// Include tool definitions if provided
-// 	if (tools && tools.length > 0) {
-// 		const toolDefs = convertTools(tools);
-// 		if (toolDefs.tools) {
-// 			result.tools = toolDefs.tools;
-// 		}
-// 		if (toolDefs.tool_choice) {
-// 			result.tool_choice = toolDefs.tool_choice;
-// 		}
-// 	}
-
-// 	return result;
-// }
 
 
 export function convertLmModeltoModelItem(model: LanguageModelChatInformation): ModelItem | undefined {
@@ -234,7 +120,7 @@ export async function getExecutionDataForModel(modelInfo: LanguageModelChatInfor
 	// Get model properties
 	const providerKey: string = modelItem.provider
 
-	// Get API key for the model's provider (provider-level keys only)
+	// Get API key for the model's provider
 	const modelApiKey = await ensureApiKey(providerKey, secrets);
 	if (!modelApiKey) {
 		throw new Error(
@@ -255,7 +141,8 @@ export async function getExecutionDataForModel(modelInfo: LanguageModelChatInfor
 
 	return {
 		providerConfig: provider,
-		modelItem: modelItem
+		modelItem: modelItem,
+		apiKey: modelApiKey,
 	};
 }
 

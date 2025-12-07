@@ -1,29 +1,33 @@
-import { LanguageModelChatRequestMessage } from "vscode";
-import { GenerateTextResult, ToolSet, generateText } from "ai";
-import { ModelItem, ProviderConfig, VercelType } from "../types.js";
-import { LM2VercelMessage } from "./conversion.js";
+import {
+	Progress,
+	LanguageModelChatRequestMessage,
+	LanguageModelTextPart,
+	LanguageModelThinkingPart, //part of proposed api
+	LanguageModelToolCallPart,
+	ProvideLanguageModelChatResponseOptions,
+	LanguageModelResponsePart2 as LanguageModelResponsePart, //part of proposed api
+} from "vscode";
+
+import { streamText } from "ai";
+import { ModelItem, ProviderConfig, VercelType } from "../types";
+import { LM2VercelMessage, LM2VercelTool, normalizeToolInputs } from "./conversion";
 import { ModelMessage, LanguageModel, Provider } from "ai";
-import { OpenRouterProviderClient } from './openrouter.js';
 
 /**
  * Abstract base class for provider clients that interact with language model providers.
  * Handles configuration, provider instance management, and message conversion.
  */
 export abstract class ProviderClient {
-	/**
-	 * The type of the provider (e.g., OpenAI, Vercel, etc.).
-	 */
+	//The type of the provider (e.g., OpenAI, Vercel, etc.).
 	public type: VercelType;
 
-	/**
-	 * Configuration for the provider client.
-	 */
+	// Configuration for the provider client.
+
 	protected config: ProviderConfig;
 
-	/**
-	 * The underlying provider instance used for API calls.
-	 */
+	// The underlying provider instance used for API calls.
 	protected providerInstance: Provider;
+
 
 	/**
 	 * Constructs a new ProviderClient.
@@ -35,27 +39,48 @@ export abstract class ProviderClient {
 		this.type = type;
 		this.config = config;
 		this.providerInstance = providerInstance;
+
 	}
 
 	/**
-	 * Generates a response from the language model provider based on the given request and model configuration.
-	 * @param request Array of chat request messages.
-	 * @param config Model configuration item.
-	 * @returns A promise resolving to the generated text result.
+	 * Generates a streaming response from the language model.
+	 * @param request The chat request messages.
+	 * @param options Options for providing the chat response.
+	 * @param config The model item configuration.
+	 * @param progress Progress callback for streaming response parts.
 	 */
-	async generateResponse(
+	async generateStreamingResponse(
 		request: LanguageModelChatRequestMessage[],
-		config: ModelItem
-	): Promise<GenerateTextResult<ToolSet, never>> {
+		options: ProvideLanguageModelChatResponseOptions,
+		config: ModelItem,
+		progress: Progress<LanguageModelResponsePart>
+	): Promise<void> {
 		const languageModel = this.getLanguageModel(config.slug);
 		const messages = this.convertMessages(request);
-		const result = await generateText({
-			model: languageModel,
-			messages: messages,
-		});
-		return result;
+		const tools = this.convertTools(options);
+		try {
+			const result = await streamText({
+				model: languageModel,
+				messages: messages,
+				tools: tools,
+			});
 
-		//return {} as unknown as GenerateTextResult<ToolSet, never>;
+			// We need to handle fullStream to get tool calls
+			for await (const part of result.fullStream) {
+				if (part.type === "reasoning-delta") {
+					progress.report(new LanguageModelThinkingPart(part.text));
+				} else if (part.type === "text-delta") {
+					progress.report(new LanguageModelTextPart(part.text));
+				} else if (part.type === "tool-call") {
+					const normalizedInput = normalizeToolInputs(part.toolName, part.input);
+					const toolCall = new LanguageModelToolCallPart(part.toolCallId, part.toolName, normalizedInput as object);
+					progress.report(toolCall);
+				}
+			}
+		} catch (error) {
+			console.error("Chat request failed:", error);
+			throw error;
+		}
 	}
 	/**
 	 * Retrieves a language model by its slug identifier from the provider instance.
@@ -65,7 +90,6 @@ export abstract class ProviderClient {
 	getLanguageModel(slug: string): LanguageModel {
 		return this.providerInstance.languageModel(slug);
 	}
-
 	/**
 	 * Converts VS Code chat request messages to the provider's model message format.
 	 * @param messages Array of VS Code chat request messages.
@@ -74,37 +98,12 @@ export abstract class ProviderClient {
 	convertMessages(messages: readonly LanguageModelChatRequestMessage[]): ModelMessage[] {
 		return LM2VercelMessage(messages);
 	}
-}
-
-export class ProviderClientFactory {
-  private static instances: Map<string, ProviderClient> = new Map();
-
-  static getClient(config: ProviderConfig): ProviderClient {
-	const key = `${config.vercelType}-${config.id}`;
-
-	if (this.instances.has(key)) {
-	  return this.instances.get(key)!;
+	/**
+	 * Converts VS Code chat request messages to the provider's model message format.
+	 * @param messages Array of VS Code chat request messages.
+	 * @returns Array of converted model messages.
+	 */
+	convertTools(options: ProvideLanguageModelChatResponseOptions): Record<string, any> | undefined {
+		return LM2VercelTool(options);
 	}
-
-	let client: ProviderClient;
-
-	switch (config.vercelType as VercelType) {
-	  case 'openrouter':
-		client = new OpenRouterProviderClient(config);
-		break;
-	  default:
-		throw new Error(`Unsupported provider type: ${config.vercelType}`);
-	}
-
-	this.instances.set(key, client);
-	return client;
-  }
-
-  static clearCache(): void {
-	this.instances.clear();
-  }
-
-  static getCachedClients(): ProviderClient[] {
-	return Array.from(this.instances.values());
-  }
 }
