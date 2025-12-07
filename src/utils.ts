@@ -139,8 +139,13 @@ export async function getExecutionDataForModel(modelInfo: LanguageModelChatInfor
 		throw new Error(`Provider "${providerKey}" not found in configuration`);
 	}
 
+	const providerWithProcessedHeaders: ProviderConfig = {
+		...provider,
+		headers: processHeaders(provider.headers),
+	};
+
 	return {
-		providerConfig: provider,
+		providerConfig: providerWithProcessedHeaders,
 		modelItem: modelItem,
 		apiKey: modelApiKey,
 	};
