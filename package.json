@@ -171,6 +171,7 @@
 						},
 						"required": [
 							"id",
+							"slug",
 							"provider"
 						]
 					}

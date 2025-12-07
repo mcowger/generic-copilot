@@ -9,6 +9,8 @@ import {
   VscodeDivider,
   VscodeFormHelper,
   VscodeCollapsible,
+  VscodeSingleSelect,
+  VscodeOption,
 } from '@vscode-elements/react-elements';
 
 export interface ProvidersProps {
@@ -16,18 +18,21 @@ export interface ProvidersProps {
   onChange: (providers: ProviderConfig[]) => void;
 }
 
+const vercelTypes: ProviderConfig['vercelType'][] = ['openai-compatible', 'openai', 'openrouter'];
+
 const ProviderItem: React.FC<{
   provider: ProviderConfig;
   index: number;
   onUpdate: (next: ProviderConfig) => void;
   onRemove: () => void;
 }> = ({ provider, index, onUpdate, onRemove }) => {
-  const updateField = (field: 'key' | 'displayName' | 'baseUrl', value: string) => {
+  const updateField = (field: 'key' | 'displayName' | 'baseUrl' | 'vercelType', value: string) => {
     const next: ProviderConfig = { ...provider };
     const v = value === '' ? '' : value;
-    if (field === 'key') { next.key = v; }
+    if (field === 'key') { next.id = v; }
     if (field === 'displayName') { next.displayName = v || undefined; }
     if (field === 'baseUrl') { next.baseUrl = v; }
+    if (field === 'vercelType') { next.vercelType = v as ProviderConfig['vercelType']; }
     onUpdate(next);
   };
 
@@ -56,13 +61,29 @@ const ProviderItem: React.FC<{
           <VscodeFormHelper>Key (required) *</VscodeFormHelper>
           <VscodeTextfield
             type="text"
-            value={(provider.key as unknown as string) ?? ''}
+            value={(provider.id as unknown as string) ?? ''}
             placeholder="e.g., openai, anthropic"
             onInput={(e: any) => updateField('key', e.currentTarget.value)}
           >
           </VscodeTextfield>
-          <VscodeFormHelper style={{ color: 'var(--vscode-errorForeground)', display: provider.key ? 'none' : 'block' }}>
+          <VscodeFormHelper style={{ color: 'var(--vscode-errorForeground)', display: provider.id ? 'none' : 'block' }}>
             Key is required
+          </VscodeFormHelper>
+        </div>
+
+        <div className="form-field">
+          <VscodeFormHelper>Vercel Type (required) *</VscodeFormHelper>
+          <VscodeSingleSelect
+            value={provider.vercelType ?? ''}
+            onChange={(e: any) => updateField('vercelType', e.currentTarget.value)}
+          >
+            <VscodeOption value="" disabled>Select a type</VscodeOption>
+            {vercelTypes.map((t) => (
+              <VscodeOption key={t} value={t}>{t}</VscodeOption>
+            ))}
+          </VscodeSingleSelect>
+          <VscodeFormHelper style={{ color: 'var(--vscode-errorForeground)', display: provider.vercelType ? 'none' : 'block' }}>
+            Vercel Type is required!
           </VscodeFormHelper>
         </div>
 
@@ -77,7 +98,7 @@ const ProviderItem: React.FC<{
         </div>
 
         <div className="form-field">
-          <VscodeFormHelper>Base URL (required) *</VscodeFormHelper>
+          <VscodeFormHelper>Base URL (optional override)</VscodeFormHelper>
           <VscodeTextfield
             type="text"
             value={(provider.baseUrl as unknown as string) ?? ''}
@@ -85,9 +106,6 @@ const ProviderItem: React.FC<{
             onInput={(e: any) => updateField('baseUrl', e.currentTarget.value)}
           >
           </VscodeTextfield>
-          <VscodeFormHelper style={{ color: 'var(--vscode-errorForeground)', display: provider.baseUrl ? 'none' : 'block' }}>
-            Base URL is required
-          </VscodeFormHelper>
         </div>
 
         <div className="form-field">
@@ -112,7 +130,7 @@ const ProviderItem: React.FC<{
 
 export const Providers: React.FC<ProvidersProps> = ({ providers, onChange }) => {
   const addProvider = () => {
-    const next: ProviderConfig = { key: '', baseUrl: '', displayName: '', defaults: undefined } as ProviderConfig;
+    const next: ProviderConfig = { id: '', baseUrl: '', displayName: '', vercelType: 'openai-compatible' } as ProviderConfig;
     onChange([...(providers ?? []), next]);
   };
 

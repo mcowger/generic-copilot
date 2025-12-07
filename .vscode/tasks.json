@@ -21,20 +21,21 @@
 				"owner": "esbuild",
 				"fileLocation": [
 					"relative",
-					"${workspaceFolder}"
+					"${workspaceFolder}/webview-ui"
 				],
 				"pattern": {
-					"regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(error|warning|note):\\s+(.*)$",
+					"regexp": "^([^:]+):(\\d+):(\\d+):\\s+(error|warning):\\s+(.*)$",
 					"file": 1,
 					"line": 2,
 					"column": 3,
 					"severity": 4,
 					"message": 5
 				},
-				"background": {
-					"beginsPattern": "^.",
-					"endsPattern": "\\[watch\\] build finished, watching for changes"
-				}
+	    		"background": {
+	    			"activeOnStart": true,
+	    			"beginsPattern": "\\[watch\\]",
+	      			"endsPattern": "\\[watch\\] build finished"
+	    		}
 			},
 			"presentation": {
 				"reveal": "always",

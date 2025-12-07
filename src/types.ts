@@ -13,7 +13,7 @@ export interface ModelParameters {
  * Internal properties used by the extension, not sent to the API
  */
 export interface ModelProperties {
-	owned_by: string;
+	owned_by?: string;
 	context_length?: number;
 	/**
 	 * Optional family specification for the model. This allows users to specify
