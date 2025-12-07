@@ -10,7 +10,7 @@ import {
 
 import { streamText } from "ai";
 import { ModelItem, ProviderConfig, VercelType } from "../types";
-import { LM2VercelMessage, LM2VercelTool, normalizeToolInputs } from "./conversion";
+import { LM2VercelMessage, LM2VercelTool, normalizeToolInputs } from "./utils/conversion";
 import { ModelMessage, LanguageModel, Provider } from "ai";
 
 /**

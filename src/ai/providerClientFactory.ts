@@ -1,8 +1,8 @@
 import { ProviderModelConfig, ProviderConfig, VercelType,  } from "../types";
 import { ProviderClient } from "./providerClient";
-import { OpenRouterProviderClient } from './openrouter';
-import { OpenAIProviderClient } from "./openai";
-import { OpenAICompatibleProviderClient } from "./openai-compatible";
+import { OpenRouterProviderClient } from './providers/openrouter';
+import { OpenAIProviderClient } from "./providers/openai";
+import { OpenAICompatibleProviderClient } from "./providers/openai-compatible";
 
 export class ProviderClientFactory {
   private static instances: Map<string, ProviderClient> = new Map();
