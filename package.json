@@ -231,6 +231,7 @@
 		"typescript-eslint": "^8.46.2"
 	},
 	"dependencies": {
+		"@ai-sdk/google": "^2.0.44",
 		"@ai-sdk/openai": "^2.0.77",
 		"@ai-sdk/openai-compatible": "^1.0.28",
 		"@openrouter/ai-sdk-provider": "^1.4.0",

@@ -21,7 +21,7 @@ Heavily inspired (and then extended) by https://github.com/JohnnyZ93/oai-compati
 - **Dependency**: GitHub Copilot Chat extension
 - **API Keys**: OpenAI-compatible provider API keys
 
-- **Supported Vercel AI SDK Providers**: This extension currently supports the following provider types: `openai`, `openai-compatible`, and `openrouter`.
+- **Supported Vercel AI SDK Providers**: This extension currently supports the following provider types: `openai`, `openai-compatible`, `openrouter`, and `google`.
 
 ---
 
@@ -86,7 +86,7 @@ Providers define the connection details for an API endpoint. Models reference a 
 | Field         | Type     | Required | Description                                                                    |
 |---------------|----------|----------|--------------------------------------------------------------------------------|
 | `id`         | `string` | Yes      | A unique, lowercase identifier for the provider (e.g., "openrouter", "zai").   |
-| `type`        | `string` | Yes      | The provider type. Must be one of `openai`, `openai-compatible`, or `openrouter`. |
+| `type`        | `string` | Yes      | The provider type. Must be one of `openai`, `openai-compatible`, `openrouter`, or `google`. |
 | `displayName` | `string` | No       | A user-friendly name for the provider that appears in the UI.                  |
 | `baseUrl`     | `string` | Yes      | The base URL of the provider's API endpoint (e.g., "https://api.example.com/v1"). |
 | `headers`     | `object` | No       | Custom HTTP headers to be sent with every request to this provider.            |

@@ -3,6 +3,7 @@ import { ProviderClient } from "./providerClient";
 import { OpenRouterProviderClient } from './providers/openrouter';
 import { OpenAIProviderClient } from "./providers/openai";
 import { OpenAICompatibleProviderClient } from "./providers/openai-compatible";
+import { GoogleProviderClient } from "./providers/google";
 
 export class ProviderClientFactory {
   private static instances: Map<string, ProviderClient> = new Map();
@@ -25,6 +26,9 @@ export class ProviderClientFactory {
 		break;
 	  case 'openai-compatible':
 		client = new OpenAICompatibleProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
+		break;
+	  case 'google':
+		client = new GoogleProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
 		break;
 	  default:
 		throw new Error(`Unsupported provider type: ${providerModelConfig.providerConfig.vercelType}`);
