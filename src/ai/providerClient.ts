@@ -10,8 +10,9 @@ import {
 
 import { streamText } from "ai";
 import { ModelItem, ProviderConfig, VercelType } from "../types";
-import { LM2VercelMessage, LM2VercelTool, normalizeToolInputs } from "./conversion";
+import { LM2VercelMessage, LM2VercelTool, normalizeToolInputs } from "./utils/conversion";
 import { ModelMessage, LanguageModel, Provider } from "ai";
+import { MessageLogger, LoggedRequest, LoggedResponse, LoggedInteraction } from "./utils/messageLogger";
 
 /**
  * Abstract base class for provider clients that interact with language model providers.
@@ -28,7 +29,6 @@ export abstract class ProviderClient {
 	// The underlying provider instance used for API calls.
 	protected providerInstance: Provider;
 
-
 	/**
 	 * Constructs a new ProviderClient.
 	 * @param type The type of provider.
@@ -39,7 +39,6 @@ export abstract class ProviderClient {
 		this.type = type;
 		this.config = config;
 		this.providerInstance = providerInstance;
-
 	}
 
 	/**
@@ -58,6 +57,17 @@ export abstract class ProviderClient {
 		const languageModel = this.getLanguageModel(config.slug);
 		const messages = this.convertMessages(request);
 		const tools = this.convertTools(options);
+		const messageLogger = MessageLogger.getInstance();
+
+		//Log the incoming request as soon as possible.
+		const interactionId = messageLogger.addRequestResponse({
+			type: "request",
+			vscodeMessages: request,
+			vscodeOptions: options,
+			vercelMessages: messages,
+			vercelTools: tools,
+			modelConfig: config
+		} as LoggedRequest);
 		try {
 			const result = await streamText({
 				model: languageModel,
@@ -65,24 +75,31 @@ export abstract class ProviderClient {
 				tools: tools,
 			});
 
+			const responseLog: LoggedResponse = {
+				type: "response",
+				textParts: [],
+				thinkingParts: [],
+				toolCallParts: [],
+			};
+
 			// We need to handle fullStream to get tool calls
 			for await (const part of result.fullStream) {
 				if (part.type === "reasoning-delta") {
-					console.log("Reasoning delta part:", part);
-					progress.report(new LanguageModelThinkingPart(part.text));
+					const thinkingPart = new LanguageModelThinkingPart(part.text);
+					responseLog.thinkingParts?.push(thinkingPart);
+					progress.report(thinkingPart);
 				} else if (part.type === "text-delta") {
-					console.log("Text delta part:", part);
+					const textPart = new LanguageModelTextPart(part.text);
+					responseLog.textParts?.push(textPart);
 					progress.report(new LanguageModelTextPart(part.text));
 				} else if (part.type === "tool-call") {
 					const normalizedInput = normalizeToolInputs(part.toolName, part.input);
 					const toolCall = new LanguageModelToolCallPart(part.toolCallId, part.toolName, normalizedInput as object);
-					console.log("Tool call part:", toolCall);
+					responseLog.toolCallParts?.push(toolCall);
 					progress.report(toolCall);
 				}
-				else {
-					console.debug("Unknown part type received from stream:", part);
-				}
 			}
+			messageLogger.addRequestResponse(responseLog, interactionId);
 		} catch (error) {
 			console.error("Chat request failed:", error);
 			throw error;

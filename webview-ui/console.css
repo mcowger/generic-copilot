@@ -1,0 +1,140 @@
+body {
+  padding: 10px;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+}
+.toolbar {
+  margin-bottom: 10px;
+  display: flex;
+  gap: 8px;
+}
+button {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+button:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+.interaction {
+  margin-bottom: 20px;
+  padding: 10px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;;
+  background: var(--vscode-editor-background);
+}
+.interaction-header {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #cfe9ff;
+}
+.section {
+  margin-top: 8px;
+}
+.section-title {
+  font-weight: bold;
+  color: var(--vscode-symbolIcon-variableForeground);
+  margin-bottom: 4px;
+}
+.message {
+  margin: 4px 0;
+  padding: 6px;
+  background: var(--vscode-textBlockQuote-background);
+  border-left: 3px solid var(--vscode-textBlockQuote-border);
+}
+.role {
+  font-weight: bold;
+  color: var(--vscode-symbolIcon-functionForeground);
+}
+
+/* Specific role colors for easier scanning */
+.role--user { color: #4e8f3a; }
+.role--system { color: #613a8f; }
+.role--assistant { color: #79C0FF; }
+.role--thinking { color: #8f3a7b; }
+.role--response { color: #3a868f; }
+.role--tool-call { color: #8f3a3a; }
+
+/* Response section title color */
+.section-title--response { color: #3a868f; }
+.tool-call {
+  margin: 4px 0;
+  padding: 6px;
+  background: var(--vscode-textCodeBlock-background);
+  font-family: var(--vscode-editor-font-family);
+  font-size: 0.9em;
+}
+.metadata {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.9em;
+}
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Two-column console layout */
+.console-container {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.left-panel {
+  width: 220px;
+  flex: 0 0 220px;
+  border-right: none;
+  border-radius: 0;
+  padding: 8px 0 8px 8px;
+  background: transparent;
+}
+.right-panel {
+  flex: 1 1 auto;
+  border-left: 1px solid var(--vscode-panel-border);
+  padding-left: 12px;
+}
+.interaction-list { list-style: none; padding: 0; margin: 8px 0 0 0; }
+.interaction-list-item {
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  /* Reserve space for the selection indicator so toggling selected
+     state doesn't change layout. The ::before element is present
+     by default (transparent) and becomes visible for the selected
+     state, avoiding any content shift. */
+  position: relative;
+}
+.interaction-list-item:hover { background: rgba(255,255,255,0.02); }
+.interaction-list-item::before {
+  /* invisible indicator to reserve the space used by the visible
+     indicator when the item is selected. Keeps layout stable. */
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: calc(100% - 4px);
+  background: transparent;
+  margin-right: 8px;
+  vertical-align: middle;
+  border-radius: 2px;
+  margin-top: 2px;
+}
+.interaction-list-item.selected {
+  background: rgba(31, 106, 181, 0.604);
+  border: none;
+  box-shadow: none;
+}
+.interaction-list-item.selected::before { background: rgba(80,130,180,0.5); }
+.interaction-list-title { font-weight: 600; font-size: 0.92em; }
+.interaction-list-meta { color: var(--vscode-descriptionForeground); font-size: 0.82em; display:flex; justify-content:space-between; gap:8px; align-items:center; }
+.interaction-list-meta .meta-left { font-size: 0.82em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.interaction-list-meta .meta-right { font-size: 0.76em; color: var(--vscode-descriptionForeground); flex: 0 0 auto; white-space: nowrap; }
+.interaction-list-stats { color: var(--vscode-descriptionForeground); font-size: 0.78em; margin-top: 2px; }

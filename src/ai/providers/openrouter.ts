@@ -1,6 +1,6 @@
-import {ProviderConfig } from "../types";
+import {ProviderConfig } from "../../types";
 import { createOpenRouter, OpenRouterProviderSettings } from "@openrouter/ai-sdk-provider";
-import { ProviderClient } from "./providerClient";
+import { ProviderClient } from "../providerClient";
 
 export class OpenRouterProviderClient extends ProviderClient {
 	constructor(config: ProviderConfig, apiKey: string) {

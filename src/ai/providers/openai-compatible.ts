@@ -1,6 +1,6 @@
-import {ProviderConfig } from "../types";
+import {ProviderConfig } from "../../types";
 import { createOpenAICompatible, OpenAICompatibleProviderSettings } from "@ai-sdk/openai-compatible";
-import { ProviderClient } from "./providerClient";
+import { ProviderClient } from "../providerClient";
 
 export class OpenAICompatibleProviderClient extends ProviderClient {
 	constructor(config: ProviderConfig, apiKey: string) {

@@ -5,6 +5,7 @@ import { ChatModelProvider } from "./provider";
 import type { ProviderConfig } from "./types";
 import { ConfigurationPanel } from "./configurationPanel";
 import { initStatusBar } from "./statusBar";
+import { ConsoleViewProvider } from "./consoleView";
 
 function setupDevAutoRestart(context: vscode.ExtensionContext) {
 	if (context.extensionMode !== vscode.ExtensionMode.Development) {
@@ -55,6 +56,12 @@ export function activate(context: vscode.ExtensionContext) {
 	const provider = new ChatModelProvider(context.secrets, ua, tokenCountStatusBarItem, context);
 	const providerRegistration = vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
 	context.subscriptions.push(providerRegistration);
+
+	// Register Console View
+	const consoleViewProvider = new ConsoleViewProvider(context.extensionUri);
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider(ConsoleViewProvider.viewType, consoleViewProvider)
+	);
 
 	console.debug("GenericCopilot extension activated.");
 	// Command to open configuration GUI
