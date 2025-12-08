@@ -19,12 +19,25 @@ import {
 	tool,
 	jsonSchema,
 	SystemModelMessage,
+	type JSONValue,
 } from "ai";
+import { MetadataCache } from "./metadataCache";
 //import { LanguageModelChatMessageRoleExtended, LanguageModelChatMessageRoleExtended as LanguageModelChatMessageRoleExtendedType } from "../../types";
+
+/**
+ * Tool call part with providerOptions for sending to AI SDK providers.
+ * providerOptions is used for INPUT (what we send to providers),
+ * while providerMetadata is used for OUTPUT (what we receive from providers).
+ */
+interface ToolCallPartWithProviderOptions extends ToolCallPart {
+	providerOptions?: Record<string, Record<string, JSONValue>>;
+}
 
 // Converts VS Code tools to AI SDK tool format
 // borrowed and adapted from https://github.com/jaykv/modelbridge/blob/main/src/provider.ts (MIT License)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function LM2VercelTool(options: ProvideLanguageModelChatResponseOptions): Record<string, any> | undefined {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const tools: Record<string, any> = {};
 	if (options.tools) {
 		for (const vsTool of options.tools) {
@@ -151,15 +164,30 @@ export function LM2VercelMessage(messages: readonly LanguageModelChatRequestMess
 
 		if (message.role === LanguageModelChatMessageRole.Assistant) {
 			const contentParts: (TextPart | ToolCallPart | ReasoningOutput)[] = [];
+			const metadataCache = MetadataCache.getInstance();
 
 			for (const part of message.content) {
 				if (part instanceof LanguageModelToolCallPart) {
-					contentParts.push({
+					const toolCallPart: ToolCallPartWithProviderOptions = {
 						type: "tool-call",
 						toolCallId: part.callId,
 						toolName: part.name,
 						input: part.input,
-					});
+					};
+
+					// Retrieve providerMetadata from cache (e.g., Google's thoughtSignature)
+					// The metadata was stored by the provider's generateStreamingResponse
+					// Note: We do NOT delete the cache entry here because the same assistant message
+					// will be converted multiple times as part of conversation history in future turns
+					//
+					// IMPORTANT: We use providerOptions (not providerMetadata) when SENDING to providers
+					// providerMetadata is what we RECEIVE from providers, providerOptions is what we SEND
+					const cachedMetadata = metadataCache.get(part.callId);
+					if (cachedMetadata?.providerMetadata) {
+						toolCallPart.providerOptions = cachedMetadata.providerMetadata;
+					}
+
+					contentParts.push(toolCallPart);
 				} else if (part instanceof LanguageModelThinkingPart) {
 					const text = Array.isArray(part.value) ? part.value.join("") : part.value;
 					contentParts.push({ type: "reasoning", text });
