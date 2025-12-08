@@ -83,11 +83,11 @@ export class GoogleProviderClient extends ProviderClient {
 					const normalizedInput = normalizeToolInputs(part.toolName, part.input);
 					// Type assertion is necessary because normalizeToolInputs returns unknown
 					const toolCall = new LanguageModelToolCallPart(
-						part.toolCallId, 
-						part.toolName, 
+						part.toolCallId,
+						part.toolName,
 						normalizedInput as object
 					);
-					
+
 					// Store providerMetadata (including thoughtSignature) in cache
 					// This metadata will be retrieved later when converting messages back to the AI SDK format
 					if (part.providerMetadata) {
@@ -95,7 +95,7 @@ export class GoogleProviderClient extends ProviderClient {
 							providerMetadata: part.providerMetadata
 						});
 					}
-					
+
 					responseLog.toolCallParts?.push(toolCall);
 					progress.report(toolCall);
 				}
