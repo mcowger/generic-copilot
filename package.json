@@ -54,7 +54,7 @@
 			]
 		},
 		"viewsContainers": {
-			"activitybar": [
+			"panel": [
 				{
 					"id": "generic-copilot-explorer",
 					"title": "Generic Copilot",
