@@ -8,11 +8,7 @@ import {
 	LanguageModelResponsePart,
 	Progress,
 } from "vscode";
-// import { ToolCallAccumulator } from "./types"
-// import {
-// 	getModelItemForModel,
-// 	stripDoubleNewlines
-// } from "./utils";
+import { logger } from "./outputLogger";
 
 import { prepareLanguageModelChatInformation } from "./provideModel";
 import { prepareTokenCount } from "./provideToken";
@@ -46,6 +42,7 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 		options: { silent: boolean },
 		_token: CancellationToken
 	): Promise<LanguageModelChatInformation[]> {
+		logger.debug(`Providing language model chat information with options: ${JSON.stringify(options)}`);
 		return prepareLanguageModelChatInformation(
 			{ silent: options.silent ?? false },
 			_token,
@@ -67,8 +64,10 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 		text: LanguageModelChatRequestMessage,
 		_token: CancellationToken
 	): Promise<number> {
+		logger.debug(`Providing token count for model "${model.id}"`);
 		try {
 			const tokenCount = await prepareTokenCount(model, text, _token);
+			logger.debug(`Token count for model "${model.id}": ${tokenCount}`);
 			return tokenCount;
 		} catch (error) {
 			throw error;
@@ -95,10 +94,14 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 
 		const modelItem = convertLmModeltoModelItem(model);
 		if (!modelItem) {
+			logger.error(`Model "${model.id}" not found in configuration`);
 			throw new Error(`Model "${model.id}" not found in configuration`);
 		}
 		const executionData = await getExecutionDataForModel(model, this.secrets);
 		const client = ProviderClientFactory.getClient(executionData);
+
+		logger.debug(`Providing language model chat response for model "${model.id}" with provider "${modelItem.provider}"`);
+
 		updateContextStatusBar(messages,model,this.statusBarItem)
 
 		await client.generateStreamingResponse(

@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { LanguageModelChatInformation, LanguageModelChatRequestMessage, CancellationTokenSource } from "vscode";
 import { prepareTokenCount } from "./provideToken";
-
+import { logger } from "./outputLogger";
 export function initStatusBar(context: vscode.ExtensionContext): vscode.StatusBarItem {
 
 	// Create status bar item for token count display
@@ -87,6 +87,8 @@ export async function updateContextStatusBar(
 	} else {
 		statusBarItem.backgroundColor = undefined;
 	}
+
+	logger.debug(`Status bar updated: ${displayText}`);
 
 	statusBarItem.show();
 }

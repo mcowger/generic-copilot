@@ -6,12 +6,13 @@ import type { ProviderConfig } from "./types";
 import { ConfigurationPanel } from "./configurationPanel";
 import { initStatusBar } from "./statusBar";
 import { ConsoleViewProvider } from "./consoleView";
+import { logger } from "./outputLogger";
 
 function setupDevAutoRestart(context: vscode.ExtensionContext) {
 	if (context.extensionMode !== vscode.ExtensionMode.Development) {
 		return;
 	}
-
+	logger.debug(`Setting up dev auto-restart watcher`);
 	const outDir = path.join(context.extensionPath, "out");
 	if (!fs.existsSync(outDir)) {
 		return;
@@ -19,15 +20,15 @@ function setupDevAutoRestart(context: vscode.ExtensionContext) {
 
 	let restartTimeout: NodeJS.Timeout | undefined;
 	const scheduleRestart = () => {
-		console.debug(`generic-copilot: file changed, scheduling restart`);
+		logger.debug(`generic-copilot: file changed, scheduling restart`);
 		if (restartTimeout) {
 			clearTimeout(restartTimeout);
 		}
 		restartTimeout = setTimeout(async () => {
-			console.debug(`generic-copilot: Reloading extension host window`);
+			logger.debug(`generic-copilot: Reloading extension host window`);
 			restartTimeout = undefined;
 			await vscode.commands.executeCommand("workbench.action.reloadWindow");
-			console.log("generic-copilot: window reload triggered");
+			logger.warn("generic-copilot: window reload triggered");
 		}, 100);
 	};
 

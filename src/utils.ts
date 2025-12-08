@@ -6,11 +6,12 @@ import type {
 	ProviderModelConfig
 } from "./types";
 
-
 import {
 	LanguageModelChatInformation
 } from "vscode";
 import { resolveModelWithProvider } from "./provideModel";
+
+import { logger } from "./outputLogger";
 
 // Model ID parsing helper
 export interface ParsedModelId {
@@ -80,6 +81,7 @@ async function ensureApiKey(provider: string, secrets: vscode.SecretStorage): Pr
 	const providerKey = `generic-copilot.apiKey.${normalizedProvider}`;
 	let apiKey = await secrets.get(providerKey);
 	if (!apiKey) {
+		logger.warn(`API key for provider "${normalizedProvider}" not found in secret storage; prompting user to enter it.`);
 		const entered = await vscode.window.showInputBox({
 			title: `API key for ${normalizedProvider}`,
 			prompt: `Enter API key for ${normalizedProvider}`,
@@ -99,6 +101,7 @@ export function getModelItemFromString(modelId: string): ModelItem {
 	const userModels = config.get<ModelItem[]>("generic-copilot.models", []);
 	const matchingModel = userModels.find(m => m.id === modelId) || null;
 	if (!matchingModel) {
+		logger.error(`Model not found from ID: ${modelId}`);
 		throw new Error("Model not found from ID")
 	}
 	return matchingModel
@@ -114,6 +117,7 @@ export async function getExecutionDataForModel(modelInfo: LanguageModelChatInfor
 
 	const modelItem = newModelItem
 	if (!modelItem) {
+		logger.error(`Model "${modelInfo.id}" not found in configuration`);
 		throw new Error(`Model "${modelInfo.id}" not found in configuration`);
 	}
 
@@ -123,6 +127,7 @@ export async function getExecutionDataForModel(modelInfo: LanguageModelChatInfor
 	// Get API key for the model's provider
 	const modelApiKey = await ensureApiKey(providerKey, secrets);
 	if (!modelApiKey) {
+		logger.error(`API key for provider "${providerKey}" not found`);
 		throw new Error(
 			providerKey && providerKey.trim()
 				? `API key for provider "${providerKey}" not found`
@@ -136,6 +141,7 @@ export async function getExecutionDataForModel(modelInfo: LanguageModelChatInfor
 	const provider = providers.find((p) => p.id === providerKey);
 
 	if (!provider) {
+		logger.error(`Provider "${providerKey}" not found in configuration`);
 		throw new Error(`Provider "${providerKey}" not found in configuration`);
 	}
 

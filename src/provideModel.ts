@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { CancellationToken, LanguageModelChatInformation } from "vscode";
 import type { ModelItem, ProviderConfig } from "./types";
-
+import { logger } from "./outputLogger";
 const DEFAULT_CONTEXT_LENGTH = 128000;
 const DEFAULT_MAX_TOKENS = 8000;
 
@@ -24,6 +24,7 @@ export async function prepareLanguageModelChatInformation(
 	const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
 	let infos: LanguageModelChatInformation[];
 	if (userModels.length > 0) {
+		logger.debug(`Preparing language model chat information for ${userModels.length} user models`);
 		// Return user-provided models directly
 		infos = userModels.map((m) => {
 			// Resolve model configuration with provider inheritance
@@ -63,8 +64,10 @@ export async function prepareLanguageModelChatInformation(
 		});
 	} else {
 		// No user-provided models
+		logger.debug("No user-configured models found; returning empty model list");
 		infos = [];
 	}
+	logger.debug(`Prepared ${infos.length} language model chat information entries`);
 	return infos;
 }
 
@@ -90,7 +93,7 @@ export function resolveModelWithProvider(model: ModelItem): ModelItem {
 	// Find the referenced provider
 	const provider = providers.find((p) => p.id === providerRef);
 	if (!provider) {
-		console.error(`[Generic Compatible Model Provider] Provider '${providerRef}' not found in configuration`);
+		logger.error(`[Generic Compatible Model Provider] Provider '${providerRef}' not found in configuration`);
 		return model;
 	}
 

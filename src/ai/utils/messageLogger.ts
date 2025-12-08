@@ -10,7 +10,7 @@ import {
 } from "vscode";
 import { ModelMessage, StreamTextResult } from "ai";
 import { ModelItem } from "../../types";
-
+import { logger } from "../../outputLogger";
 /**
  * Types for logging request and response data
  */
@@ -84,6 +84,7 @@ export class MessageLogger {
 	private constructor() {}
 
 	public addRequestResponse(incoming: LoggedRequest | LoggedResponse, id?: string): string {
+		logger.debug(`Adding request/response log with ID "${id ?? "new"}"`);
 		if (!id) {
 			id = MessageLogger.generateId();
 		}

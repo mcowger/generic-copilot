@@ -22,6 +22,7 @@ import {
 	type JSONValue,
 } from "ai";
 import { MetadataCache } from "./metadataCache";
+import { logger } from "../../outputLogger";
 //import { LanguageModelChatMessageRoleExtended, LanguageModelChatMessageRoleExtended as LanguageModelChatMessageRoleExtendedType } from "../../types";
 
 /**
@@ -37,6 +38,7 @@ interface ToolCallPartWithProviderOptions extends ToolCallPart {
 // borrowed and adapted from https://github.com/jaykv/modelbridge/blob/main/src/provider.ts (MIT License)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function LM2VercelTool(options: ProvideLanguageModelChatResponseOptions): Record<string, any> | undefined {
+	logger.debug(`Converting VS Code tools to AI SDK format`);
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const tools: Record<string, any> = {};
 	if (options.tools) {
@@ -57,6 +59,7 @@ export function LM2VercelTool(options: ProvideLanguageModelChatResponseOptions):
  * (e.g. `create_file` expects `content` as a string).
  */
 export function normalizeToolInputs(toolName: string, input: unknown): unknown {
+	logger.debug(`Normalizing tool inputs for tool "${toolName}"`);
 	if (!input || typeof input !== "object") {
 		return input;
 	}
@@ -83,6 +86,7 @@ export function normalizeToolInputs(toolName: string, input: unknown): unknown {
  * - arrays: converted to array of stringified content elements
  */
 export function convertToolResultToString(content: unknown): string {
+	logger.debug(`Converting tool result content to string`);
 	// Handle string case
 	if (typeof content === "string") {
 		return content;
@@ -129,21 +133,25 @@ export function convertToolResultToString(content: unknown): string {
 // Converts VS Code LanguageModelChatRequestMessage array to AI SDK ModelMessage array
 // borrowed and adapted from https://github.com/jaykv/modelbridge/blob/main/src/provider.ts (MIT License)
 export function LM2VercelMessage(messages: readonly LanguageModelChatRequestMessage[]): ModelMessage[] {
+	logger.debug(`Converting VS Code chat messages to AI SDK format`);
 	const messagesPayload: ModelMessage[] = [];
 
 	for (const message of messages) {
 		if (message.role === LanguageModelChatMessageRole.System) {
+			logger.debug(`Processing system message`);
 			messagesPayload.push({
 				role: "system",
 				content: (message.content[0] as LanguageModelTextPart).value,
 			} as SystemModelMessage);
 		}
 		if (message.role === LanguageModelChatMessageRole.User) {
+			logger.debug(`Processing user message`);
 			const textParts: string[] = [];
 			const toolResults: ToolResultPart[] = [];
 
 			for (const part of message.content) {
 				if (part instanceof LanguageModelToolResultPart) {
+					logger.debug(`Processing tool result part with callId "${part.callId}"`);
 					toolResults.push({
 						type: "tool-result",
 						toolCallId: part.callId,
@@ -163,6 +171,7 @@ export function LM2VercelMessage(messages: readonly LanguageModelChatRequestMess
 		}
 
 		if (message.role === LanguageModelChatMessageRole.Assistant) {
+			logger.debug(`Processing assistant message`);
 			const contentParts: (TextPart | ToolCallPart | ReasoningOutput)[] = [];
 			const metadataCache = MetadataCache.getInstance();
 
@@ -184,6 +193,7 @@ export function LM2VercelMessage(messages: readonly LanguageModelChatRequestMess
 					// providerMetadata is what we RECEIVE from providers, providerOptions is what we SEND
 					const cachedMetadata = metadataCache.get(part.callId);
 					if (cachedMetadata?.providerMetadata) {
+						logger.debug(`Using cached provider metadata for toolCallId "${part.callId}"`);
 						toolCallPart.providerOptions = cachedMetadata.providerMetadata;
 					}
 
@@ -201,112 +211,3 @@ export function LM2VercelMessage(messages: readonly LanguageModelChatRequestMess
 	}
 	return messagesPayload;
 }
-
-/**
- * Converts VS Code LanguageModelChatRequestMessage array to AI SDK ModelMessage array
- *
- * Maps the following message types:
- * - User role -> UserModelMessage
- * - Assistant role -> AssistantModelMessage
- *
- * Note: System messages are not directly supported in LanguageModelChatRequestMessage,
- * so only user and assistant roles are converted.
- */
-// export function LM2VercelMessage(
-//   messages: readonly LanguageModelChatRequestMessage[]
-// ): (UserModelMessage | AssistantModelMessage)[] {
-//   return messages.map((message) => {
-//     // User message
-//     if (message.role === LanguageModelChatMessageRole.User) {
-//       // Extract content from parts - can include text parts and tool result parts
-//       const userContent: Array<any> = [];
-
-//       for (const part of message.content) {
-//         // Text part
-//         if (part instanceof LanguageModelTextPart) {
-//           userContent.push({
-//             type: "text" as const,
-//             text: part.value,
-//           });
-//         }
-//         // Tool result part - link tool results back to tool calls
-//         else if (part instanceof LanguageModelToolResultPart) {
-//           userContent.push({
-//             type: "tool-result" as const,
-//             toolCallId: part.callId,
-//             toolName: (part as any).name || "unknown",
-//             result: part.content?.[0] ?? null,
-//           });
-//         }
-//       }
-
-//       // If only one text part, simplify to string content
-//       if (userContent.length === 1 && userContent[0].type === "text") {
-//         return {
-//           role: "user" as const,
-//           content: userContent[0].text,
-//         } as UserModelMessage;
-//       }
-
-//       // Mixed content - return as array of parts
-//       return {
-//         role: "user" as const,
-//         content: userContent,
-//       } as UserModelMessage;
-//     }
-
-//     // Assistant message
-//     if (message.role === LanguageModelChatMessageRole.Assistant) {
-//       // Convert assistant message parts to AI SDK format
-//       const assistantContent = message.content.map((part) => {
-//         // Text part
-//         if (part instanceof LanguageModelTextPart) {
-//           return {
-//             type: "text" as const,
-//             text: part.value,
-//           };
-//         }
-
-//         // Tool call part - convert from VSCode format to AI SDK format
-//         if (part instanceof LanguageModelToolCallPart) {
-//           return {
-//             type: "tool-call" as const,
-//             toolCallId: part.callId,
-//             toolName: part.name,
-//             args: part.input ?? {},
-//           };
-//         }
-
-//         // Default fallback for unknown part types
-//         return {
-//           type: "text" as const,
-//           text: JSON.stringify(part),
-//         };
-//       });
-
-//       // If only one text part, simplify to string content
-//       if (assistantContent.length === 1 && assistantContent[0].type === "text") {
-//         return {
-//           role: "assistant" as const,
-//           content: assistantContent[0].text,
-//         } as AssistantModelMessage;
-//       }
-
-//       return {
-//         role: "assistant" as const,
-//         content: assistantContent,
-//       } as AssistantModelMessage;
-//     }
-
-//     // Fallback for unknown message types - treat as user message with text content
-//     const textParts = message.content
-//       .filter((p): p is LanguageModelTextPart => p instanceof LanguageModelTextPart)
-//       .map(p => p.value)
-//       .join("");
-
-//     return {
-//       role: "user" as const,
-//       content: textParts || "",
-//     } as UserModelMessage;
-//   });
-// }

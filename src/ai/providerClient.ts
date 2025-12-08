@@ -13,6 +13,7 @@ import { ModelItem, ProviderConfig, VercelType } from "../types";
 import { LM2VercelMessage, LM2VercelTool, normalizeToolInputs } from "./utils/conversion";
 import { ModelMessage, LanguageModel, Provider } from "ai";
 import { MessageLogger, LoggedRequest, LoggedResponse, LoggedInteraction } from "./utils/messageLogger";
+import { logger } from "../outputLogger";
 
 /**
  * Abstract base class for provider clients that interact with language model providers.
@@ -39,6 +40,7 @@ export abstract class ProviderClient {
 		this.type = type;
 		this.config = config;
 		this.providerInstance = providerInstance;
+		logger.debug(`ProviderClient created for type "${type}" with config ID "${config.id}"`);
 	}
 
 	/**
@@ -58,6 +60,7 @@ export abstract class ProviderClient {
 		const messages = this.convertMessages(request);
 		const tools = this.convertTools(options);
 		const messageLogger = MessageLogger.getInstance();
+		logger.debug(`Generating streaming response for model "${config.id}" with provider "${this.config.id}"`);
 
 		//Log the incoming request as soon as possible.
 		const interactionId = messageLogger.addRequestResponse({
@@ -69,6 +72,7 @@ export abstract class ProviderClient {
 			modelConfig: config
 		} as LoggedRequest);
 		try {
+			logger.debug(`Streaming response started for model "${config.id}" with provider "${this.config.id}"`);
 			const result = await streamText({
 				model: languageModel,
 				messages: messages,
@@ -82,6 +86,7 @@ export abstract class ProviderClient {
 				toolCallParts: [],
 			};
 
+			logger.debug(`Processing streaming response parts for model "${config.id}" with provider "${this.config.id}"`);
 			// We need to handle fullStream to get tool calls
 			for await (const part of result.fullStream) {
 				if (part.type === "reasoning-delta") {
@@ -101,7 +106,7 @@ export abstract class ProviderClient {
 			}
 			messageLogger.addRequestResponse(responseLog, interactionId);
 		} catch (error) {
-			console.error("Chat request failed:", error);
+			logger.error("Chat request failed:", error);
 			throw error;
 		}
 	}

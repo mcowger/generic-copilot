@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { CancellationToken, LanguageModelChatInformation, LanguageModelChatRequestMessage } from "vscode";
 import { get_encoding } from "tiktoken";
-
+import { logger } from "./outputLogger";
 /**
  * Returns the number of tokens for a given text using the model specific tokenizer logic
  * @param model The language model to use
@@ -36,6 +36,7 @@ export async function prepareTokenCount(
 	}
 	// Apply correction factor based on empirical observations
 	totalTokens = Math.ceil(totalTokens * 1.0166);
+	logger.debug(`Token count prepared: ${totalTokens}`);
 	return totalTokens;
 }
 
