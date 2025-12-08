@@ -2,7 +2,7 @@
 	"name": "generic-copilot",
 	"publisher": "mcowger",
 	"displayName": "Generic Provider for Copilot",
-	"description": "An extension that integrates OpenAI Compatible Inference Providers into GitHub Copilot Chat",
+	"description": "An extension that integrates Vercel AI SDK compatible inference Providers into GitHub Copilot Chat",
 	"icon": "assets/logo.png",
 	"keywords": [
 		"ai",
