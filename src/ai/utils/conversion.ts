@@ -177,6 +177,8 @@ export function LM2VercelMessage(messages: readonly LanguageModelChatRequestMess
 					const cachedMetadata = metadataCache.get(part.callId);
 					if (cachedMetadata?.providerMetadata) {
 						toolCallPart.providerMetadata = cachedMetadata.providerMetadata;
+						// Clean up the cache after successful retrieval to prevent memory accumulation
+						metadataCache.delete(part.callId);
 					}
 					
 					contentParts.push(toolCallPart);

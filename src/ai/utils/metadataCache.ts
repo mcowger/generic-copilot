@@ -6,16 +6,35 @@
  * LanguageModelToolCallPart instances when they're sent back in conversation history.
  */
 
+/**
+ * Metadata associated with a tool call.
+ * Contains provider-specific information that must be preserved across turns.
+ * 
+ * @example
+ * // Google's thoughtSignature for Gemini-3 models
+ * {
+ *   providerMetadata: {
+ *     google: {
+ *       thoughtSignature: "abc123..."
+ *     }
+ *   }
+ * }
+ */
 export interface ToolCallMetadata {
 	providerMetadata?: Record<string, Record<string, unknown>>;
 }
 
 /**
  * Singleton class for caching tool call metadata across conversation turns.
+ * 
+ * Memory management: The cache is cleaned up automatically when metadata is consumed
+ * during message conversion. Entries are removed after being retrieved to prevent
+ * indefinite growth.
  */
 export class MetadataCache {
 	private static instance: MetadataCache;
 	private cache: Map<string, ToolCallMetadata>;
+	private readonly maxSize: number = 1000; // Safety limit to prevent unbounded growth
 
 	private constructor() {
 		this.cache = new Map();
@@ -37,6 +56,14 @@ export class MetadataCache {
 	 * @param metadata The metadata to store
 	 */
 	public set(toolCallId: string, metadata: ToolCallMetadata): void {
+		// Enforce size limit to prevent memory issues
+		if (this.cache.size >= this.maxSize) {
+			// Remove oldest entry (first entry in the Map)
+			const firstKey = this.cache.keys().next().value;
+			if (firstKey) {
+				this.cache.delete(firstKey);
+			}
+		}
 		this.cache.set(toolCallId, metadata);
 	}
 
