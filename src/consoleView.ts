@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { TextDecoder } from "util";
 import { MessageLogger, LoggedInteraction } from "./ai/utils/messageLogger";
+import { convertToolResultToString } from "./ai/utils/conversion";
 
 export class ConsoleViewProvider implements vscode.WebviewViewProvider {
 	public static readonly viewType = "generic-copilot.consoleView";
@@ -73,17 +74,50 @@ export class ConsoleViewProvider implements vscode.WebviewViewProvider {
 						toolsCount: log.request.vercelTools ? Object.keys(log.request.vercelTools).length : 0,
 						messages: log.request.vscodeMessages.map((msg: any) => ({
 							role: msg.role,
-							content:
-								typeof msg.content === "string"
-									? msg.content
-									: msg.content
-											.map((part: any) => {
-												if (typeof part === "string") return part;
-												if (part.value) return part.value;
-												if (part.text) return part.text;
-												return "[non-text content]";
-											})
-											.join("\n"),
+							// If content is already a raw string, just use it
+							content: typeof msg.content === 'string'
+								? msg.content
+								: // Otherwise it's an array of parts (text parts, tool results, etc.) — preserve structured parts when possible
+								  msg.content.map((part: any) => {
+									  if (typeof part === 'string') return part;
+
+									  // Standard text parts used by many language model APIs — return raw text
+									  if (part.value) return part.value;
+									  if (part.text) return part.text;
+
+									  // Tool result parts often expose a `content` property (which may be an array)
+									  if (part.content) {
+										  // If the tool returned multiple content items filter out cache-control metadata
+										  let content = part.content;
+										  if (Array.isArray(content)) {
+											  content = content.filter((c: any) => !(c && c.mimeType === 'cache_control'));
+										  }
+
+										  // Return a structured tool-result object instead of a string so the front-end can render it specially
+										  return {
+											  type: 'tool-result',
+											  toolCallId: part.callId ?? part.toolCallId ?? undefined,
+											  output: content,
+										  };
+									  }
+
+									  // Tool call parts (calls _to_ tools, not results) -- include name and input if present
+									  if (part.name || part.input || part.callId || part.toolCallId) {
+										  const name = part.name ?? part.toolName ?? '(tool)';
+										  const id = part.callId ?? part.toolCallId ?? part.callId ?? '';
+										  const input = part.input ?? part.args ?? part.input ?? undefined;
+										  const inputStr = input ? JSON.stringify(input, null, 2) : '';
+										  // Keep previous string format for tool-calls in requests for now
+										  return `[tool-call] ${name}${id ? ` (${id})` : ''}${inputStr ? ` -> ${inputStr}` : ''}`;
+									  }
+
+									  // Unknown non-text content — preserve if serializable
+									  try {
+										  return JSON.parse(JSON.stringify(part));
+									  } catch (err) {
+										  return '[non-text content]';
+									  }
+								  }),
 						})),
 				  }
 				: undefined,
@@ -93,8 +127,8 @@ export class ConsoleViewProvider implements vscode.WebviewViewProvider {
 						textPartsCount: log.response.textParts?.length ?? 0,
 						thinkingPartsCount: log.response.thinkingParts?.length ?? 0,
 						toolCallsCount: log.response.toolCallParts?.length ?? 0,
-						textContent: log.response.textParts?.map((p) => p.value).join("\n") ?? "",
-						thinkingContent: log.response.thinkingParts?.map((p) => p.value).join("\n") ?? "",
+						textContent: log.response.textParts?.map((p) => p.value).join("") ?? "",
+						thinkingContent: log.response.thinkingParts?.map((p) => p.value).join("") ?? "",
 						toolCalls:
 							log.response.toolCallParts?.map((tc) => ({
 								id: tc.callId,

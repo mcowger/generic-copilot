@@ -7,7 +7,7 @@ export interface RequestType {
     timestamp?: string | number;
     messageCount?: number;
     toolsCount?: number;
-    messages?: Array<{ role: string; content: string }>;
+    messages?: Array<{ role: string; content: string | unknown }>;
 }
 
 export interface RequestProps {
@@ -24,7 +24,7 @@ export const Request: React.FC<RequestProps> = ({ request }) => {
             <div className="section-title">Request</div>
             <div className="metadata">Model: {request.modelId} ({request.modelSlug})</div>
             <div className="metadata">Time: {time}</div>
-            <div className="metadata">Messages: {request.messageCount}, Tools: {request.toolsCount}</div>
+            <div className="metadata">Messages: {request.messageCount}, Tools Defined: {request.toolsCount}</div>
 
             {request.messages?.map((msg, idx) => (
                 <Message key={idx} role={msg.role} content={msg.content} />

@@ -1,5 +1,6 @@
 import React from 'react';
 import Message from './Message';
+import ToolCall from './ToolCall';
 
 export interface ToolCall {
     name?: string;
@@ -30,7 +31,7 @@ export const Response: React.FC<ResponseProps> = ({ response }) => {
         <div className="section">
             <div className="section-title">Response</div>
             <div className="metadata">Time: {time}</div>
-            <div className="metadata">Text parts: {response.textPartsCount}, Thinking: {response.thinkingPartsCount}, Tool calls: {response.toolCallsCount}</div>
+            <div className="metadata">Text Parts: {response.textPartsCount}, Thinking Parts: {response.thinkingPartsCount}, Tool Calls: {response.toolCallsCount}</div>
 
             {response.thinkingContent && (
                 <Message role="Thinking" content={response.thinkingContent} />
@@ -41,11 +42,7 @@ export const Response: React.FC<ResponseProps> = ({ response }) => {
             )}
 
             {response.toolCalls?.map((tc, idx) => (
-                <div className="tool-call" key={idx}>
-                    <strong>{tc.name}</strong> ({tc.id})
-                    <br />
-                    <pre>{JSON.stringify(tc.input, null, 2)}</pre>
-                </div>
+                <ToolCall key={idx} name={tc.name} id={tc.id} input={tc.input} />
             ))}
         </div>
     );
