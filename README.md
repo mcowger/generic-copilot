@@ -11,6 +11,7 @@ Heavily inspired (and then extended) by https://github.com/JohnnyZ93/oai-compati
 - **Configuration GUI**: Intuitive webview-based interface for managing providers and models with validation and error handling.  Access this with the quick picker entry "GenericCopilot: Open Configuration GUI"
 - **Provider-First Configuration**: Define providers once with shared settings (baseUrl, headers, API keys) that are automatically inherited by models
 - **Multiple Provider Support**: Manage API keys for unlimited providers with automatic per-provider key storage using vscode secret storage.
+- **Multiple API Keys per Provider**: Add multiple API keys for each provider with automatic random selection for load distribution and rate limit avoidance.
 - **Flexible Headers & parameters**: Set custom parameters for any model.
 
 ---
@@ -56,7 +57,13 @@ If an API key is not found for a provider, you will be prompted in the QuickPick
 1. Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
 2. Run: **"GenericCopilot: Set Generic Compatible Multi-Provider Apikey"**
 3. Select your provider (e.g., `iflow`)
-4. Enter the API key for that provider
+4. Choose an action:
+   - **Add new API key**: Add a new key to the provider
+   - **Remove an API key**: Remove a specific key (shows masked keys)
+   - **View current API keys**: Display all keys (masked)
+   - **Clear all API keys**: Remove all keys for the provider
+
+**Multiple API Keys:** Each provider can have one or more API keys. When multiple keys are configured, the extension will randomly select one for each request, providing simple load distribution and helping to avoid rate limits.
 
 Repeat for each provider. Keys are stored securely in VS Code's secret storage as `generic-copilot.apiKey.<provider-key>`.
 
