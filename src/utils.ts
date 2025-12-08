@@ -74,12 +74,51 @@ export function convertLmModeltoModelItem(model: LanguageModelChatInformation): 
 
 }
 
+/**
+ * Parse stored API keys from secrets storage.
+ * Supports both single string (legacy) and JSON array formats.
+ * @param stored The stored value from secrets
+ * @returns Array of API keys
+ */
+export function parseApiKeys(stored: string): string[] {
+	if (!stored || !stored.trim()) {
+		return [];
+	}
+	
+	// Try to parse as JSON array first
+	try {
+		const parsed = JSON.parse(stored);
+		if (Array.isArray(parsed)) {
+			return parsed.filter(key => typeof key === 'string' && key.trim() !== '');
+		}
+	} catch {
+		// Not valid JSON, treat as single key
+	}
+	
+	// Treat as single key (backward compatibility)
+	return [stored.trim()];
+}
+
+/**
+ * Randomly select one API key from an array of keys.
+ * @param keys Array of API keys
+ * @returns A randomly selected API key
+ */
+function selectRandomApiKey(keys: string[]): string | undefined {
+	if (keys.length === 0) {
+		return undefined;
+	}
+	const randomIndex = Math.floor(Math.random() * keys.length);
+	return keys[randomIndex];
+}
+
 async function ensureApiKey(provider: string, secrets: vscode.SecretStorage): Promise<string | undefined> {
 	// Provider-level keys only; no generic key fallback
 	const normalizedProvider = provider.toLowerCase();
 	const providerKey = `generic-copilot.apiKey.${normalizedProvider}`;
-	let apiKey = await secrets.get(providerKey);
-	if (!apiKey) {
+	const storedValue = await secrets.get(providerKey);
+	
+	if (!storedValue) {
 		const entered = await vscode.window.showInputBox({
 			title: `API key for ${normalizedProvider}`,
 			prompt: `Enter API key for ${normalizedProvider}`,
@@ -87,11 +126,18 @@ async function ensureApiKey(provider: string, secrets: vscode.SecretStorage): Pr
 			password: true,
 		});
 		if (entered && entered.trim()) {
-			apiKey = entered.trim();
+			const apiKey = entered.trim();
 			await secrets.store(providerKey, apiKey);
+			return apiKey;
 		}
+		return undefined;
 	}
-	return apiKey || undefined;
+	
+	// Parse stored keys (supports both single string and array)
+	const apiKeys = parseApiKeys(storedValue);
+	
+	// Randomly select one key if multiple are available
+	return selectRandomApiKey(apiKeys);
 }
 
 export function getModelItemFromString(modelId: string): ModelItem {

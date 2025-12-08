@@ -6,6 +6,7 @@ import type { ProviderConfig } from "./types";
 import { ConfigurationPanel } from "./configurationPanel";
 import { initStatusBar } from "./statusBar";
 import { ConsoleViewProvider } from "./consoleView";
+import { parseApiKeys } from "./utils";
 
 function setupDevAutoRestart(context: vscode.ExtensionContext) {
 	if (context.extensionMode !== vscode.ExtensionMode.Development) {
@@ -118,31 +119,110 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 
-			// Get existing API key for selected provider
+			// Get existing API keys for selected provider
 			const providerKey = `generic-copilot.apiKey.${selectedProvider}`;
 			const existing = await context.secrets.get(providerKey);
+			const existingKeys = existing ? parseApiKeys(existing) : [];
 
-			// Prompt for API key
-			const apiKey = await vscode.window.showInputBox({
-				title: `Generic Compatible API Key for ${selectedProvider}`,
-				prompt: existing ? `Update API key for ${selectedProvider}` : `Enter API key for ${selectedProvider}`,
-				ignoreFocusOut: true,
-				password: true,
-				value: existing ?? "",
+			// Show action menu
+			const actions = [
+				{ label: "Add new API key", action: "add" },
+				...(existingKeys.length > 0 ? [{ label: "Remove an API key", action: "remove" }] : []),
+				...(existingKeys.length > 0 ? [{ label: "View current API keys", action: "view" }] : []),
+				...(existingKeys.length > 0 ? [{ label: "Clear all API keys", action: "clear" }] : []),
+			];
+
+			const selectedAction = await vscode.window.showQuickPick(actions, {
+				title: `Manage API Keys for ${selectedProvider}`,
+				placeHolder: `Current: ${existingKeys.length} key(s)`,
 			});
 
-			if (apiKey === undefined) {
-				return; // user canceled
-			}
-
-			if (!apiKey.trim()) {
-				await context.secrets.delete(providerKey);
-				vscode.window.showInformationMessage(`API key for ${selectedProvider} cleared.`);
+			if (!selectedAction) {
 				return;
 			}
 
-			await context.secrets.store(providerKey, apiKey.trim());
-			vscode.window.showInformationMessage(`API key for ${selectedProvider} saved.`);
+			switch (selectedAction.action) {
+				case "add": {
+					const apiKey = await vscode.window.showInputBox({
+						title: `Add API Key for ${selectedProvider}`,
+						prompt: `Enter a new API key for ${selectedProvider}`,
+						ignoreFocusOut: true,
+						password: true,
+					});
+
+					if (apiKey === undefined) {
+						return; // user canceled
+					}
+
+					if (!apiKey.trim()) {
+						vscode.window.showWarningMessage("API key cannot be empty.");
+						return;
+					}
+
+					const trimmedKey = apiKey.trim();
+					if (existingKeys.includes(trimmedKey)) {
+						vscode.window.showWarningMessage("This API key already exists.");
+						return;
+					}
+
+					const updatedKeys = [...existingKeys, trimmedKey];
+					await context.secrets.store(providerKey, JSON.stringify(updatedKeys));
+					vscode.window.showInformationMessage(`API key added for ${selectedProvider}. Total: ${updatedKeys.length} key(s).`);
+					break;
+				}
+
+				case "remove": {
+					// Show masked keys for selection
+					const maskedKeys = existingKeys.map((key, index) => ({
+						label: `Key ${index + 1}: ${key.substring(0, 8)}...${key.substring(key.length - 4)}`,
+						index: index,
+					}));
+
+					const selectedKey = await vscode.window.showQuickPick(maskedKeys, {
+						title: `Remove API Key for ${selectedProvider}`,
+						placeHolder: "Select an API key to remove",
+					});
+
+					if (!selectedKey) {
+						return;
+					}
+
+					const updatedKeys = existingKeys.filter((_, idx) => idx !== selectedKey.index);
+					if (updatedKeys.length === 0) {
+						await context.secrets.delete(providerKey);
+						vscode.window.showInformationMessage(`All API keys cleared for ${selectedProvider}.`);
+					} else {
+						await context.secrets.store(providerKey, JSON.stringify(updatedKeys));
+						vscode.window.showInformationMessage(`API key removed for ${selectedProvider}. Remaining: ${updatedKeys.length} key(s).`);
+					}
+					break;
+				}
+
+				case "view": {
+					const maskedKeys = existingKeys.map((key, index) => 
+						`Key ${index + 1}: ${key.substring(0, 8)}...${key.substring(key.length - 4)}`
+					).join('\n');
+					vscode.window.showInformationMessage(
+						`API Keys for ${selectedProvider} (${existingKeys.length}):\n\n${maskedKeys}`,
+						{ modal: true }
+					);
+					break;
+				}
+
+				case "clear": {
+					const confirm = await vscode.window.showWarningMessage(
+						`Are you sure you want to clear all ${existingKeys.length} API key(s) for ${selectedProvider}?`,
+						{ modal: true },
+						"Yes, clear all"
+					);
+
+					if (confirm === "Yes, clear all") {
+						await context.secrets.delete(providerKey);
+						vscode.window.showInformationMessage(`All API keys cleared for ${selectedProvider}.`);
+					}
+					break;
+				}
+			}
 		})
 	);
 
