@@ -232,7 +232,7 @@ When making requests to the model provider:
 #### Family Name variations
 * GPT family | gpt (excl. gpt-4o) : supports apply_patch, prefers JSON notebook representation
 * Claude / Anthropic | claude / Anthropic : supports multi_replace/replace_string, can use replace_string exclusively, MCP image_url disallowed
-* Gemini | gemini : supports replace_string, healing/strong-replace hints required, cannot accept image_url in requests
+* Gemini | gemini : supports replace_string, healing/strong-replace hints required, cannot accept image_url in requests. Supports Gemini 3 thought signatures (requires `google` provider).
 * Grok | grok-code : supports replace_string and can use replace_string exclusively
 
 
@@ -252,6 +252,16 @@ Use descriptive `configId` values:
 ### Headers for Custom Auth
 
 If a provider uses non-standard authentication, set it in the `headers` object of the provider's configuration.
+
+### Gemini 3 & Thought Signatures
+
+Gemini 3 models (e.g. Gemini 3 Pro) introduce a requirement for preserving "thought signatures" during multi-turn conversations involving function calls.
+
+This extension implements automated handling of these signatures **only when using the `google` provider type**.
+
+To properly support Gemini 3:
+1. Use `type: "google"` for your provider configuration.
+2. Ensure your model `family` is set to `"gemini"`.
 
 ---
 
