@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -29,6 +31,23 @@ jobs:
       - name: Build and Package
         run: npm run package
 
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          # 1. Get current tag
+          CURRENT_TAG=${{ github.ref_name }}
+
+          # 2. Get previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 ${CURRENT_TAG}^ 2>/dev/null || echo "")
+
+          # 3. Generate log for this specific version
+          echo "## Changes in $CURRENT_TAG" > RELEASE_BODY.md
+          if [ -z "$PREV_TAG" ]; then
+            git log --pretty=format:"- %s (%h)" $CURRENT_TAG >> RELEASE_BODY.md
+          else
+            git log --pretty=format:"- %s (%h)" $PREV_TAG..$CURRENT_TAG >> RELEASE_BODY.md
+          fi
+
       - name: Publish to VS Code Marketplace
         run: npx vsce publish --packagePath generic-copilot.vsix --allow-all-proposed-apis --skip-duplicate
         env:
@@ -38,4 +57,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: generic-copilot.vsix
+          body_path: RELEASE_BODY.md
           generate_release_notes: true
