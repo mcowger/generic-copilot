@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Interaction from './Interaction';
 
 declare function acquireVsCodeApi(): {
     postMessage: (message: any) => void;
@@ -63,42 +64,7 @@ export const ConsoleApp: React.FC = () => {
                     <div className="empty-state">No interactions logged yet.</div>
                 ) : (
                     logs.map((log) => (
-                        <div className="interaction" key={log.id}>
-                            <div className="interaction-header">Interaction: {log.id}</div>
-
-                            {log.request && (
-                                <div className="section">
-                                    <div className="section-title">Request</div>
-                                    <div className="metadata">Model: {log.request.modelId} ({log.request.modelSlug})</div>
-                                    <div className="metadata">Time: {new Date(log.request.timestamp).toLocaleString()}</div>
-                                    <div className="metadata">Messages: {log.request.messageCount}, Tools: {log.request.toolsCount}</div>
-
-                                    {log.request.messages.map((msg: any, idx: number) => (
-                                        <div className="message" key={idx}><span className="role">{msg.role}:</span>&nbsp;{msg.content}</div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {log.response && (
-                                <div className="section">
-                                    <div className="section-title">Response</div>
-                                    <div className="metadata">Time: {new Date(log.response.timestamp).toLocaleString()}</div>
-                                    <div className="metadata">Text parts: {log.response.textPartsCount}, Thinking: {log.response.thinkingPartsCount}, Tool calls: {log.response.toolCallsCount}</div>
-
-                                    {log.response.thinkingContent && (
-                                        <div className="message"><span className="role">Thinking:</span>&nbsp;{log.response.thinkingContent}</div>
-                                    )}
-
-                                    {log.response.textContent && (
-                                        <div className="message"><span className="role">Response:</span>&nbsp;{log.response.textContent}</div>
-                                    )}
-
-                                    {log.response.toolCalls.map((tc: any, idx: number) => (
-                                        <div className="tool-call" key={idx}><strong>{tc.name}</strong> ({tc.id})<br /><pre>{JSON.stringify(tc.input, null, 2)}</pre></div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                        <Interaction interaction={log} key={log.id} />
                     ))
                 )}
             </div>
