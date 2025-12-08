@@ -99,14 +99,42 @@ button:hover {
 }
 .interaction-list { list-style: none; padding: 0; margin: 8px 0 0 0; }
 .interaction-list-item {
-  padding: 8px;
+  padding: 6px 8px;
   cursor: pointer;
   border-radius: 4px;
   margin-bottom: 6px;
   border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  /* Reserve space for the selection indicator so toggling selected
+     state doesn't change layout. The ::before element is present
+     by default (transparent) and becomes visible for the selected
+     state, avoiding any content shift. */
+  position: relative;
 }
 .interaction-list-item:hover { background: rgba(255,255,255,0.02); }
-.interaction-list-item.selected { background: rgba(80,130,180,0.08); border: none; box-shadow: none; }
-.interaction-list-item.selected::before { content: ''; display: inline-block; width: 4px; height: 100%; background: rgba(80,130,180,0.5); margin-right: 8px; vertical-align: middle; border-radius: 2px; }
-.interaction-list-title { font-weight: 600; font-size: 0.95em; }
-.interaction-list-meta { color: var(--vscode-descriptionForeground); font-size: 0.85em; }
+.interaction-list-item::before {
+  /* invisible indicator to reserve the space used by the visible
+     indicator when the item is selected. Keeps layout stable. */
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: calc(100% - 4px);
+  background: transparent;
+  margin-right: 8px;
+  vertical-align: middle;
+  border-radius: 2px;
+  margin-top: 2px;
+}
+.interaction-list-item.selected {
+  background: rgba(31, 106, 181, 0.604);
+  border: none;
+  box-shadow: none;
+}
+.interaction-list-item.selected::before { background: rgba(80,130,180,0.5); }
+.interaction-list-title { font-weight: 600; font-size: 0.92em; }
+.interaction-list-meta { color: var(--vscode-descriptionForeground); font-size: 0.82em; display:flex; justify-content:space-between; gap:8px; align-items:center; }
+.interaction-list-meta .meta-left { font-size: 0.82em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.interaction-list-meta .meta-right { font-size: 0.76em; color: var(--vscode-descriptionForeground); flex: 0 0 auto; white-space: nowrap; }
+.interaction-list-stats { color: var(--vscode-descriptionForeground); font-size: 0.78em; margin-top: 2px; }

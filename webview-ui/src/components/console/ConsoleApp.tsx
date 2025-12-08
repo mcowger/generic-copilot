@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Interaction from './Interaction';
+import InteractionListItem from './InteractionListItem';
+import InteractionList from './InteractionList';
 
 declare function acquireVsCodeApi(): {
     postMessage: (message: any) => void;
@@ -119,25 +121,7 @@ export const ConsoleApp: React.FC = () => {
             </div>
 
             <div id="content" className="console-container">
-                <div className="left-panel">
-                    <div className="section-title">Interactions</div>
-                    {orderedLogs.length === 0 ? (
-                        <div className="empty-state">No interactions logged yet.</div>
-                    ) : (
-                        <ul className="interaction-list">
-                            {orderedLogs.map((log) => (
-                                <li
-                                    key={log.id}
-                                    className={"interaction-list-item" + (selectedId === log.id ? ' selected' : '')}
-                                    onClick={() => setSelectedId(log.id)}
-                                >
-                                    <div className="interaction-list-title">{log.id}</div>
-                                    <div className="interaction-list-meta">{log.request?.modelSlug || log.request?.modelId || '—'}</div>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
+                <InteractionList logs={logs} onSelectionChange={(id) => setSelectedId(id)} />
 
                 <div className="right-panel">
                     {selectedId == null ? (
