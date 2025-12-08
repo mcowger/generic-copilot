@@ -1,0 +1,68 @@
+body {
+  padding: 10px;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+}
+.toolbar {
+  margin-bottom: 10px;
+  display: flex;
+  gap: 8px;
+}
+button {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+button:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+.interaction {
+  margin-bottom: 20px;
+  padding: 10px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  background: var(--vscode-editor-background);
+}
+.interaction-header {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: var(--vscode-textLink-foreground);
+}
+.section {
+  margin-top: 8px;
+}
+.section-title {
+  font-weight: bold;
+  color: var(--vscode-symbolIcon-variableForeground);
+  margin-bottom: 4px;
+}
+.message {
+  margin: 4px 0;
+  padding: 6px;
+  background: var(--vscode-textBlockQuote-background);
+  border-left: 3px solid var(--vscode-textBlockQuote-border);
+}
+.role {
+  font-weight: bold;
+  color: var(--vscode-symbolIcon-functionForeground);
+}
+.tool-call {
+  margin: 4px 0;
+  padding: 6px;
+  background: var(--vscode-textCodeBlock-background);
+  font-family: var(--vscode-editor-font-family);
+  font-size: 0.9em;
+}
+.metadata {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.9em;
+}
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--vscode-descriptionForeground);
+}

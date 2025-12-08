@@ -128,7 +128,7 @@ export class ConfigurationPanel {
 	private async _getReactHtml(webview: vscode.Webview) {
 		const nonce = getNonce();
 		const assetsRoot = vscode.Uri.joinPath(this._extensionUri, "webview-ui");
-		const templatePath = vscode.Uri.joinPath(assetsRoot, "react.html");
+		const templatePath = vscode.Uri.joinPath(assetsRoot, "config.html");
 		const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(assetsRoot, "config.css"));
 		const bundleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, "webview-ui", "dist", "main.js"));
 

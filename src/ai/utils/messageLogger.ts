@@ -5,6 +5,8 @@ import {
 	LanguageModelThinkingPart,
 	LanguageModelToolCallPart,
 	ProvideLanguageModelChatResponseOptions,
+	EventEmitter,
+	Event,
 } from "vscode";
 import { ModelMessage, StreamTextResult } from "ai";
 import { ModelItem } from "../../types";
@@ -25,7 +27,7 @@ export interface LoggedRequest {
 	vscodeOptions: ProvideLanguageModelChatResponseOptions;
 
 	/** Converted Vercel SDK messages */
-	vercelMessages: ModelMessage[];
+	vercelMessages: readonly ModelMessage[];
 
 	/** Converted Vercel SDK messages */
 	vercelTools: Record<string, any> | undefined;
@@ -73,6 +75,9 @@ export class MessageLogger {
 	private logs: LoggedInteraction[] = [];
 	private maxEntries = 100;
 
+	private _onDidLogUpdate = new EventEmitter<void>();
+	public readonly onDidLogUpdate: Event<void> = this._onDidLogUpdate.event;
+
 	/**
 	 * Private constructor to enforce singleton pattern
 	 */
@@ -98,12 +103,17 @@ export class MessageLogger {
 		}
 
 		// Add to the beginning of the array (most recent first)
-		this.logs.unshift(log);
+		// If it's a new log (not found in existing logs), unshift it
+		if (!maybeLog && !this.logs.some((l) => l.id === log.id)) {
+			this.logs.unshift(log);
+		}
 
 		// Trim to maximum entries
 		if (this.logs.length > this.maxEntries) {
 			this.logs = this.logs.slice(0, this.maxEntries);
 		}
+
+		this._onDidLogUpdate.fire();
 		return log.id;
 	}
 
@@ -136,6 +146,7 @@ export class MessageLogger {
 	 */
 	public clear(): void {
 		this.logs = [];
+		this._onDidLogUpdate.fire();
 	}
 
 	/**

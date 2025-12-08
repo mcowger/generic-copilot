@@ -76,7 +76,10 @@ export abstract class ProviderClient {
 			});
 
 			const responseLog: LoggedResponse = {
-				type: "response"
+				type: "response",
+				textParts: [],
+				thinkingParts: [],
+				toolCallParts: [],
 			};
 
 			// We need to handle fullStream to get tool calls
