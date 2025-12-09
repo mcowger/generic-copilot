@@ -26,10 +26,10 @@ const ProviderItem: React.FC<{
   onUpdate: (next: ProviderConfig) => void;
   onRemove: () => void;
 }> = ({ provider, index, onUpdate, onRemove }) => {
-  const updateField = (field: 'key' | 'displayName' | 'baseUrl' | 'vercelType', value: string) => {
+  const updateField = (field: 'id' | 'displayName' | 'baseUrl' | 'vercelType', value: string) => {
     const next: ProviderConfig = { ...provider };
     const v = value === '' ? '' : value;
-    if (field === 'key') { next.id = v; }
+    if (field === 'id') { next.id = v; }
     if (field === 'displayName') { next.displayName = v || undefined; }
     if (field === 'baseUrl') { next.baseUrl = v; }
     if (field === 'vercelType') { next.vercelType = v as ProviderConfig['vercelType']; }
@@ -63,7 +63,7 @@ const ProviderItem: React.FC<{
             type="text"
             value={(provider.id as unknown as string) ?? ''}
             placeholder="e.g., openai, anthropic"
-            onInput={(e: any) => updateField('key', e.currentTarget.value)}
+            onInput={(e: any) => updateField('id', e.currentTarget.value)}
           >
           </VscodeTextfield>
           <VscodeFormHelper style={{ color: 'var(--vscode-errorForeground)', display: provider.id ? 'none' : 'block' }}>
