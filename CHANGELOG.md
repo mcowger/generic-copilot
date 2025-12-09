@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.13.1] - 2025-12-09
+
+- fix: fixed display of API keys to use password type (#24) (d129816)
+
+
 ## [v0.13.0] - 2025-12-09
 
 - Supress test dir from compiulation. (590a276)
