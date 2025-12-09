@@ -70,7 +70,7 @@
 			},
 			{
 				"command": "generic-copilot.setProviderApikey",
-				"title": "GenericCopilot: Set Generic Compatible Multi-Provider Apikey"
+				"title": "GenericCopilot: Set Generic Compatible Multi-Provider API key"
 			},
 			{
 				"command": "generic-copilot.refresh",
@@ -102,7 +102,7 @@
 						"properties": {
 							"id": {
 								"type": "string",
-								"description": "Canonical provider key (lowercase, used as owned_by and for API key storage)."
+								"description": "Canonical provider ID (lowercase, used as owned_by and for API key storage)."
 							},
 							"displayName": {
 								"type": "string",
@@ -144,7 +144,7 @@
 							},
 							"provider": {
 								"type": "string",
-								"description": "(Required) Reference to a provider key. Allows inheriting key and baseURL and headers"
+								"description": "(Required) Reference to a provider ID. Allows inheriting the API key and baseURL and headers"
 							},
 							"displayName": {
 								"type": "string",

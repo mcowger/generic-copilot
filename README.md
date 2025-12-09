@@ -14,7 +14,7 @@ Heavily inspired (and then extended) by https://github.com/JohnnyZ93/oai-compati
 
 - **Configuration GUI**: Intuitive webview-based interface for managing providers and models with validation and error handling.  Access this with the quick picker entry "GenericCopilot: Open Configuration GUI"
 - **Provider-First Configuration**: Define providers once with shared settings (baseUrl, headers, API keys) that are automatically inherited by models
-- **Multiple Provider Support**: Manage API keys for unlimited providers with automatic per-provider key storage using vscode secret storage.
+- **Multiple Provider Support**: Manage API keys for unlimited providers with automatic per-provider API key storage using vscode secret storage.
 - **Flexible Headers & parameters**: Set custom parameters for any model.
 - **Supports Autocompletion and Inline Suggestions**: Configure a model with the 'Use For Autocomplete' option, and it will be used to provide suggestions.
 
@@ -63,7 +63,7 @@ If an API key is not found for a provider, you will be prompted in the QuickPick
 3. Select your provider (e.g., `iflow`)
 4. Enter the API key for that provider
 
-Repeat for each provider. Keys are stored securely in VS Code's secret storage as `generic-copilot.apiKey.<provider-key>`.
+Repeat for each provider. Keys are stored securely in VS Code's secret storage as `generic-copilot.apiKey.<provider-id>`.
 
 ### 3. Use in Copilot Chat
 
@@ -215,7 +215,7 @@ Here is a complete example for your `settings.json` file, demonstrating how to c
 Each provider has its own API key stored securely:
 
 - **Storage Key**: `generic-copilot.apiKey.<provider-key>`
-- **Example**: For provider `key: "iflow"`, the storage key is `generic-copilot.apiKey.iflow`
+- **Example**: For provider `id: "iflow"`, the storage key is `generic-copilot.apiKey.iflow`
 
 
 
@@ -255,10 +255,10 @@ When making requests to the model provider:
 
 ### Naming Convention
 
-Use lowercase provider keys that match the service name for consistency:
-- ✅ `"key": "openai"`
-- ✅ `"key": "anthropic"`
-- ❌ `"key": "OpenAI"`
+Use lowercase provider identifiers that match the service name for consistency:
+- ✅ `"id": "openai"`
+- ✅ `"id": "anthropic"`
+- ❌ `"id": "OpenAI"`
 
 ### ConfigId for Variants
 
@@ -286,7 +286,7 @@ To properly support Gemini 3:
 
 ### Models Not Appearing
 
-1. Check provider `key` matches exactly in both provider and model config
+1. Check provider `id` matches exactly in both provider and model config
 2. Verify `baseUrl` is correct and accessible
 3. Look for errors in VS Code Developer Console (`Help > Toggle Developer Tools`)
 
