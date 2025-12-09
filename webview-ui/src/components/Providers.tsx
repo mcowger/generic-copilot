@@ -60,7 +60,7 @@ const ProviderItem: React.FC<{
         <div className="form-field">
           <VscodeFormHelper>Key (required) *</VscodeFormHelper>
           <VscodeTextfield
-            type="text"
+            type="password"
             value={(provider.id as unknown as string) ?? ''}
             placeholder="e.g., openai, anthropic"
             onInput={(e: any) => updateField('key', e.currentTarget.value)}
