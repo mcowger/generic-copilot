@@ -69,7 +69,7 @@ const App: React.FC = () => {
         // Validate providers
         const invalidProviders = providers.filter((p) => !p.id || !p.vercelType);
         if (invalidProviders.length > 0) {
-            alert('Please fill in required fields (key and vercel type) for all providers.');
+            alert('Please fill in required fields (identifier and vercel type) for all providers.');
             return;
         }
         // Validate models
