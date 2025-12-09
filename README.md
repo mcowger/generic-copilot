@@ -1,10 +1,14 @@
 # Generic Provider for Copilot
 
-Use frontier open LLMs like Qwen3 Coder, Kimi K2, DeepSeek V3.1, GLM 4.5 and more in VS Code with GitHub Copilot Chat powered by any OpenAI-compatible provider 🔥
+Use frontier open LLMs like Qwen3 Coder, Kimi K2, DeepSeek V3.1, GLM 4.5 and more in VS Code with GitHub Copilot Chat powered by any Vercel AI-SDK compatible provider 🔥
 
 ## Thanks
 
 Heavily inspired (and then extended) by https://github.com/JohnnyZ93/oai-compatible-copilot
+
+## Contributions & PRs
+
+...are most welcome!
 
 ## ✨ Features
 
@@ -19,9 +23,9 @@ Heavily inspired (and then extended) by https://github.com/JohnnyZ93/oai-compati
 
 - **VS Code**: 1.105.0 or higher
 - **Dependency**: GitHub Copilot Chat extension
-- **API Keys**: OpenAI-compatible provider API keys
+- **API Keys**: compatible provider API keys
 
-- **Supported Vercel AI SDK Providers**: This extension currently supports the following provider types: `openai`, `openai-compatible`, `openrouter`, and `google`.
+- **Supported Vercel AI SDK Providers**: This extension currently supports the following provider types: `openai`, `openai-compatible`, `openrouter`, and `google`.  
 
 ---
 
