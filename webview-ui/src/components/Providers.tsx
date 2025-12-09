@@ -58,16 +58,16 @@ const ProviderItem: React.FC<{
           Remove
         </VscodeButton>
         <div className="form-field">
-          <VscodeFormHelper>Key (required) *</VscodeFormHelper>
+          <VscodeFormHelper>Identifier</VscodeFormHelper>
           <VscodeTextfield
-            type="password"
+            type="text"
             value={(provider.id as unknown as string) ?? ''}
             placeholder="e.g., openai, anthropic"
             onInput={(e: any) => updateField('key', e.currentTarget.value)}
           >
           </VscodeTextfield>
           <VscodeFormHelper style={{ color: 'var(--vscode-errorForeground)', display: provider.id ? 'none' : 'block' }}>
-            Key is required
+            Identifier is required.  Used for referencing this provider in models.
           </VscodeFormHelper>
         </div>
 
