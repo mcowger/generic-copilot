@@ -150,6 +150,11 @@
 								"type": "string",
 								"description": "(Optional) Display name for the model."
 							},
+							"use_for_autocomplete": {
+								"type": "boolean",
+								"default": false,
+								"description": "(Optional) Whether to use this model for autocomplete features."
+							},
 							"model_properties": {
 								"type": "object",
 								"description": "(Optional) Model properties including context_length, family, owned_by, etc.",

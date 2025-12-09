@@ -33,6 +33,7 @@ export interface ModelItem {
 	slug: string;
 	displayName?: string;
 	provider: string;
+	use_for_autocomplete?: boolean;
 
 	model_properties: ModelProperties;
 	model_parameters: ModelParameters;

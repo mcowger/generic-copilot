@@ -12,6 +12,7 @@ Heavily inspired (and then extended) by https://github.com/JohnnyZ93/oai-compati
 - **Provider-First Configuration**: Define providers once with shared settings (baseUrl, headers, API keys) that are automatically inherited by models
 - **Multiple Provider Support**: Manage API keys for unlimited providers with automatic per-provider key storage using vscode secret storage.
 - **Flexible Headers & parameters**: Set custom parameters for any model.
+- **Supports Autocompletion and Inline Suggestions**: Configure a model with the 'Use For Autocomplete' option, and it will be used to provide suggestions.
 
 ---
 
@@ -103,6 +104,7 @@ Models define the specific LLMs you want to use. Each model must be associated w
 | `provider`           | `string` | Yes      | The `id` of a configured provider. The model will inherit `baseUrl` and `headers` from this provider.                                    |
 | `slug`               | `string` | Yes      | The actual model value that will be sent to the inference provider.                     |
 | `displayName`        | `string` | No       | A user-friendly name for the model. If not set, a name is generated from `id` and `slug`.                                           |
+| `use_for_autocomplete` | `boolean` | No      | If set to true, this model will be used for ghost text autocompletions in the editor. Only one model should have this enabled. |
 | `model_properties`   | `object` | No       | Internal metadata used by the extension to control behavior. These are **not** sent to the provider's API.                              |
 | `model_parameters`   | `object` | No       | Parameters that are sent in the body of the request to the provider's API.                                                              |
 
@@ -120,6 +122,18 @@ Models define the specific LLMs you want to use. Each model must be associated w
 |-------------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------|
 | `temperature`           | `number` | Controls randomness. Lower values are more deterministic. Range: `[0, 2]`. Defaults to `1`.                                            |
 | `extra`                 | `object` | A container for any other parameters you want to send to the API. These are passed through directly.                                   |
+
+### Autocompletions
+
+You can designate a single model to be used for inline ghost-text autocompletions in the editor. This can be enabled via the checkbox in the Configuration GUI or by setting `"use_for_autocomplete": true` in the model configuration.  If more than 1 model is enabled, behavior is undefined.
+
+**Recommendation:** Autocompletion requires extremely low latency to be useful. It is **strongly recommended** to only use very fast, low-latency models for this feature, such as:
+*   `gemini-flash-lite`
+*   `codestral`
+*   `qwen-2.5-coder-7b`
+*   `llama-3-8b`
+
+Using large or reasoning-heavy models (like `gpt-4o` or `claude-3-opus`) will result in a poor user experience due to high latency.
 
 ---
 

@@ -7,6 +7,7 @@ import { ConfigurationPanel } from "./configurationPanel";
 import { initStatusBar } from "./statusBar";
 import { ConsoleViewProvider } from "./consoleView";
 import { logger } from "./outputLogger";
+import { registerInlineCompletionItemProvider } from "./autocomplete/fimProvider";
 
 function setupDevAutoRestart(context: vscode.ExtensionContext) {
 	if (context.extensionMode !== vscode.ExtensionMode.Development) {
@@ -56,6 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const tokenCountStatusBarItem: vscode.StatusBarItem = initStatusBar(context);
 	const provider = new ChatModelProvider(context.secrets, ua, tokenCountStatusBarItem, context);
 	const providerRegistration = vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
+	registerInlineCompletionItemProvider(context);
 	context.subscriptions.push(providerRegistration);
 
 	// Register Console View

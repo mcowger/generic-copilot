@@ -14,6 +14,7 @@ import {
     VscodeTextfield,
     VscodeSingleSelect,
     VscodeOption,
+    VscodeCheckbox,
 } from '@vscode-elements/react-elements';
 
 export interface ModelsProps {
@@ -31,7 +32,7 @@ const ModelItemCard: React.FC<{
 }> = ({ value, index, providers, onUpdate, onRemove }) => {
     const updateField = (field: keyof ModelItem | keyof ModelProperties, v: any) => {
         const next: any = { ...value };
-        if (['id', 'slug', 'displayName', 'provider'].includes(field as string)) {
+        if (['id', 'slug', 'displayName', 'provider', 'use_for_autocomplete'].includes(field as string)) {
             if (v === '' || v === undefined) {
                 delete next[field];
             } else {
@@ -117,6 +118,15 @@ const ModelItemCard: React.FC<{
                                     ))}
                                 </VscodeSingleSelect>
                                 <VscodeFormHelper>Select a provider to inherit baseUrl and defaults (optional)</VscodeFormHelper>
+                            </div>
+                            <div className="form-field">
+                                <VscodeCheckbox
+                                    checked={value?.use_for_autocomplete ?? false}
+                                    onChange={(e: any) => updateField('use_for_autocomplete', e.currentTarget.checked)}
+                                >
+                                    Use for Autocomplete
+                                </VscodeCheckbox>
+                                <VscodeFormHelper>Use this model for code completion.  Only a single model may have this box selected.  If multiple are selected, behavior is undefined</VscodeFormHelper>
                             </div>
                             <VscodeDivider></VscodeDivider>
                             <ModelPropertiesForm value={props} providers={providers} onChange={updateField} />

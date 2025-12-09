@@ -31,6 +31,7 @@ const toGrouped = (m: any): ModelItem => {
         displayName: m?.displayName,
         provider: m?.provider ?? '',
         slug: m?.slug ?? '',
+        use_for_autocomplete: m?.use_for_autocomplete,
         model_properties: mp,
         model_parameters: par,
     } as ModelItem;

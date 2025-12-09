@@ -1,14 +1,8 @@
 import * as vscode from "vscode";
 import { randomUUID } from "crypto";
-import type {
-	ProviderConfig,
-	ModelItem,
-	ProviderModelConfig
-} from "./types";
+import type { ProviderConfig, ModelItem, ProviderModelConfig } from "./types";
 
-import {
-	LanguageModelChatInformation
-} from "vscode";
+import { LanguageModelChatInformation } from "vscode";
 import { resolveModelWithProvider } from "./provideModel";
 
 import { logger } from "./outputLogger";
@@ -17,7 +11,6 @@ import { logger } from "./outputLogger";
 export interface ParsedModelId {
 	baseId: string;
 }
-
 
 /**
  * Process headers and replace "RANDOM" values with UUIDv4.
@@ -40,14 +33,13 @@ function processHeaders(headers?: Record<string, string>): Record<string, string
 	return processed;
 }
 
-
 export function convertLmModeltoModelItem(model: LanguageModelChatInformation): ModelItem | undefined {
 	const config = vscode.workspace.getConfiguration();
 	const userModels = config.get<ModelItem[]>("generic-copilot.models", []);
 	// Parse the model ID to handle a potential provider prefix and config ID suffix
-	const modelId = model.id
+	const modelId = model.id;
 	let providerHint: string | undefined;
-	let baseIdForMatch = modelId
+	let baseIdForMatch = modelId;
 	const slashIdx = baseIdForMatch.indexOf("/");
 	if (slashIdx !== -1) {
 		providerHint = baseIdForMatch.slice(0, slashIdx).toLowerCase();
@@ -72,7 +64,6 @@ export function convertLmModeltoModelItem(model: LanguageModelChatInformation): 
 
 	const resolvedModel = userModel ? resolveModelWithProvider(userModel) : userModel;
 	return resolvedModel;
-
 }
 
 async function ensureApiKey(provider: string, secrets: vscode.SecretStorage): Promise<string | undefined> {
@@ -81,7 +72,9 @@ async function ensureApiKey(provider: string, secrets: vscode.SecretStorage): Pr
 	const providerKey = `generic-copilot.apiKey.${normalizedProvider}`;
 	let apiKey = await secrets.get(providerKey);
 	if (!apiKey) {
-		logger.warn(`API key for provider "${normalizedProvider}" not found in secret storage; prompting user to enter it.`);
+		logger.warn(
+			`API key for provider "${normalizedProvider}" not found in secret storage; prompting user to enter it.`
+		);
 		const entered = await vscode.window.showInputBox({
 			title: `API key for ${normalizedProvider}`,
 			prompt: `Enter API key for ${normalizedProvider}`,
@@ -99,30 +92,34 @@ async function ensureApiKey(provider: string, secrets: vscode.SecretStorage): Pr
 export function getModelItemFromString(modelId: string): ModelItem {
 	const config = vscode.workspace.getConfiguration();
 	const userModels = config.get<ModelItem[]>("generic-copilot.models", []);
-	const matchingModel = userModels.find(m => m.id === modelId) || null;
+	const matchingModel = userModels.find((m) => m.id === modelId) || null;
 	if (!matchingModel) {
 		logger.error(`Model not found from ID: ${modelId}`);
-		throw new Error("Model not found from ID")
+		throw new Error("Model not found from ID");
 	}
-	return matchingModel
+	return matchingModel;
 }
 
-export async function getExecutionDataForModel(modelInfo: LanguageModelChatInformation|ModelItem, secrets: vscode.SecretStorage): Promise<ProviderModelConfig> {
-	let newModelItem: ModelItem | undefined
-	if ("provider" in modelInfo) { // We have a LanguageModelChatInformation
-		newModelItem = modelInfo
+export async function getExecutionDataForModel(
+	modelInfo: LanguageModelChatInformation | ModelItem,
+	secrets: vscode.SecretStorage
+): Promise<ProviderModelConfig> {
+	let newModelItem: ModelItem | undefined;
+	if ("provider" in modelInfo) {
+		// We have a LanguageModelChatInformation
+		newModelItem = modelInfo;
 	} else {
 		newModelItem = convertLmModeltoModelItem(modelInfo as LanguageModelChatInformation);
 	}
 
-	const modelItem = newModelItem
+	const modelItem = newModelItem;
 	if (!modelItem) {
 		logger.error(`Model "${modelInfo.id}" not found in configuration`);
 		throw new Error(`Model "${modelInfo.id}" not found in configuration`);
 	}
 
 	// Get model properties
-	const providerKey: string = modelItem.provider
+	const providerKey: string = modelItem.provider;
 
 	// Get API key for the model's provider
 	const modelApiKey = await ensureApiKey(providerKey, secrets);
@@ -158,5 +155,16 @@ export async function getExecutionDataForModel(modelInfo: LanguageModelChatInfor
 }
 
 export function stripDoubleNewlines(input: string): string {
-	return input.replace(/\n\n+/g, '\n');
+	return input.replace(/\n\n+/g, "\n");
+}
+
+export function getAutocompleteModels(): ModelItem|undefined {
+	const config = vscode.workspace.getConfiguration();
+	const userModels = config.get<ModelItem[]>("generic-copilot.models", []);
+	const matchingModel = userModels.find((m) => m.use_for_autocomplete === true) || null;
+	if (!matchingModel) {
+		logger.error(`No autocomplete models found in configuration`);
+		return undefined;
+	}
+	return matchingModel;
 }

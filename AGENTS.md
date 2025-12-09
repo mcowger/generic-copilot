@@ -78,5 +78,13 @@ The project has two distinct parts that need dependency installation:
 3.  Update `package.json` configuration schema to allow the new type.
 4.  Update `webview-ui` components if specific UI handling is needed.
 
+## 6. Modifying Data Models (Configuration)
+When adding new properties to `ModelItem` or `ProviderConfig` in `src/types.ts`:
+1.  **Update Type Definitions**: Add the property to the interface in `src/types.ts`.
+2.  **Update Configuration Schema**: Add the property to `package.json` under `contributes.configuration`.
+3.  **Update Webview Data Mapping**:
+    *   **CRITICAL**: You **MUST** update the `toGrouped` function in `webview-ui/src/App.tsx` to include the new property. The Webview does not automatically ingest new fields; they must be explicitly mapped.
+4.  **Update UI Components**: Update the relevant React components (e.g., `webview-ui/src/components/Models.tsx` or `Providers.tsx`) to display and edit the new field.
+
 ---
 **Failure to follow these rules, especially regarding logging and build processes, will result in rejected code.**

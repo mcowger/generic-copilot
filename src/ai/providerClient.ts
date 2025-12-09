@@ -6,14 +6,17 @@ import {
 	LanguageModelToolCallPart,
 	ProvideLanguageModelChatResponseOptions,
 	LanguageModelResponsePart2 as LanguageModelResponsePart, //part of proposed api
+	CancellationToken,
 } from "vscode";
+import { z } from "zod";
 
-import { streamText } from "ai";
+import { generateObject, streamText } from "ai";
 import { ModelItem, ProviderConfig, VercelType } from "../types";
 import { LM2VercelMessage, LM2VercelTool, normalizeToolInputs } from "./utils/conversion";
 import { ModelMessage, LanguageModel, Provider } from "ai";
 import { MessageLogger, LoggedRequest, LoggedResponse, LoggedInteraction } from "./utils/messageLogger";
 import { logger } from "../outputLogger";
+import { generateCompletionPromptInstruction, completionSystemInstruction, completionDescription } from "../autocomplete/constants";
 
 /**
  * Abstract base class for provider clients that interact with language model providers.
@@ -69,7 +72,7 @@ export abstract class ProviderClient {
 			vscodeOptions: options,
 			vercelMessages: messages,
 			vercelTools: tools,
-			modelConfig: config
+			modelConfig: config,
 		} as LoggedRequest);
 		try {
 			logger.debug(`Streaming response started for model "${config.id}" with provider "${this.config.id}"`);
@@ -110,6 +113,33 @@ export abstract class ProviderClient {
 			throw error;
 		}
 	}
+
+	async getInlineCompleteResponse(
+		config: ModelItem,
+		prefix: string,
+		suffix: string,
+		fileName: string,
+		languageId: string,
+		token: CancellationToken
+	): Promise<string> {
+		const languageModel = this.getLanguageModel(config.slug);
+
+		// The generateObject call
+		const { object } = await generateObject({
+			model: languageModel,
+			// Define the structure of the output
+			schema: z.object({
+				completion: z.string().describe(completionDescription),
+			}),
+			// Set the behavior of the model
+			system: completionSystemInstruction,
+
+			// Construct the prompt using the inputs
+			prompt: generateCompletionPromptInstruction(fileName, languageId, prefix, suffix),
+		});
+		return object.completion;
+	}
+
 	/**
 	 * Retrieves a language model by its slug identifier from the provider instance.
 	 * @param slug The model slug identifier.
