@@ -8,7 +8,7 @@ import {
 	EventEmitter,
 	Event,
 } from "vscode";
-import { ModelMessage, StreamTextResult } from "ai";
+import { ModelMessage, StreamTextResult, LanguageModelUsage } from "ai";
 import { ModelItem } from "../../types";
 import { logger } from "../../outputLogger";
 /**
@@ -50,6 +50,9 @@ export interface LoggedResponse {
 	textParts?: LanguageModelTextPart[];
 	thinkingParts?: LanguageModelThinkingPart[];
 	toolCallParts?: LanguageModelToolCallPart[];
+
+	// /** Token usage information from the Vercel AI SDK */
+	usage?: LanguageModelUsage;
 
 	// /** Timestamp when response started */
 	timestamp?: Date;

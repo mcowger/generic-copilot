@@ -16,6 +16,14 @@ export interface ResponseType {
     thinkingContent?: string;
     textContent?: string;
     toolCalls?: ToolCall[];
+    // Token usage data from Vercel AI SDK
+    usage?: {
+        inputTokens?: number;
+        outputTokens?: number;
+        totalTokens?: number;
+        reasoningTokens?: number;
+        cachedInputTokens?: number;
+    };
 }
 
 export interface ResponseProps {
@@ -32,6 +40,15 @@ export const Response: React.FC<ResponseProps> = ({ response }) => {
             <div className="section-title">Response</div>
             <div className="metadata">Time: {time}</div>
             <div className="metadata">Text Parts: {response.textPartsCount}, Thinking Parts: {response.thinkingPartsCount}, Tool Calls: {response.toolCallsCount}</div>
+            {response.usage && (
+                <div className="metadata">
+                    Tokens: {response.usage.totalTokens ?? 0}
+                    (Input: {response.usage.inputTokens ?? 0},
+                     Output: {response.usage.outputTokens ?? 0}
+                     {response.usage.reasoningTokens ? `, Reasoning: ${response.usage.reasoningTokens}` : ""}
+                     {response.usage.cachedInputTokens ? `, Cached: ${response.usage.cachedInputTokens}` : ""})
+                </div>
+            )}
 
             {response.thinkingContent && (
                 <Message role="Thinking" content={response.thinkingContent} />

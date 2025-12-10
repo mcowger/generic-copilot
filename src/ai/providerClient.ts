@@ -124,6 +124,8 @@ export abstract class ProviderClient {
 				if (streamError) {
 					throw streamError;
 				}
+				// Add usage information after streaming completes
+				responseLog.usage = await result.usage;
 				messageLogger.addRequestResponse(responseLog, interactionId);
 				return;
 			} catch (error) {
