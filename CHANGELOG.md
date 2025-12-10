@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.13.5] - 2025-12-09
+
+- Add performance metrics to response logging and status bar updates (50a2fda)
+- Refactor token handling: replace 'tiktoken' with 'tokenx' and update token estimation functions to use async/await.   Improves token estimation speed by 3x. (bd2b928)
+- Update github actions (8c59aa3)
+- Add token usage tracking to response logging and display (74d48cb)
+
+
 ## [v0.13.4] - 2025-12-09
 
 - Add thoughts output for google models (#28) (25d8bd1)
