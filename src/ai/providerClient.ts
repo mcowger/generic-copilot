@@ -107,7 +107,7 @@ export abstract class ProviderClient {
 				// We need to handle fullStream to get tool calls
 				for await (const part of result.fullStream) {
 					if (part.type === "reasoning-delta") {
-						const thinkingPart = new LanguageModelThinkingPart(part.text);
+						const thinkingPart = new LanguageModelThinkingPart(part.text, part.id);
 						responseLog.thinkingParts?.push(thinkingPart);
 						progress.report(thinkingPart);
 					} else if (part.type === "text-delta") {
@@ -135,7 +135,8 @@ export abstract class ProviderClient {
 			}
 		}
 		logger.error("Chat request failed after retries:", lastError);
-		throw lastError;
+		//const message = lastError instanceof Error ? lastError.message : String(lastError);
+
 	}
 
 	async getInlineCompleteResponse(
