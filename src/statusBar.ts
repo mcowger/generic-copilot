@@ -57,29 +57,22 @@ export function createProgressBar(usedTokens: number, maxTokens: number): string
  * @param provideTokenCount Callback function to count tokens for a message
  */
 export async function updateContextStatusBar(
-	messages: readonly LanguageModelChatRequestMessage[],
-	model: LanguageModelChatInformation,
+	tokens: number,
+	maxTokens: number,
 	statusBarItem: vscode.StatusBarItem,
 ): Promise<void> {
 	// Loop through each message and count tokens
-	let totalTokenCount = 0;
-
-	for (const message of messages) {
-		const tokenCount = await prepareTokenCount(model, message, new CancellationTokenSource().token);
-		totalTokenCount += tokenCount;
-	}
 
 	// Update status bar with token count and model context window
-	const maxTokens = model.maxInputTokens + model.maxOutputTokens;
+
 
 	// Create visual progress bar with single progressive block
-	const progressBar = createProgressBar(totalTokenCount, maxTokens);
+	const progressBar = createProgressBar(tokens, maxTokens);
 	const displayText = `$(symbol-parameter) ${progressBar}`;
 	statusBarItem.text = displayText;
-	statusBarItem.tooltip = `Token Usage: ${totalTokenCount} / ${formatTokenCount(maxTokens)}\n\n${progressBar}\n\nClick to open configuration`;
-
+	statusBarItem.tooltip = `Token Usage: ${tokens} / ${formatTokenCount(maxTokens)}\n\n${progressBar}\n\nClick to open configuration`;
 	// Add color coding based on token usage
-	const usagePercentage = (totalTokenCount / maxTokens) * 100;
+	const usagePercentage = (tokens / maxTokens) * 100;
 	if (usagePercentage > 90) {
 		statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
 	} else if (usagePercentage > 70) {

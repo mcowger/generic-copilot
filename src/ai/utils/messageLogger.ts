@@ -54,6 +54,12 @@ export interface LoggedResponse {
 	// /** Token usage information from the Vercel AI SDK */
 	usage?: LanguageModelUsage;
 
+	// /** Response duration in milliseconds */
+	durationMs?: number;
+
+	// /** Tokens per second generation rate */
+	tokensPerSecond?: number;
+
 	// /** Timestamp when response started */
 	timestamp?: Date;
 }

@@ -8,6 +8,7 @@ import {
 	LanguageModelResponsePart2 as LanguageModelResponsePart, //part of proposed api
 	CancellationToken,
 } from "vscode";
+import { updateContextStatusBar } from "../statusBar";
 import { z } from "zod";
 import * as vscode from "vscode";
 
@@ -63,6 +64,7 @@ export abstract class ProviderClient {
 		options: ProvideLanguageModelChatResponseOptions,
 		config: ModelItem,
 		progress: Progress<LanguageModelResponsePart>,
+		statusBarItem: vscode.StatusBarItem,
 	): Promise<void> {
 		const languageModel = this.getLanguageModel(config.slug);
 		const messages = this.convertMessages(request);
@@ -86,6 +88,17 @@ export abstract class ProviderClient {
 			try {
 				logger.debug(`Streaming response started for model "${config.id}" with provider "${this.config.id}"`);
 				let streamError: any;
+
+				// Record start time for performance measurement
+				const startTime = Date.now();
+
+				const responseLog: LoggedResponse = {
+					type: "response",
+					textParts: [],
+					thinkingParts: [],
+					toolCallParts: [],
+				};
+				logger.debug(`Processing streaming response parts for model "${config.id}" with provider "${this.config.id}"`);
 				const result = streamText({
 					model: languageModel,
 					messages: messages,
@@ -96,14 +109,6 @@ export abstract class ProviderClient {
 					},
 				});
 
-				const responseLog: LoggedResponse = {
-					type: "response",
-					textParts: [],
-					thinkingParts: [],
-					toolCallParts: [],
-				};
-
-				logger.debug(`Processing streaming response parts for model "${config.id}" with provider "${this.config.id}"`);
 				// We need to handle fullStream to get tool calls
 				for await (const part of result.fullStream) {
 					if (part.type === "reasoning-delta") {
@@ -126,10 +131,23 @@ export abstract class ProviderClient {
 				}
 				// Add usage information after streaming completes
 				responseLog.usage = await result.usage;
+
+				// Calculate duration
+				const endTime = Date.now();
+				responseLog.durationMs = endTime - startTime;
+
+				// Calculate tokens per second (whole number)
+				if (responseLog.usage?.outputTokens) {
+					const durationSeconds = responseLog.durationMs / 1000;
+					responseLog.tokensPerSecond = Math.round(responseLog.usage.outputTokens / durationSeconds);
+				}
+				updateContextStatusBar(responseLog.usage.totalTokens || 0,config.model_properties.context_length || 0,statusBarItem)
 				messageLogger.addRequestResponse(responseLog, interactionId);
 				return;
 			} catch (error) {
-				progress.report(new LanguageModelThinkingPart("\n\n[Error occurred during streaming response.  Retrying...]\n","error" ));
+				progress.report(
+					new LanguageModelThinkingPart("\n\n[Error occurred during streaming response.  Retrying...]\n", "error")
+				);
 				lastError = error;
 				logger.warn(
 					`Chat request failed (attempt ${attempt + 1}): ${error instanceof Error ? error.message : String(error)}`
@@ -140,7 +158,6 @@ export abstract class ProviderClient {
 		vscode.window.showErrorMessage(
 			`Chat request failed after multiple attempts: ${lastError instanceof Error ? lastError.message : String(lastError)}`
 		);
-
 	}
 
 	async getInlineCompleteResponse(
