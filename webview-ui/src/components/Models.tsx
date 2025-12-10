@@ -32,7 +32,7 @@ const ModelItemCard: React.FC<{
 }> = ({ value, index, providers, onUpdate, onRemove }) => {
     const updateField = (field: keyof ModelItem | keyof ModelProperties, v: any) => {
         const next: any = { ...value };
-        if (['id', 'slug', 'displayName', 'provider', 'use_for_autocomplete'].includes(field as string)) {
+        if (['id', 'slug', 'displayName', 'provider', 'use_for_autocomplete', 'retries'].includes(field as string)) {
             if (v === '' || v === undefined) {
                 delete next[field];
             } else {
@@ -127,6 +127,20 @@ const ModelItemCard: React.FC<{
                                     Use for Autocomplete
                                 </VscodeCheckbox>
                                 <VscodeFormHelper>Use this model for code completion.  Only a single model may have this box selected.  If multiple are selected, behavior is undefined</VscodeFormHelper>
+                            </div>
+                            <div className="form-field">
+                                <VscodeFormHelper>Retries</VscodeFormHelper>
+                                <VscodeTextfield
+                                    type="text"
+                                    placeholder="3"
+                                    value={value?.retries?.toString() ?? ''}
+                                    onInput={(e: any) => {
+                                        const val = e.currentTarget.value;
+                                        updateField('retries', val === '' ? undefined : Number(val));
+                                    }}
+                                >
+                                </VscodeTextfield>
+                                <VscodeFormHelper>Number of retries for failed requests (optional, default 3)</VscodeFormHelper>
                             </div>
                             <VscodeDivider></VscodeDivider>
                             <ModelPropertiesForm value={props} providers={providers} onChange={updateField} />

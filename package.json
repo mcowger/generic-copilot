@@ -155,6 +155,13 @@
 								"default": false,
 								"description": "(Optional) Whether to use this model for autocomplete features."
 							},
+							"retries": {
+								"type": "number",
+								"default": 3,
+								"minimum": 0,
+								"maximum": 10,
+								"description": "(Optional) Number of retries for failed requests. Defaults to 3."
+							},
 							"model_properties": {
 								"type": "object",
 								"description": "(Optional) Model properties including context_length, family, owned_by, etc.",

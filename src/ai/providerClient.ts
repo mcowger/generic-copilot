@@ -9,6 +9,7 @@ import {
 	CancellationToken,
 } from "vscode";
 import { z } from "zod";
+import * as vscode from "vscode";
 
 import { generateObject, streamText } from "ai";
 import { ModelItem, ProviderConfig, VercelType } from "../types";
@@ -16,7 +17,11 @@ import { LM2VercelMessage, LM2VercelTool, normalizeToolInputs } from "./utils/co
 import { ModelMessage, LanguageModel, Provider } from "ai";
 import { MessageLogger, LoggedRequest, LoggedResponse, LoggedInteraction } from "./utils/messageLogger";
 import { logger } from "../outputLogger";
-import { generateCompletionPromptInstruction, completionSystemInstruction, completionDescription } from "../autocomplete/constants";
+import {
+	generateCompletionPromptInstruction,
+	completionSystemInstruction,
+	completionDescription,
+} from "../autocomplete/constants";
 
 /**
  * Abstract base class for provider clients that interact with language model providers.
@@ -57,7 +62,7 @@ export abstract class ProviderClient {
 		request: LanguageModelChatRequestMessage[],
 		options: ProvideLanguageModelChatResponseOptions,
 		config: ModelItem,
-		progress: Progress<LanguageModelResponsePart>
+		progress: Progress<LanguageModelResponsePart>,
 	): Promise<void> {
 		const languageModel = this.getLanguageModel(config.slug);
 		const messages = this.convertMessages(request);
@@ -74,44 +79,66 @@ export abstract class ProviderClient {
 			vercelTools: tools,
 			modelConfig: config,
 		} as LoggedRequest);
-		try {
-			logger.debug(`Streaming response started for model "${config.id}" with provider "${this.config.id}"`);
-			const result = await streamText({
-				model: languageModel,
-				messages: messages,
-				tools: tools,
-			});
 
-			const responseLog: LoggedResponse = {
-				type: "response",
-				textParts: [],
-				thinkingParts: [],
-				toolCallParts: [],
-			};
+		let lastError: any;
+		const maxRetries = config.retries ?? 3;
+		for (let attempt = 0; attempt < maxRetries; attempt++) {
+			try {
+				logger.debug(`Streaming response started for model "${config.id}" with provider "${this.config.id}"`);
+				let streamError: any;
+				const result = streamText({
+					model: languageModel,
+					messages: messages,
+					tools: tools,
+					maxRetries: 3,
+					onError: ({ error }) => {
+						streamError = error;
+					},
+				});
 
-			logger.debug(`Processing streaming response parts for model "${config.id}" with provider "${this.config.id}"`);
-			// We need to handle fullStream to get tool calls
-			for await (const part of result.fullStream) {
-				if (part.type === "reasoning-delta") {
-					const thinkingPart = new LanguageModelThinkingPart(part.text);
-					responseLog.thinkingParts?.push(thinkingPart);
-					progress.report(thinkingPart);
-				} else if (part.type === "text-delta") {
-					const textPart = new LanguageModelTextPart(part.text);
-					responseLog.textParts?.push(textPart);
-					progress.report(new LanguageModelTextPart(part.text));
-				} else if (part.type === "tool-call") {
-					const normalizedInput = normalizeToolInputs(part.toolName, part.input);
-					const toolCall = new LanguageModelToolCallPart(part.toolCallId, part.toolName, normalizedInput as object);
-					responseLog.toolCallParts?.push(toolCall);
-					progress.report(toolCall);
+				const responseLog: LoggedResponse = {
+					type: "response",
+					textParts: [],
+					thinkingParts: [],
+					toolCallParts: [],
+				};
+
+				logger.debug(`Processing streaming response parts for model "${config.id}" with provider "${this.config.id}"`);
+				// We need to handle fullStream to get tool calls
+				for await (const part of result.fullStream) {
+					if (part.type === "reasoning-delta") {
+						const thinkingPart = new LanguageModelThinkingPart(part.text, part.id);
+						responseLog.thinkingParts?.push(thinkingPart);
+						progress.report(thinkingPart);
+					} else if (part.type === "text-delta") {
+						const textPart = new LanguageModelTextPart(part.text);
+						responseLog.textParts?.push(textPart);
+						progress.report(new LanguageModelTextPart(part.text));
+					} else if (part.type === "tool-call") {
+						const normalizedInput = normalizeToolInputs(part.toolName, part.input);
+						const toolCall = new LanguageModelToolCallPart(part.toolCallId, part.toolName, normalizedInput as object);
+						responseLog.toolCallParts?.push(toolCall);
+						progress.report(toolCall);
+					}
 				}
+				if (streamError) {
+					throw streamError;
+				}
+				messageLogger.addRequestResponse(responseLog, interactionId);
+				return;
+			} catch (error) {
+				progress.report(new LanguageModelThinkingPart("\n\n[Error occurred during streaming response.  Retrying...]\n","error" ));
+				lastError = error;
+				logger.warn(
+					`Chat request failed (attempt ${attempt + 1}): ${error instanceof Error ? error.message : String(error)}`
+				);
 			}
-			messageLogger.addRequestResponse(responseLog, interactionId);
-		} catch (error) {
-			logger.error("Chat request failed:", error);
-			throw error;
 		}
+		logger.error("Chat request failed after retries:", lastError);
+		vscode.window.showErrorMessage(
+			`Chat request failed after multiple attempts: ${lastError instanceof Error ? lastError.message : String(lastError)}`
+		);
+
 	}
 
 	async getInlineCompleteResponse(

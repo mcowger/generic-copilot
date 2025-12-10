@@ -34,6 +34,7 @@ export interface ModelItem {
 	displayName?: string;
 	provider: string;
 	use_for_autocomplete?: boolean;
+	retries?: number;
 
 	model_properties: ModelProperties;
 	model_parameters: ModelParameters;
