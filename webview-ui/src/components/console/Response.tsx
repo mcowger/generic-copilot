@@ -24,6 +24,9 @@ export interface ResponseType {
         reasoningTokens?: number;
         cachedInputTokens?: number;
     };
+    // Performance metrics
+    durationMs?: number;
+    tokensPerSecond?: number;
 }
 
 export interface ResponseProps {
@@ -47,6 +50,11 @@ export const Response: React.FC<ResponseProps> = ({ response }) => {
                      Output: {response.usage.outputTokens ?? 0}
                      {response.usage.reasoningTokens ? `, Reasoning: ${response.usage.reasoningTokens}` : ""}
                      {response.usage.cachedInputTokens ? `, Cached: ${response.usage.cachedInputTokens}` : ""})
+                </div>
+            )}
+            {response.durationMs !== undefined && (
+                <div className="metadata">
+                    Duration: {(response.durationMs / 1000).toFixed(1)}s | Rate: {response.tokensPerSecond ?? 0} tokens/s
                 </div>
             )}
 

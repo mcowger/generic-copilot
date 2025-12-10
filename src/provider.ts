@@ -12,7 +12,6 @@ import { logger } from "./outputLogger";
 
 import { prepareLanguageModelChatInformation } from "./provideModel";
 import { prepareTokenCount } from "./provideToken";
-import { updateContextStatusBar } from "./statusBar";
 import { convertLmModeltoModelItem, getExecutionDataForModel} from "./utils";
 import {ProviderClientFactory} from "./ai/providerClientFactory";
 
@@ -102,13 +101,12 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 
 		logger.debug(`Providing language model chat response for model "${model.id}" with provider "${modelItem.provider}"`);
 
-		updateContextStatusBar(messages,model,this.statusBarItem)
-
 		await client.generateStreamingResponse(
 			messages,
 			options,
 			modelItem,
-			progress
+			progress,
+			this.statusBarItem,
 		);
 	}
 }
