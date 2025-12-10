@@ -81,8 +81,19 @@ function generateCompletionItems(
 	insertText: string,
 	position: vscode.Position
 ): vscode.InlineCompletionItem[] {
-	if (!insertText || !insertText?.trim() || insertText?.trim().length < 9) {
-		logger.debug(`Skip short suggestion: ${insertText}`);
+	switch (insertText) {
+		case null:
+			logger.debug("No insert text provided: null");
+			return [];
+		case undefined:
+			logger.debug("No insert text provided: undefined");
+			return [];
+		case "":
+			logger.debug("No insert text provided: empty string");
+			return [];
+	}
+	if (insertText.trim().length < 9) {
+		logger.debug(`Insert text too short (${insertText.trim().length} chars): "${insertText.trim()}"`);
 		return [];
 	}
 

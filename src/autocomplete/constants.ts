@@ -54,7 +54,7 @@ export const FILENAME_SENSITIVE_KEYWORDS = [
 	"wp-config",
 ];
 
-export const completionSystemInstruction = `You are a specialized code completion engine. Your goal is to generate the missing code that bridges the gap between the provided prefix and suffix contexts.
+export const completionSystemInstruction = `You are a specialized code completion engine. Your goal is to generate the missing code that bridges the gap between the provided prefix and suffix contexts.  You must not provide any additional explanations or commentary—only the exact code snippet that fits perfectly between the prefix and suffix.  Limit your suggestions to code only, avoiding any prose or extraneous information.  Ensure that the generated code is syntactically correct and contextually relevant to seamlessly integrate with the surrounding code.  Limit your response to fewer than 5 lines of code.
 `;
 
 export const completionDescription = "The code snippet that fits exactly between the prefix and suffix."

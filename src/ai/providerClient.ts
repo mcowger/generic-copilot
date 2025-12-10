@@ -12,7 +12,7 @@ import { updateContextStatusBar } from "../statusBar";
 import { z } from "zod";
 import * as vscode from "vscode";
 
-import { generateObject, streamText } from "ai";
+import { generateText, streamText } from "ai";
 import { ModelItem, ProviderConfig, VercelType } from "../types";
 import { LM2VercelMessage, LM2VercelTool, normalizeToolInputs } from "./utils/conversion";
 import { ModelMessage, LanguageModel, Provider } from "ai";
@@ -170,20 +170,13 @@ export abstract class ProviderClient {
 	): Promise<string> {
 		const languageModel = this.getLanguageModel(config.slug);
 
-		// The generateObject call
-		const { object } = await generateObject({
+		const result = await generateText({
 			model: languageModel,
-			// Define the structure of the output
-			schema: z.object({
-				completion: z.string().describe(completionDescription),
-			}),
-			// Set the behavior of the model
 			system: completionSystemInstruction,
-
 			// Construct the prompt using the inputs
 			prompt: generateCompletionPromptInstruction(fileName, languageId, prefix, suffix),
 		});
-		return object.completion;
+		return result.text;
 	}
 
 	/**
