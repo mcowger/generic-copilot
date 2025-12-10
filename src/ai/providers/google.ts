@@ -1,5 +1,9 @@
-import {ProviderConfig, ModelItem } from "../../types";
-import { createGoogleGenerativeAI, GoogleGenerativeAIProviderSettings } from "@ai-sdk/google";
+import { ProviderConfig, ModelItem } from "../../types";
+import {
+	createGoogleGenerativeAI,
+	GoogleGenerativeAIProviderSettings,
+	GoogleGenerativeAIProviderOptions,
+} from "@ai-sdk/google";
 import { ProviderClient } from "../providerClient";
 import {
 	Progress,
@@ -22,12 +26,21 @@ export class GoogleProviderClient extends ProviderClient {
 			config,
 			createGoogleGenerativeAI({
 				apiKey: apiKey,
+
 				...(config.baseUrl && { baseURL: config.baseUrl }),
 				...(config.headers && { headers: config.headers }),
 			} as GoogleGenerativeAIProviderSettings)
 		);
 	}
 
+	// 	  providerOptions: {
+	//     google: {
+	//       thinkingConfig: {
+	//         thinkingLevel: 'high',
+	//         includeThoughts: true,
+	//       },
+	//     } satisfies GoogleGenerativeAIProviderOptions,
+	//   },
 	/**
 	 * Custom implementation of generateStreamingResponse for Google provider.
 	 * This is needed to properly handle and preserve thoughtSignature metadata
@@ -52,14 +65,21 @@ export class GoogleProviderClient extends ProviderClient {
 			vscodeOptions: options,
 			vercelMessages: messages,
 			vercelTools: tools,
-			modelConfig: config
+			modelConfig: config,
 		} as LoggedRequest);
 
 		try {
-			const result = await streamText({
+			const result = streamText({
 				model: languageModel,
 				messages: messages,
 				tools: tools,
+				providerOptions: {
+					google: {
+						thinkingConfig: {
+							includeThoughts: true,
+						},
+					} satisfies GoogleGenerativeAIProviderOptions,
+				},
 			});
 
 			const responseLog: LoggedResponse = {
@@ -82,17 +102,13 @@ export class GoogleProviderClient extends ProviderClient {
 				} else if (part.type === "tool-call") {
 					const normalizedInput = normalizeToolInputs(part.toolName, part.input);
 					// Type assertion is necessary because normalizeToolInputs returns unknown
-					const toolCall = new LanguageModelToolCallPart(
-						part.toolCallId,
-						part.toolName,
-						normalizedInput as object
-					);
+					const toolCall = new LanguageModelToolCallPart(part.toolCallId, part.toolName, normalizedInput as object);
 
 					// Store providerMetadata (including thoughtSignature) in cache
 					// This metadata will be retrieved later when converting messages back to the AI SDK format
 					if (part.providerMetadata) {
 						metadataCache.set(part.toolCallId, {
-							providerMetadata: part.providerMetadata
+							providerMetadata: part.providerMetadata,
 						});
 					}
 
