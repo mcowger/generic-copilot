@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.13.3] - 2025-12-09
+
+- Add links (c620448)
+- Enable support for retries, specified in the config on a per-model basis, with a default of 3. (54898ca)
+- Make better error messages (2715246)
+- Enable retries on failure, and emit fake thinking blocks (c7cd216)
+
+
 ## [v0.13.2] - 2025-12-09
 
 - Refactored provider 'key' to 'id' to be slightly less confusing (#25) (724e932)
