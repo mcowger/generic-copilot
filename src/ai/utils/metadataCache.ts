@@ -1,13 +1,13 @@
 /**
- * Cache for storing provider-specific metadata (like Google's thoughtSignature)
- * that needs to be preserved across conversation turns.
+ * Generic cache for storing metadata that needs to be preserved across operations.
  *
- * This is necessary because VSCode doesn't persist custom properties on
- * LanguageModelToolCallPart instances when they're sent back in conversation history.
+ * Primary use case: Storing provider-specific metadata (like Google's thoughtSignature)
+ * that VSCode doesn't persist on LanguageModelToolCallPart instances.
  */
 
 import type { JSONValue } from "ai";
 import { logger } from "../../outputLogger";
+
 /**
  * Metadata associated with a tool call.
  * Contains provider-specific information that must be preserved across turns.
@@ -27,69 +27,70 @@ export interface ToolCallMetadata {
 }
 
 /**
- * Singleton class for caching tool call metadata across conversation turns.
+ * Generic cache with a size limit for storing arbitrary data.
  *
- * Memory management: The cache maintains metadata for the lifetime of tool calls
- * in the conversation history. Entries persist across multiple conversions since
- * the same assistant messages are sent repeatedly as part of conversation context.
- * The cache enforces a maximum size limit to prevent unbounded growth.
+ * Memory management: The cache enforces a maximum size limit to prevent unbounded growth.
+ * When the limit is reached, the oldest entry is evicted (FIFO).
+ *
+ * Callers should cast values on get() as needed, e.g.:
+ *   cache.get(key) as MyType
  */
 export class MetadataCache {
-	private static instance: MetadataCache;
-	private cache: Map<string, ToolCallMetadata>;
-	private readonly maxSize: number = 1000; // Safety limit to prevent unbounded growth
+	private cache: Map<string, unknown>;
+	private readonly maxSize: number;
 
-	private constructor() {
+	constructor(maxSize: number = 1000) {
 		this.cache = new Map();
+		this.maxSize = maxSize;
 	}
 
 	/**
-	 * Get the singleton instance
+	 * Store a value in the cache
+	 * @param key The unique key to store the value under
+	 * @param value The value to store
 	 */
-	public static getInstance(): MetadataCache {
-		if (!MetadataCache.instance) {
-			MetadataCache.instance = new MetadataCache();
-		}
-		return MetadataCache.instance;
-	}
-
-	/**
-	 * Store metadata for a tool call
-	 * @param toolCallId The unique identifier for the tool call
-	 * @param metadata The metadata to store
-	 */
-	public set(toolCallId: string, metadata: ToolCallMetadata): void {
-		logger.debug(`Setting metadata for toolCallId "${toolCallId}"`);
+	public set(key: string, value: unknown): void {
+		logger.debug(`MetadataCache: setting key "${key}"`);
 		// Enforce size limit to prevent memory issues
-		if (this.cache.size >= this.maxSize) {
+		if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
 			// Remove oldest entry (first entry in the Map)
 			const firstKey = this.cache.keys().next().value;
 			if (firstKey) {
 				this.cache.delete(firstKey);
 			}
 		}
-		this.cache.set(toolCallId, metadata);
+		this.cache.set(key, value);
 	}
 
 	/**
-	 * Retrieve metadata for a tool call
-	 * @param toolCallId The unique identifier for the tool call
-	 * @returns The stored metadata, or undefined if not found
+	 * Retrieve a value from the cache
+	 * @param key The key to look up
+	 * @returns The stored value, or undefined if not found
 	 */
-	public get(toolCallId: string): ToolCallMetadata | undefined {
-		return this.cache.get(toolCallId);
+	public get(key: string): unknown {
+		return this.cache.get(key);
 	}
 
 	/**
-	 * Remove metadata for a tool call
-	 * @param toolCallId The unique identifier for the tool call
+	 * Check if a key exists in the cache
+	 * @param key The key to check
+	 * @returns True if the key exists
 	 */
-	public delete(toolCallId: string): void {
-		this.cache.delete(toolCallId);
+	public has(key: string): boolean {
+		return this.cache.has(key);
 	}
 
 	/**
-	 * Clear all cached metadata
+	 * Remove a value from the cache
+	 * @param key The key to remove
+	 * @returns True if the key was found and removed
+	 */
+	public delete(key: string): boolean {
+		return this.cache.delete(key);
+	}
+
+	/**
+	 * Clear all cached entries
 	 */
 	public clear(): void {
 		this.cache.clear();
@@ -100,5 +101,41 @@ export class MetadataCache {
 	 */
 	public size(): number {
 		return this.cache.size;
+	}
+}
+
+/**
+ * Registry of named cache instances.
+ */
+
+export class CacheRegistry {
+	private static caches: Map<string, MetadataCache> = new Map();
+
+	/**
+	 * Get or create a named cache instance.
+	 * @param name Unique name for this cache
+	 * @param maxSize Maximum number of entries (only used when creating)
+	 */
+	public static getCache(name: string, maxSize: number = 1000): MetadataCache {
+		if (!CacheRegistry.caches.has(name)) {
+			CacheRegistry.caches.set(name, new MetadataCache(maxSize));
+		}
+		return CacheRegistry.caches.get(name)!;
+	}
+
+	/**
+	 * Clear a specific cache by name
+	 */
+	public static clearCache(name: string): void {
+		CacheRegistry.caches.get(name)?.clear();
+	}
+
+	/**
+	 * Clear all caches
+	 */
+	public static clearAll(): void {
+		for (const cache of CacheRegistry.caches.values()) {
+			cache.clear();
+		}
 	}
 }

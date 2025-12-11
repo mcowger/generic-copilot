@@ -72,6 +72,13 @@ The project has two distinct parts that need dependency installation:
 *   **`src/configurationPanel.ts`**: Handles the Webview panel creation and message passing.
 *   **`webview-ui/`**: Standalone React application. Builds to `out/webview-ui/`.
 
+### Metadata Cache (important)
+*   The cache lives in `src/ai/utils/metadataCache.ts` and is accessed via `CacheRegistry.getCache(name)`.
+*   The cache stores `unknown`; **always cast on get/set** to the shape you expect (e.g., `as ToolCallMetadata`). Do not widen the cache type globally.
+*   Use named caches per concern (e.g., `toolCallMetadata`, `yourFeatureName`) to avoid cross-contamination. Avoid reusing names across unrelated features.
+*   The cache has a size limit (FIFO eviction). Do not store large payloads or secrets; it is meant for transient provider metadata (e.g., Google `thoughtSignature`).
+*   If you add a new metadata type, define or import a small interface for it near the usage site and cast explicitly when reading/writing the cache.
+
 ## 5. Adding New Providers
 1.  Create a new client in `src/ai/providers/` implementing `ProviderClient`.
 2.  Update `src/ai/providerClientFactory.ts` to handle the new `vercelType`.

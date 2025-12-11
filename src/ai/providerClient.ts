@@ -15,7 +15,7 @@ import * as vscode from "vscode";
 import { generateText, JSONValue, streamText } from "ai";
 import { ModelItem, ProviderConfig, VercelType } from "../types";
 import { LM2VercelMessage, LM2VercelTool, normalizeToolInputs } from "./utils/conversion";
-import { ModelMessage, LanguageModel, Provider } from "ai";
+import { ModelMessage, LanguageModel, Provider, ProviderMetadata } from "ai";
 import { MessageLogger, LoggedRequest, LoggedResponse, LoggedInteraction } from "./utils/messageLogger";
 import { logger } from "../outputLogger";
 import {
@@ -125,6 +125,11 @@ export abstract class ProviderClient {
 					} else if (part.type === "tool-call") {
 						const normalizedInput = normalizeToolInputs(part.toolName, part.input);
 						const toolCall = new LanguageModelToolCallPart(part.toolCallId, part.toolName, normalizedInput as object);
+
+						// Allow subclasses to process tool call metadata.
+						// Only called by subclasses that implement it (e.g., GoogleProviderClient).
+						this.processToolCallMetadata(part.toolCallId, part.providerMetadata);
+
 						responseLog.toolCallParts?.push(toolCall);
 						progress.report(toolCall);
 					}
@@ -132,6 +137,10 @@ export abstract class ProviderClient {
 				if (streamError) {
 					throw streamError;
 				}
+
+				// Allow subclasses to process response-level metadata (e.g., OpenAI's responseId)
+				this.processResponseMetadata(result);
+
 				// Add usage information after streaming completes
 				responseLog.usage = await result.usage;
 
@@ -209,5 +218,27 @@ export abstract class ProviderClient {
 	 */
 	convertTools(options: ProvideLanguageModelChatResponseOptions): Record<string, any> | undefined {
 		return LM2VercelTool(options);
+	}
+
+	/**
+	 * Hook for subclasses to process tool call metadata from the provider.
+	 * Override this method to handle provider-specific metadata (e.g., Google's thoughtSignature).
+	 * @param toolCallId The ID of the tool call.
+	 * @param providerMetadata The metadata from the provider, if any.
+	 */
+	protected processToolCallMetadata(toolCallId: string, providerMetadata: ProviderMetadata | undefined): void {
+		// Default implementation does nothing.
+		// Subclasses like GoogleProviderClient can override to cache metadata.
+	}
+
+	/**
+	 * Hook for subclasses to process response-level metadata from the provider.
+	 * Override this method to handle provider-specific response metadata (e.g., OpenAI's responseId).
+	 * @param result The streaming result object from streamText.
+	 */
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	protected processResponseMetadata(result: any): void {
+		// Default implementation does nothing.
+		// Subclasses like OpenAIProviderClient can override to cache response metadata.
 	}
 }
