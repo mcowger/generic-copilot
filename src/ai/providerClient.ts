@@ -12,7 +12,7 @@ import { updateContextStatusBar } from "../statusBar";
 import { z } from "zod";
 import * as vscode from "vscode";
 
-import { generateText, streamText } from "ai";
+import { generateText, JSONValue, streamText } from "ai";
 import { ModelItem, ProviderConfig, VercelType } from "../types";
 import { LM2VercelMessage, LM2VercelTool, normalizeToolInputs } from "./utils/conversion";
 import { ModelMessage, LanguageModel, Provider } from "ai";
@@ -65,6 +65,7 @@ export abstract class ProviderClient {
 		config: ModelItem,
 		progress: Progress<LanguageModelResponsePart>,
 		statusBarItem: vscode.StatusBarItem,
+		providerOptions?: Record<string, Record<string, JSONValue>>
 	): Promise<void> {
 		const languageModel = this.getLanguageModel(config.slug);
 		const messages = this.convertMessages(request);
@@ -104,9 +105,11 @@ export abstract class ProviderClient {
 					messages: messages,
 					tools: tools,
 					maxRetries: 3,
+					providerOptions: providerOptions || {},
 					onError: ({ error }) => {
+						logger.error(`Error during streaming response: ${error instanceof Error ? error.message : String(error)}`);
 						streamError = error;
-					},
+					}
 				});
 
 				// We need to handle fullStream to get tool calls
@@ -141,7 +144,11 @@ export abstract class ProviderClient {
 					const durationSeconds = responseLog.durationMs / 1000;
 					responseLog.tokensPerSecond = Math.round(responseLog.usage.outputTokens / durationSeconds);
 				}
-				updateContextStatusBar(responseLog.usage.totalTokens || 0,config.model_properties.context_length || 0,statusBarItem)
+				updateContextStatusBar(
+					responseLog.usage.totalTokens || 0,
+					config.model_properties.context_length || 0,
+					statusBarItem
+				);
 				messageLogger.addRequestResponse(responseLog, interactionId);
 				return;
 			} catch (error) {
@@ -154,7 +161,7 @@ export abstract class ProviderClient {
 				);
 			}
 		}
-		logger.error("Chat request failed after retries:", lastError);
+		logger.error("Chat request failed after retries:", (lastError as Error).message);
 		vscode.window.showErrorMessage(
 			`Chat request failed after multiple attempts: ${lastError instanceof Error ? lastError.message : String(lastError)}`
 		);
