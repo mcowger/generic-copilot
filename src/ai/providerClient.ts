@@ -137,6 +137,10 @@ export abstract class ProviderClient {
 				if (streamError) {
 					throw streamError;
 				}
+
+				// Allow subclasses to process response-level metadata (e.g., OpenAI's responseId)
+				this.processResponseMetadata(result);
+
 				// Add usage information after streaming completes
 				responseLog.usage = await result.usage;
 
@@ -225,5 +229,16 @@ export abstract class ProviderClient {
 	protected processToolCallMetadata(toolCallId: string, providerMetadata: ProviderMetadata | undefined): void {
 		// Default implementation does nothing.
 		// Subclasses like GoogleProviderClient can override to cache metadata.
+	}
+
+	/**
+	 * Hook for subclasses to process response-level metadata from the provider.
+	 * Override this method to handle provider-specific response metadata (e.g., OpenAI's responseId).
+	 * @param result The streaming result object from streamText.
+	 */
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	protected processResponseMetadata(result: any): void {
+		// Default implementation does nothing.
+		// Subclasses like OpenAIProviderClient can override to cache response metadata.
 	}
 }
