@@ -2,6 +2,8 @@
 
 Configuration is managed in VS Code's `settings.json` file. You can either edit the JSON directly or use the Configuration GUI (`GenericCopilot: Open Configuration GUI`).
 
+> **📝 New!** For information about VS Code settings integration and how to add new simple settings (checkboxes, dropdowns, etc.), see [VS_CODE_SETTINGS_INTEGRATION.md](VS_CODE_SETTINGS_INTEGRATION.md) and [SETTINGS_VISUAL_GUIDE.md](SETTINGS_VISUAL_GUIDE.md).
+
 ![GUI](/docs/images/gui.png)
 ![GUI](/docs/images/modelsgui.png)
 
