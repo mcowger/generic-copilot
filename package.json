@@ -97,6 +97,7 @@
 				"generic-copilot.providers": {
 					"type": "array",
 					"default": [],
+					"editPresentation": "multilineText",
 					"items": {
 						"type": "object",
 						"properties": {
@@ -126,11 +127,12 @@
 							"vercelType"
 						]
 					},
-					"description": "A list of provider configurations. Models can reference providers to inherit baseUrl"
+					"description": "A list of provider configurations. Models can reference providers to inherit baseUrl. Use the Configuration GUI or edit in settings.json."
 				},
 				"generic-copilot.models": {
 					"type": "array",
 					"default": [],
+					"editPresentation": "multilineText",
 					"items": {
 						"type": "object",
 						"properties": {
@@ -206,13 +208,36 @@
 							"slug",
 							"provider"
 						]
-					}
+					},
+					"description": "A list of model configurations. Use the Configuration GUI or edit in settings.json."
 				},
 				"generic-copilot.delay": {
 					"type": "number",
 					"default": 0,
 					"minimum": 0,
 					"description": "Fixed delay in milliseconds between consecutive requests. Default is 0 (no delay)."
+				},
+				"generic-copilot.enableExperimentalFeatures": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enable experimental features (example checkbox setting)."
+				},
+				"generic-copilot.logLevel": {
+					"type": "string",
+					"enum": [
+						"error",
+						"warn",
+						"info",
+						"debug"
+					],
+					"default": "info",
+					"description": "Set the logging level for the extension (example dropdown setting).",
+					"enumDescriptions": [
+						"Show only errors",
+						"Show warnings and errors",
+						"Show informational messages, warnings, and errors",
+						"Show all messages including debug information"
+					]
 				}
 			}
 		}
