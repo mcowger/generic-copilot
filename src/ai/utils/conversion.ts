@@ -172,17 +172,14 @@ export function LM2VercelMessage(messages: readonly LanguageModelChatRequestMess
 
 		if (message.role === LanguageModelChatMessageRole.Assistant) {
 			logger.debug(`Processing assistant message`);
-			const contentParts: (TextPart | ToolCallPart | ReasoningOutput)[] = [];
+			const contentParts: (TextPart | ReasoningOutput)[] = [];
+			const toolCalls: Array<Record<string, unknown>> = [];
 
 			for (const part of message.content) {
 				if (part instanceof LanguageModelToolCallPart) {
-					const toolCallPart: ToolCallPartWithProviderOptions = {
-						type: "tool-call",
-						toolCallId: part.callId,
-						toolName: part.name,
-						input: part.input,
-					};
-
+					// Convert LanguageModelToolCallPart into a serializable `tool_calls` entry
+					// We keep the original cache-related comments and behavior here so
+					// downstream systems (and templates) can associate provider metadata.
 					// Retrieve providerMetadata from cache (e.g., Google's thoughtSignature)
 					// The metadata was stored by the provider's generateStreamingResponse
 					// Note: We do NOT delete the cache entry here because the same assistant message
@@ -192,12 +189,20 @@ export function LM2VercelMessage(messages: readonly LanguageModelChatRequestMess
 					// providerMetadata is what we RECEIVE from providers, providerOptions is what we SEND
 					const cache = CacheRegistry.getCache("toolCallMetadata");
 					const cachedMetadata = cache.get(part.callId) as ToolCallMetadata | undefined;
-					if (cachedMetadata?.providerMetadata) {
-						logger.debug(`Using cached provider metadata for toolCallId "${part.callId}"`);
-						toolCallPart.providerOptions = cachedMetadata.providerMetadata;
+					const providerOptions = cachedMetadata?.providerMetadata;
+
+					const toolCallFunc: Record<string, unknown> = {
+						function: {
+							name: part.name ?? "unknown",
+							arguments: part.input ?? {},
+						},
+					};
+
+					if (providerOptions) {
+						toolCallFunc.function = { ...(toolCallFunc.function as object), providerOptions };
 					}
 
-					contentParts.push(toolCallPart);
+					toolCalls.push(toolCallFunc);
 				} else if (part instanceof LanguageModelThinkingPart) {
 					if (part.id && part.id.startsWith("error")) {
 						continue;
@@ -213,8 +218,32 @@ export function LM2VercelMessage(messages: readonly LanguageModelChatRequestMess
 				}
 			}
 
-			messagesPayload.push({ role: "assistant", content: contentParts } as AssistantModelMessage);
+			const assistantMsg: Record<string, unknown> = { role: "assistant", content: contentParts };
+			if (toolCalls.length > 0) {
+				assistantMsg["tool_calls"] = toolCalls;
+			}
+
+			messagesPayload.push(assistantMsg as AssistantModelMessage);
 		}
 	}
-	return messagesPayload;
+
+	// Post-process: merge consecutive `user` messages into a single message.
+	// Some frontends (and certain model prompt templates) require that after an
+	// optional `system` message, roles alternate `user` / `assistant` (tool calls
+	// and results are allowed exceptions). VS Code may produce multiple
+	// consecutive `user` messages; merge them here to avoid prompt template
+	// rendering errors (e.g., Jinja complaining about non-alternating roles).
+	const mergedPayload: ModelMessage[] = [];
+	for (const msg of messagesPayload) {
+		if (msg.role === "user" && mergedPayload.length > 0 && mergedPayload[mergedPayload.length - 1].role === "user") {
+			// Safe to treat content as string for user messages
+			const prev = mergedPayload[mergedPayload.length - 1] as UserModelMessage;
+			const curr = msg as UserModelMessage;
+			prev.content = `${String(prev.content)}\n${String(curr.content)}`;
+		} else {
+			mergedPayload.push(msg);
+		}
+	}
+
+	return mergedPayload;
 }
