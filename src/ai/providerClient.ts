@@ -14,8 +14,10 @@ import * as vscode from "vscode";
 
 import { generateText, JSONValue, streamText } from "ai";
 import { ModelItem, ProviderConfig, VercelType } from "../types";
-import { LM2VercelMessage, LM2VercelTool, normalizeToolInputs } from "./utils/conversion";
-import { ModelMessage, LanguageModel, Provider, ProviderMetadata } from "ai";
+import { LM2VercelTool, normalizeToolInputs, convertToolResultToString } from "./utils/conversion";
+import { CacheRegistry, ToolCallMetadata } from "./utils/metadataCache";
+import { AssistantModelMessage, ToolModelMessage, ToolResultPart, UserModelMessage, TextPart, ReasoningOutput, SystemModelMessage, ModelMessage, LanguageModel, Provider, ProviderMetadata, ToolCallPart } from "ai";
+import { LanguageModelChatMessageRole, LanguageModelToolResultPart } from "vscode";
 import { MessageLogger, LoggedRequest, LoggedResponse, LoggedInteraction } from "./utils/messageLogger";
 import { logger } from "../outputLogger";
 import {
@@ -23,6 +25,11 @@ import {
 	completionSystemInstruction,
 	completionDescription,
 } from "../autocomplete/constants";
+
+// Local helper: ToolCallPartWithProviderOptions (originally defined in conversion.ts)
+interface ToolCallPartWithProviderOptions extends ToolCallPart {
+	providerOptions?: Record<string, Record<string, JSONValue>>;
+}
 
 /**
  * Abstract base class for provider clients that interact with language model providers.
@@ -205,12 +212,96 @@ export abstract class ProviderClient {
 		return this.providerInstance.languageModel(slug);
 	}
 	/**
-	 * Converts VS Code chat request messages to the provider's model message format.
+	 * Converts VS Code LanguageModelChatRequestMessage array to AI SDK ModelMessage array
+   * borrowed and adapted from https://github.com/jaykv/modelbridge/blob/main/src/provider.ts (MIT License)
 	 * @param messages Array of VS Code chat request messages.
 	 * @returns Array of converted model messages.
 	 */
 	convertMessages(messages: readonly LanguageModelChatRequestMessage[]): ModelMessage[] {
-		return LM2VercelMessage(messages);
+		logger.debug(`Converting VS Code chat messages to AI SDK format`);
+		const messagesPayload: ModelMessage[] = [];
+
+		for (const message of messages) {
+			if (message.role === LanguageModelChatMessageRole.System) {
+				logger.debug(`Processing system message`);
+				messagesPayload.push({
+					role: "system",
+					content: (message.content[0] as LanguageModelTextPart).value,
+				} as SystemModelMessage);
+			}
+			if (message.role === LanguageModelChatMessageRole.User) {
+				logger.debug(`Processing user message`);
+				const textParts: string[] = [];
+				const toolResults: ToolResultPart[] = [];
+
+				for (const part of message.content) {
+					if (part instanceof LanguageModelToolResultPart) {
+						logger.debug(`Processing tool result part with callId "${part.callId}"`);
+						toolResults.push({
+							type: "tool-result",
+							toolCallId: part.callId,
+							toolName: (part as { name?: string }).name ?? "unknown",
+							output: { type: "text", value: convertToolResultToString(part.content[0]) },
+						});
+					} else if (part instanceof LanguageModelTextPart) {
+						textParts.push(part.value);
+					}
+				}
+
+				if (toolResults.length > 0) {
+					messagesPayload.push({ role: "tool", content: toolResults } as ToolModelMessage);
+				} else {
+					messagesPayload.push({ role: "user", content: textParts.join("\n") } as UserModelMessage);
+				}
+			}
+
+			if (message.role === LanguageModelChatMessageRole.Assistant) {
+				logger.debug(`Processing assistant message`);
+				const contentParts: (TextPart | ToolCallPart | ReasoningOutput)[] = [];
+
+				for (const part of message.content) {
+					if (part instanceof LanguageModelToolCallPart) {
+						const toolCallPart: ToolCallPartWithProviderOptions = {
+							type: "tool-call",
+							toolCallId: part.callId,
+							toolName: part.name,
+							input: part.input,
+						};
+
+						// Retrieve providerMetadata from cache (e.g., Google's thoughtSignature)
+						// The metadata was stored by the provider's generateStreamingResponse
+						// Note: We do NOT delete the cache entry here because the same assistant message
+						// will be converted multiple times as part of conversation history in future turns
+						//
+						// IMPORTANT: We use providerOptions (not providerMetadata) when SENDING to providers
+						// providerMetadata is what we RECEIVE from providers, providerOptions is what we SEND
+						const cache = CacheRegistry.getCache("toolCallMetadata");
+						const cachedMetadata = cache.get(part.callId) as ToolCallMetadata | undefined;
+						if (cachedMetadata?.providerMetadata) {
+							logger.debug(`Using cached provider metadata for toolCallId "${part.callId}"`);
+							toolCallPart.providerOptions = cachedMetadata.providerMetadata;
+						}
+
+						contentParts.push(toolCallPart);
+					} else if (part instanceof LanguageModelThinkingPart) {
+						if (part.id && part.id.startsWith("error")) {
+							continue;
+							// Specialized thinking part for error messages; skip and dont include in context.
+							// VScode doesn't allow a reasonable way to inject errors into the chat history.
+							// So in generateStreamingResponse() we use a thinking part with id "error" to indicate an error.
+							// And specifically exclude it here.
+						}
+						const text = Array.isArray(part.value) ? part.value.join("") : part.value;
+						contentParts.push({ type: "reasoning", text });
+					} else if (part instanceof LanguageModelTextPart) {
+						contentParts.push({ type: "text", text: part.value });
+					}
+				}
+
+				messagesPayload.push({ role: "assistant", content: contentParts } as AssistantModelMessage);
+			}
+		}
+		return messagesPayload;
 	}
 	/**
 	 * Converts VS Code chat request messages to the provider's model message format.
