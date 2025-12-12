@@ -199,9 +199,9 @@ export function LM2VercelMessage(messages: readonly LanguageModelChatRequestMess
 
 					contentParts.push(toolCallPart);
 				} else if (part instanceof LanguageModelThinkingPart) {
-					if (part.id && part.id.startsWith("error")) {
+					if (part.id && part.id.startsWith("error") || part.id?.startsWith("thinking-initial")) {
 						continue;
-						// Specialized thinking part for error messages; skip and dont include in context.
+						// Specialized thinking part for error messages and working notifications; skip and dont include in context.
 						// VScode doesn't allow a reasonable way to inject errors into the chat history.
 						// So in generateStreamingResponse() we use a thinking part with id "error" to indicate an error.
 						// And specifically exclude it here.

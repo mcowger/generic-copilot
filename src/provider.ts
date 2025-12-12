@@ -108,6 +108,7 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 			progress,
 			this.statusBarItem,
 		);
+		logger.debug(`Completed language model chat response for model`);
 	}
 }
 

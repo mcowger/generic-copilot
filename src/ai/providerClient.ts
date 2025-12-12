@@ -100,6 +100,12 @@ export abstract class ProviderClient {
 					toolCallParts: [],
 				};
 				logger.debug(`Processing streaming response parts for model "${config.id}" with provider "${this.config.id}"`);
+				logger.debug(`Sending initial thinking part: start`);
+				const id = `thinking-initial-${Date.now()}`;
+				progress.report(
+					new LanguageModelThinkingPart(`Working...`, id) // mark as type error so it doens't get included in context
+				);
+				let started = false;
 				const result = streamText({
 					model: languageModel,
 					messages: messages,
@@ -112,17 +118,31 @@ export abstract class ProviderClient {
 					}
 				});
 
+				let didOuputTextOrToolCall = false;
+				const actualResponseTypes  = ["reasoning-start", "text-start", "tool-input-start"];
 				// We need to handle fullStream to get tool calls
 				for await (const part of result.fullStream) {
+					logger.debug(`Received streaming part of type: ${part.type}`);
+					if (!started && actualResponseTypes.includes(part.type)) {
+						logger.debug(`Ending initial thinking part: ${part.type}`);
+						progress.report(new LanguageModelThinkingPart("", id, { vscode_reasoning_done: true }));
+						started = true;
+					}
 					if (part.type === "reasoning-delta") {
+						logger.debug(`Started reasoning delta part`);
 						const thinkingPart = new LanguageModelThinkingPart(part.text, part.id);
 						responseLog.thinkingParts?.push(thinkingPart);
 						progress.report(thinkingPart);
+						logger.debug(`Emitted reasoning delta part`);
 					} else if (part.type === "text-delta") {
+						logger.debug(`Started text delta part`);
 						const textPart = new LanguageModelTextPart(part.text);
 						responseLog.textParts?.push(textPart);
-						progress.report(new LanguageModelTextPart(part.text));
+						progress.report(textPart);
+						didOuputTextOrToolCall = true;
+						logger.debug(`Emitted text delta part`);
 					} else if (part.type === "tool-call") {
+						logger.debug(`Started tool call part`);
 						const normalizedInput = normalizeToolInputs(part.toolName, part.input);
 						const toolCall = new LanguageModelToolCallPart(part.toolCallId, part.toolName, normalizedInput as object);
 
@@ -132,7 +152,14 @@ export abstract class ProviderClient {
 
 						responseLog.toolCallParts?.push(toolCall);
 						progress.report(toolCall);
+						didOuputTextOrToolCall = true;
+						logger.debug(`Emitted tool call part`);
 					}
+				}
+				if (!didOuputTextOrToolCall) {
+					// If no text or tool call was output, Copilot regards that as a failed response.
+					// So we add a final fake text part to avoid that.
+					progress.report(new LanguageModelTextPart("Work complete."));
 				}
 				if (streamError) {
 					throw streamError;
