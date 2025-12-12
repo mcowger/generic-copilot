@@ -1,13 +1,16 @@
 # Configuration Guide
 
+The configuration is split into two main parts: `providers` and `models`.
+
+## Provider Configuration (`generic-copilot.providers`)
+
+Note: `claude` is supported with the subscription or API key.  It has [specialized instructions.](CLAUDE-CODE.md)
+
 Configuration is managed in VS Code's `settings.json` file. You can either edit the JSON directly or use the Configuration GUI (`GenericCopilot: Open Configuration GUI`).
 
 ![GUI](/docs/images/gui.png)
 ![GUI](/docs/images/modelsgui.png)
 
-The configuration is split into two main parts: `providers` and `models`.
-
-## Provider Configuration (`generic-copilot.providers`)
 
 Providers define the connection details for an API endpoint. Models reference a provider to inherit its settings.
 
@@ -16,7 +19,7 @@ Providers define the connection details for an API endpoint. Models reference a 
 | Field         | Type     | Required | Description                                                                    |
 |---------------|----------|----------|--------------------------------------------------------------------------------|
 | `id`         | `string` | Yes      | A unique, lowercase identifier for the provider (e.g., "openrouter", "zai").   |
-| `vercelType`        | `string` | Yes      | The provider type. Must be one of `openai`, `openai-compatible`, `openrouter`, or `google`. |
+| `vercelType`        | `string` | Yes      | The provider type. Must be one of `openai`, `openai-compatible`, `openrouter`, `google`, `claude-code`. |
 | `displayName` | `string` | No       | A user-friendly name for the provider that appears in the UI.                  |
 | `baseUrl`     | `string` | No      | The base URL of the provider's API endpoint (e.g., "https://api.example.com/v1"). |
 | `headers`     | `object` | No       | Custom HTTP headers to be sent with every request to this provider.            |
