@@ -46,7 +46,7 @@ export function LM2VercelTool(options: ProvideLanguageModelChatResponseOptions):
 			// Use AI SDK's tool() function to create properly validated tools
 			tools[vsTool.name] = tool({
 				description: vsTool.description,
-				inputSchema: jsonSchema(vsTool.inputSchema ?? {}),
+				inputSchema: jsonSchema(vsTool.inputSchema ?? { type: "object", properties: {} }),
 			});
 		}
 	}
