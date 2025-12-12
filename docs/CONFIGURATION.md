@@ -96,7 +96,17 @@ Here is a complete example for your `settings.json` file, demonstrating how to c
       "baseUrl": "https://open.zaidata.com/v1",
       "headers": {
         "X-Source": "vscode-extension"
+      },
+      {
+      "id": "claude-code",
+      "vercelType": "claude-code",
+      "displayName": "Claude Code",
+      "providerSpecificOptions": {
+        "pathToClaudeCodeExecutable": "/Users/HOMEDIR/.bin/claude", //Optional
+        "permissionMode": "bypassPermissions", //Optional
+        "systemPrompt": "", // Optional - will be combined with prompts from Copilot
       }
+    }
     }
   ],
   "generic-copilot.models": [
@@ -111,6 +121,15 @@ Here is a complete example for your `settings.json` file, demonstrating how to c
       },
       "model_parameters": {
         "temperature": 0.7
+      }
+    },
+    {
+      "id": "claude-code-haiku",
+      "slug": "haiku", // can be haiku | sonnet | opus
+      "provider": "claude-code",
+      "displayName": "Haiku",
+      "model_properties": {
+        "context_length": 200000
       }
     },
     {

@@ -120,6 +120,10 @@
 							"vercelType": {
 								"type": "string",
 								"description": "(Required) The type of Vercel provider."
+							},
+							"providerSpecificOptions": {
+								"type": "object",
+								"description": "(Optional) Provider-specific options as a JSON object. Used for provider-specific configuration (e.g., pathToClaudeCodeExecutable, permissionMode for claude-code provider)."
 							}
 						},
 						"required": [

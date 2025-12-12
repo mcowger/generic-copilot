@@ -18,7 +18,7 @@ export interface ProvidersProps {
   onChange: (providers: ProviderConfig[]) => void;
 }
 
-const vercelTypes: ProviderConfig['vercelType'][] = ['openai-compatible', 'openai', 'openrouter', 'google'];
+const vercelTypes: ProviderConfig['vercelType'][] = ['openai-compatible', 'openai', 'openrouter', 'google', 'claude-code'];
 
 const ProviderItem: React.FC<{
   provider: ProviderConfig;
@@ -48,6 +48,21 @@ const ProviderItem: React.FC<{
       onUpdate({ ...provider, headers: provider.headers });
     } else {
       onUpdate({ ...provider, headers: parsed });
+    }
+  };
+
+  const updateProviderSpecificOptions = (text: string) => {
+    const parsed = tryParseJson<Record<string, unknown>>(text);
+    if (parsed === undefined) {
+      const next = { ...provider };
+      delete next.providerSpecificOptions;
+      onUpdate(next);
+    } else if (typeof parsed === 'string') {
+      // keep raw string by storing nothing and letting textarea show text
+      // No-op to avoid data loss; we can't store string in providerSpecificOptions typed as Record
+      onUpdate({ ...provider, providerSpecificOptions: provider.providerSpecificOptions });
+    } else {
+      onUpdate({ ...provider, providerSpecificOptions: parsed });
     }
   };
 
@@ -118,6 +133,18 @@ const ProviderItem: React.FC<{
           >
           </VscodeTextarea>
           <VscodeFormHelper>Custom headers for this provider (JSON object)</VscodeFormHelper>
+        </div>
+
+        <div className="form-field">
+          <VscodeFormHelper>Provider-Specific Options (JSON)</VscodeFormHelper>
+          <VscodeTextarea
+            rows={3 as any}
+            placeholder='{"pathToClaudeCodeExecutable":"/path/to/claude","permissionMode":"bypassPermissions"}'
+            value={prettyJson(provider.providerSpecificOptions)}
+            onInput={(e: any) => updateProviderSpecificOptions(e.currentTarget.value)}
+          >
+          </VscodeTextarea>
+          <VscodeFormHelper>Provider-specific configuration options (JSON object). Used for provider-specific settings like claude-code paths or permission modes.</VscodeFormHelper>
         </div>
 
 

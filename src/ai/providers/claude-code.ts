@@ -1,5 +1,5 @@
 import { ProviderClient } from "../providerClient";
-import { Provider, streamText } from "ai";
+import { Provider, streamText, TextStreamPart, ToolSet } from "ai";
 import {
 	Progress,
 	LanguageModelChatRequestMessage,
@@ -15,8 +15,7 @@ import { ProviderConfig, ModelItem } from "../../types";
 import * as vscode from "vscode";
 import { JSONValue } from "ai";
 import { logger } from "../../outputLogger";
-import { randomUUID } from "crypto";
-import { LoggedRequest, LoggedResponse,MessageLogger } from "../utils/messageLogger";
+import { LoggedRequest, LoggedResponse, MessageLogger } from "../utils/messageLogger";
 import { normalizeToolInputs } from "../utils/conversion";
 
 // Dynamic import for ESM module - using any type to avoid TS1479 error
@@ -43,18 +42,19 @@ export class ClaudeCodeProviderClient extends ProviderClient {
 			return;
 		}
 		const createClaudeCode = await loadClaudeCode();
+		const claudeSpecificOptions = this.config.providerSpecificOptions || {};
 		const providerInstance = createClaudeCode({
 			defaultSettings: {
-				pathToClaudeCodeExecutable: "/Users/matt.cowger/.asdf/shims/claude",
-				permissionMode: "bypassPermissions", // Ask for permissions
-				systemPrompt: "",
+				pathToClaudeCodeExecutable: claudeSpecificOptions.pathToClaudeCodeExecutable || null,
+				permissionMode: claudeSpecificOptions.permissionMode || "bypassPermissions", // Ask for permissions
+				systemPrompt: claudeSpecificOptions.systemPrompt || "",
 				verbose: false,
-				// logger: {
-				// 	//debug: (message: string) => logger.debug(`Claude: ${message}`),
-				// 	info: (message: string) => logger.info(`Claude: ${message}`),
-				// 	warn: (message: string) => logger.warn(`Claude: ${message}`),
-				// 	error: (message: string) => logger.error(`Claude: ${message}`),
-				// },
+				logger: {
+					debug: (message: string) => {},
+					info: (message: string) => logger.info(`Claude: ${message}`),
+					warn: (message: string) => logger.warn(`Claude: ${message}`),
+					error: (message: string) => logger.error(`Claude: ${message}`),
+				},
 			},
 		});
 		this.providerInstance = providerInstance;
@@ -87,8 +87,8 @@ export class ClaudeCodeProviderClient extends ProviderClient {
 		} as LoggedRequest);
 		let streamError: any;
 		const result = streamText({
-			model: this.providerInstance.languageModel("haiku"),
-			messages: messages.slice(1),
+			model: this.providerInstance.languageModel(config.slug),
+			messages: messages,
 			maxRetries: 3,
 			onError: ({ error }) => {
 				logger.error(`Error during streaming response: ${error instanceof Error ? error.message : String(error)}`);
@@ -115,10 +115,7 @@ export class ClaudeCodeProviderClient extends ProviderClient {
 				responseLog.textParts?.push(textPart);
 				progress.report(textPart);
 			} else if (part.type === "tool-call") {
-				const normalizedInput = normalizeToolInputs(part.toolName, part.input);
-				const toolCall = new LanguageModelToolCallPart(part.toolCallId, part.toolName, normalizedInput as object);
-				responseLog.toolCallParts?.push(toolCall);
-				progress.report(new LanguageModelTextPart(`\n\`${part.toolName}\`: ${JSON.stringify(part.input)}\n`));
+				progress.report(this.generateTextPartForToolCall(part));
 			} else {
 				//logger.warn(`Unknown part type received from Claude Code: ${part.type}: ${JSON.stringify(part)}`);
 			}
@@ -135,7 +132,56 @@ export class ClaudeCodeProviderClient extends ProviderClient {
 		}
 		messageLogger.addRequestResponse(responseLog, interactionId);
 		return;
+		``;
 
 		// return super.generateStreamingResponse(request, options, config, progress, statusBarItem, _providerOptions);
+	}
+
+	private stripWorkspaceRootFromPath(filePath: string): string {
+		const workspaceRoot = vscode.workspace.workspaceFolders
+			? vscode.workspace.workspaceFolders[0].uri.fsPath
+			: undefined;
+		if (workspaceRoot && filePath.startsWith(workspaceRoot)) {
+			let relativePath = filePath.substring(workspaceRoot.length);
+			// Remove leading slash if present
+			if (relativePath.startsWith("/")) {
+				relativePath = relativePath.substring(1);
+			}
+			return relativePath;
+		}
+		return filePath;
+	}
+	private generateTextPartForToolCall(part: TextStreamPart<ToolSet>): LanguageModelTextPart {
+		const workspaceRoot = vscode.workspace.workspaceFolders
+			? vscode.workspace.workspaceFolders[0].uri.fsPath
+			: undefined;
+		if (part.type !== "tool-call") {
+			return new LanguageModelTextPart("");
+		}
+		switch (part.toolName) {
+			case "Read":
+				const readName = this.stripWorkspaceRootFromPath(part.input.file_path);
+				return new LanguageModelTextPart(`\n\`${part.toolName}:\` ${readName}\n`);
+			case "Write":
+			case "Edit":
+				const writeName = this.stripWorkspaceRootFromPath(part.input.file_path);
+				return new LanguageModelTextPart(`\n\`${part.toolName}:\` ${writeName}\n`);
+			// Add cases for specific tool names if needed
+			case "Glob":
+			case "Grep":
+				const pattern = part.input.pattern;
+				return new LanguageModelTextPart(`\n\`${part.toolName}:\` \`${pattern}\`\n`);
+			case "Bash":
+				const command = part.input.command;
+				return new LanguageModelTextPart(`\n\`${part.toolName}:\` \`${command}\`\n`);
+			case "WebSearch":
+				const query = part.input.query;
+				return new LanguageModelTextPart(`\n\`${part.toolName}:\` \`${query}\`\n`);
+			case "WebFetch":
+				const url = part.input.url;
+				return new LanguageModelTextPart(`\n\`${part.toolName}:\` \`${url}\`\n`);
+			default:
+				return new LanguageModelTextPart(`\n\`${part.toolName}\`\n`);
+		}
 	}
 }

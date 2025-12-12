@@ -55,6 +55,8 @@ export interface ProviderConfig {
 	headers?: Record<string, string>;
 	/** Type of the provider for vercel handling */
 	vercelType: VercelType;
+	/** Provider-specific options (arbitrary JSON for provider-specific configuration) */
+	providerSpecificOptions?: Record<string, unknown>;
 }
 export interface ProviderModelConfig {
 	providerConfig: ProviderConfig;
