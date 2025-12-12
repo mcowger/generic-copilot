@@ -8,6 +8,7 @@ import { initStatusBar } from "./statusBar";
 import { ConsoleViewProvider } from "./consoleView";
 import { logger } from "./outputLogger";
 import { registerInlineCompletionItemProvider } from "./autocomplete/fimProvider";
+import { CacheRegistry } from "./ai/utils/metadataCache";
 
 function setupDevAutoRestart(context: vscode.ExtensionContext) {
 	if (context.extensionMode !== vscode.ExtensionMode.Development) {
@@ -47,6 +48,11 @@ function setupDevAutoRestart(context: vscode.ExtensionContext) {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+	// Initialize the metadata cache with workspace state for persistence across restarts.
+	// This allows critical context (like Google's thoughtSignature) to survive extension reloads.
+	CacheRegistry.initialize(context.workspaceState);
+	logger.info("CacheRegistry initialized with workspace state persistence");
+
 	// Build a descriptive User-Agent to help quantify API usage.  Who knows why.
 	const ext = vscode.extensions.getExtension("generic-copilot");
 	const extVersion = ext?.packageJSON?.version ?? "unknown";
@@ -152,4 +158,13 @@ export function activate(context: vscode.ExtensionContext) {
 	setupDevAutoRestart(context);
 }
 
-export function deactivate() {}
+export async function deactivate(): Promise<void> {
+	// Persist all caches before the extension is deactivated.
+	// This ensures critical context (like Google's thoughtSignature) survives restarts.
+	try {
+		await CacheRegistry.persistAll();
+		logger.info("CacheRegistry persisted on deactivation");
+	} catch (error) {
+		logger.error("Failed to persist CacheRegistry on deactivation", error);
+	}
+}
