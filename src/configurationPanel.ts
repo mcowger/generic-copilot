@@ -52,12 +52,7 @@ export class ConfigurationPanel {
 							providersCount: Array.isArray(message.providers) ? message.providers.length : "n/a",
 							modelsCount: Array.isArray(message.models) ? message.models.length : "n/a",
 						});
-						await this._saveConfiguration(
-							message.providers, 
-							message.models,
-							message.enableExperimentalFeatures,
-							message.logLevel
-						);
+						await this._saveConfiguration(message.providers, message.models);
 						return;
 					case "openSettings":
 						console.log("[ConfigurationPanel] Handling openSettings request from webview");
@@ -75,30 +70,15 @@ export class ConfigurationPanel {
 		);
 	}
 
-	private async _saveConfiguration(
-		providers: ProviderConfig[], 
-		models: ModelItem[],
-		enableExperimentalFeatures?: boolean,
-		logLevel?: string
-	) {
+	private async _saveConfiguration(providers: ProviderConfig[], models: ModelItem[]) {
 		try {
 			console.log("[ConfigurationPanel] _saveConfiguration called", {
 				providers,
 				models,
-				enableExperimentalFeatures,
-				logLevel,
 			});
 			const config = vscode.workspace.getConfiguration();
 			await config.update("generic-copilot.providers", providers, vscode.ConfigurationTarget.Global);
 			await config.update("generic-copilot.models", models, vscode.ConfigurationTarget.Global);
-			
-			// Save simple settings
-			if (enableExperimentalFeatures !== undefined) {
-				await config.update("generic-copilot.enableExperimentalFeatures", enableExperimentalFeatures, vscode.ConfigurationTarget.Global);
-			}
-			if (logLevel !== undefined) {
-				await config.update("generic-copilot.logLevel", logLevel, vscode.ConfigurationTarget.Global);
-			}
 
 			vscode.window.showInformationMessage("Configuration saved successfully!");
 
@@ -114,22 +94,16 @@ export class ConfigurationPanel {
 		const config = vscode.workspace.getConfiguration();
 		const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
 		const models = config.get<ModelItem[]>("generic-copilot.models", []);
-		const enableExperimentalFeatures = config.get<boolean>("generic-copilot.enableExperimentalFeatures", false);
-		const logLevel = config.get<string>("generic-copilot.logLevel", "info");
 
 		console.log("[ConfigurationPanel] Sending configuration to webview", {
 			providersCount: providers.length,
 			modelsCount: models.length,
-			enableExperimentalFeatures,
-			logLevel,
 		});
 
 		this._panel.webview.postMessage({
 			command: "loadConfiguration",
 			providers,
 			models,
-			enableExperimentalFeatures,
-			logLevel,
 		});
 	}
 

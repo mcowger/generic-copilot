@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ModelItem, ProviderConfig, ModelProperties, ModelParameters } from '../../src/types';
 import { Providers } from './components/Providers';
 import { Models } from './components/Models';
-import { Settings } from './components/Settings';
 import { VscodeButton, VscodeTabs, VscodeTabHeader, VscodeTabPanel } from '@vscode-elements/react-elements';
 
 declare function acquireVsCodeApi(): {
@@ -13,13 +12,7 @@ declare function acquireVsCodeApi(): {
 };
 
 
-interface InMessage { 
-    command: 'loadConfiguration'; 
-    providers: ProviderConfig[]; 
-    models: any[];
-    enableExperimentalFeatures?: boolean;
-    logLevel?: string;
-}
+interface InMessage { command: 'loadConfiguration'; providers: ProviderConfig[]; models: any[] }
 
 const toGrouped = (m: any): ModelItem => {
     const mp: ModelProperties = m?.model_properties ?? {
@@ -56,8 +49,6 @@ const App: React.FC = () => {
 
     const [providers, setProviders] = useState<ProviderConfig[]>([]);
     const [models, setModels] = useState<ModelItem[]>([]);
-    const [enableExperimentalFeatures, setEnableExperimentalFeatures] = useState(false);
-    const [logLevel, setLogLevel] = useState('info');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -67,8 +58,6 @@ const App: React.FC = () => {
             if (msg.command === 'loadConfiguration') {
                 setProviders(msg.providers || []);
                 setModels((msg.models || []).map(toGrouped));
-                setEnableExperimentalFeatures(msg.enableExperimentalFeatures ?? false);
-                setLogLevel(msg.logLevel ?? 'info');
                 setLoading(false);
             }
         };
@@ -92,19 +81,8 @@ const App: React.FC = () => {
         }
 
         const cleanedProviders = providers.map(cleanProviderDefaults);
-        vscode?.postMessage({ 
-            command: 'save', 
-            providers: cleanedProviders, 
-            models,
-            enableExperimentalFeatures,
-            logLevel
-        });
-    }, [providers, models, enableExperimentalFeatures, logLevel, vscode]);
-
-    const handleSettingsChange = useCallback((settings: { enableExperimentalFeatures: boolean; logLevel: string }) => {
-        setEnableExperimentalFeatures(settings.enableExperimentalFeatures);
-        setLogLevel(settings.logLevel);
-    }, []);
+        vscode?.postMessage({ command: 'save', providers: cleanedProviders, models });
+    }, [providers, models, vscode]);
 
     const openSettings = useCallback(() => {
         vscode?.postMessage({ command: 'openSettings' });
@@ -117,7 +95,6 @@ const App: React.FC = () => {
             <VscodeTabs>
                 <VscodeTabHeader slot="header">Providers</VscodeTabHeader>
                 <VscodeTabHeader slot="header">Models</VscodeTabHeader>
-                <VscodeTabHeader slot="header">Settings</VscodeTabHeader>
                 <VscodeTabPanel>
                     <div className="section">
                         <Providers providers={providers} onChange={setProviders} />
@@ -126,15 +103,6 @@ const App: React.FC = () => {
                 <VscodeTabPanel>
                     <div className="section">
                         <Models providers={providers} models={models} onChange={setModels} />
-                    </div>
-                </VscodeTabPanel>
-                <VscodeTabPanel>
-                    <div className="section">
-                        <Settings 
-                            enableExperimentalFeatures={enableExperimentalFeatures}
-                            logLevel={logLevel}
-                            onChange={handleSettingsChange}
-                        />
                     </div>
                 </VscodeTabPanel>
             </VscodeTabs>
