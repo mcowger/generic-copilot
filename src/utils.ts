@@ -66,11 +66,11 @@ export function convertLmModeltoModelItem(model: LanguageModelChatInformation): 
 	return resolvedModel;
 }
 
-async function ensureApiKey(provider: string, providerConfig: ProviderConfig | undefined, secrets: vscode.SecretStorage): Promise<string | undefined> {
+async function ensureApiKey(provider: string, providerConfig: ProviderConfig | undefined, secrets: vscode.SecretStorage): Promise<string> {
 	// Claude-code providers don't require API keys (authentication handled by claude executable)
 	if (providerConfig?.vercelType === "claude-code") {
 		logger.debug(`Skipping API key requirement for claude-code provider "${provider}"`);
-		return undefined;
+		return "noApiKeyRequired";
 	}
 
 	// Provider-level keys only; no generic key fallback
@@ -92,7 +92,10 @@ async function ensureApiKey(provider: string, providerConfig: ProviderConfig | u
 			await secrets.store(providerKey, apiKey);
 		}
 	}
-	return apiKey || undefined;
+	if (!apiKey) {
+		throw new Error(`API key for provider "${normalizedProvider}" not found`);
+	}
+	return apiKey;
 }
 
 export function getModelItemFromString(modelId: string): ModelItem {
@@ -137,16 +140,8 @@ export async function getExecutionDataForModel(
 		throw new Error(`Provider "${providerKey}" not found in configuration`);
 	}
 
-	// Get API key for the model's provider (optional for claude-code)
+	// Get API key for the model's provider (returns "noApiKeyRequired" for claude-code)
 	const modelApiKey = await ensureApiKey(providerKey, provider, secrets);
-	if (!modelApiKey && provider.vercelType !== "claude-code") {
-		logger.error(`API key for provider "${providerKey}" not found`);
-		throw new Error(
-			providerKey && providerKey.trim()
-				? `API key for provider "${providerKey}" not found`
-				: "No provider specified for model; please set 'owned_by' and configure its API key"
-		);
-	}
 
 	const providerWithProcessedHeaders: ProviderConfig = {
 		...provider,

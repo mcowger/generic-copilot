@@ -22,17 +22,16 @@ export class ProviderClientFactory {
 
 	switch (providerModelConfig.providerConfig.vercelType as VercelType) {
 	  case 'openrouter':
-		// apiKey is guaranteed to be defined for non-claude-code providers by getExecutionDataForModel
-		client = new OpenRouterProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey!);
+		client = new OpenRouterProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
 		break;
 	  case 'openai':
-		client = new OpenAIProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey!);
+		client = new OpenAIProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
 		break;
 	  case 'openai-compatible':
-		client = new OpenAICompatibleProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey!);
+		client = new OpenAICompatibleProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
 		break;
 	  case 'google':
-		client = new GoogleProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey!);
+		client = new GoogleProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
 		break;
 	  case 'claude-code':
 		client = new ClaudeCodeProviderClient(providerModelConfig.providerConfig);

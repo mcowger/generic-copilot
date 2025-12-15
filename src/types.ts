@@ -61,5 +61,5 @@ export interface ProviderConfig {
 export interface ProviderModelConfig {
 	providerConfig: ProviderConfig;
 	modelItem: ModelItem
-	apiKey?: string;  // Optional for providers like claude-code that don't require API keys
+	apiKey: string;
 }
