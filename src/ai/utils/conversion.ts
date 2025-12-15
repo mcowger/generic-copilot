@@ -26,6 +26,11 @@ import { logger } from "../../outputLogger";
 //import { LanguageModelChatMessageRoleExtended, LanguageModelChatMessageRoleExtended as LanguageModelChatMessageRoleExtendedType } from "../../types";
 
 /**
+ * The name of the internal-echo tool that should be excluded from LLM context.
+ */
+const INTERNAL_ECHO_TOOL_NAME = "internal-echo";
+
+/**
  * Tool call part with providerOptions for sending to AI SDK providers.
  * providerOptions is used for INPUT (what we send to providers),
  * while providerMetadata is used for OUTPUT (what we receive from providers).
@@ -43,6 +48,11 @@ export function LM2VercelTool(options: ProvideLanguageModelChatResponseOptions):
 	const tools: Record<string, any> = {};
 	if (options.tools) {
 		for (const vsTool of options.tools) {
+			// Skip the internal-echo tool - it should never be sent to the LLM
+			if (vsTool.name === INTERNAL_ECHO_TOOL_NAME) {
+				logger.debug(`Excluding internal-echo tool from LLM tool list`);
+				continue;
+			}
 			// Use AI SDK's tool() function to create properly validated tools
 			tools[vsTool.name] = tool({
 				description: vsTool.description,
@@ -151,11 +161,18 @@ export function LM2VercelMessage(messages: readonly LanguageModelChatRequestMess
 
 			for (const part of message.content) {
 				if (part instanceof LanguageModelToolResultPart) {
+					// Skip internal-echo tool results - they should not be included in the conversation history
+					const toolName = (part as { name?: string }).name ?? "unknown";
+					if (toolName === INTERNAL_ECHO_TOOL_NAME) {
+						logger.debug(`Excluding internal-echo tool result from conversation history`);
+						continue;
+					}
+
 					logger.debug(`Processing tool result part with callId "${part.callId}"`);
 					toolResults.push({
 						type: "tool-result",
 						toolCallId: part.callId,
-						toolName: (part as { name?: string }).name ?? "unknown",
+						toolName: toolName,
 						output: { type: "text", value: convertToolResultToString(part.content[0]) },
 					});
 				} else if (part instanceof LanguageModelTextPart) {
@@ -176,6 +193,12 @@ export function LM2VercelMessage(messages: readonly LanguageModelChatRequestMess
 
 			for (const part of message.content) {
 				if (part instanceof LanguageModelToolCallPart) {
+					// Skip internal-echo tool calls - they should not be included in the conversation history
+					if (part.name === INTERNAL_ECHO_TOOL_NAME) {
+						logger.debug(`Excluding internal-echo tool call from conversation history`);
+						continue;
+					}
+
 					const toolCallPart: ToolCallPartWithProviderOptions = {
 						type: "tool-call",
 						toolCallId: part.callId,

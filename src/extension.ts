@@ -9,6 +9,7 @@ import { ConsoleViewProvider } from "./consoleView";
 import { logger } from "./outputLogger";
 import { registerInlineCompletionItemProvider } from "./autocomplete/fimProvider";
 import { CacheRegistry } from "./ai/utils/metadataCache";
+import { InternalEchoTool } from "./tools/internalEchoTool";
 
 function setupDevAutoRestart(context: vscode.ExtensionContext) {
 	if (context.extensionMode !== vscode.ExtensionMode.Development) {
@@ -65,6 +66,12 @@ export function activate(context: vscode.ExtensionContext) {
 	const providerRegistration = vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
 	registerInlineCompletionItemProvider(context);
 	context.subscriptions.push(providerRegistration);
+
+	// Register the internal-echo tool
+	const internalEchoTool = new InternalEchoTool();
+	const internalEchoRegistration = vscode.lm.registerTool(InternalEchoTool.TOOL_NAME, internalEchoTool);
+	context.subscriptions.push(internalEchoRegistration);
+	logger.info(`Registered internal-echo tool: ${InternalEchoTool.TOOL_NAME}`);
 
 	// Register Console View
 	const consoleViewProvider = new ConsoleViewProvider(context.extensionUri);
