@@ -48,7 +48,7 @@
 			{
 				"name": "internal-echo",
 				"displayName": "Internal Echo Tool",
-				"description": "INTERNAL USE ONLY - This tool should NEVER be called by language models. It is for internal extension use only.",
+				"modelDescription": "INTERNAL USE ONLY - This tool should NEVER be called by language models. It is for internal extension use only.",
 				"inputSchema": {
 					"type": "object",
 					"properties": {
