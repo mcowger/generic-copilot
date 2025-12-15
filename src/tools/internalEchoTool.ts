@@ -62,26 +62,3 @@ export class InternalEchoTool implements vscode.LanguageModelTool<InternalEchoIn
 		};
 	}
 }
-
-/**
- * Gets the information object for registering the internal-echo tool with VS Code.
- * 
- * @returns The LanguageModelToolInformation for the internal-echo tool
- */
-export function getInternalEchoToolInfo(): vscode.LanguageModelToolInformation {
-	return {
-		name: InternalEchoTool.TOOL_NAME,
-		description: "INTERNAL USE ONLY - This tool should NEVER be called by language models. It is for internal extension use only.",
-		inputSchema: {
-			type: "object",
-			properties: {
-				content: {
-					type: "string",
-					description: "Markdown-formatted content"
-				}
-			},
-			required: ["content"]
-		},
-		tags: ["internal"]
-	};
-}
