@@ -6,6 +6,7 @@ import { OpenAICompatibleProviderClient } from "./providers/openai-compatible";
 import { GoogleProviderClient } from "./providers/google";
 import { ClaudeCodeProviderClient } from "./providers/claude-code";
 import { logger } from "../outputLogger";
+import { DeepSeekProviderClient } from "./providers/deepseek";
 
 
 export class ProviderClientFactory {
@@ -35,6 +36,9 @@ export class ProviderClientFactory {
 		break;
 	  case 'claude-code':
 		client = new ClaudeCodeProviderClient(providerModelConfig.providerConfig);
+		break;
+	  case 'deepseek':
+		client = new DeepSeekProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
 		break;
 	  default:
 		logger.error(`Unsupported provider type: ${providerModelConfig.providerConfig.vercelType}`);

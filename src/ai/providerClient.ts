@@ -115,13 +115,14 @@ export abstract class ProviderClient {
 				// We need to handle fullStream to get tool calls
 				for await (const part of result.fullStream) {
 					if (part.type === "reasoning-delta") {
+						this.processReasoningDelta(part.id, part.text);
 						const thinkingPart = new LanguageModelThinkingPart(part.text, part.id);
 						responseLog.thinkingParts?.push(thinkingPart);
 						progress.report(thinkingPart);
 					} else if (part.type === "text-delta") {
 						const textPart = new LanguageModelTextPart(part.text);
 						responseLog.textParts?.push(textPart);
-						progress.report(new LanguageModelTextPart(part.text));
+						progress.report(textPart);
 					} else if (part.type === "tool-call") {
 						const normalizedInput = normalizeToolInputs(part.toolName, part.input);
 						const toolCall = new LanguageModelToolCallPart(part.toolCallId, part.toolName, normalizedInput as object);
@@ -229,6 +230,14 @@ export abstract class ProviderClient {
 	protected processToolCallMetadata(toolCallId: string, providerMetadata: ProviderMetadata | undefined): void {
 		// Default implementation does nothing.
 		// Subclasses like GoogleProviderClient can override to cache metadata.
+	}
+
+	/**
+	 * Hook for subclasses to observe/accumulate reasoning deltas from the provider stream.
+	 * Useful for providers that require sending back reasoning content for tool-call continuation.
+	 */
+	protected processReasoningDelta(_id: string, _deltaText: string): void {
+		// Default implementation does nothing.
 	}
 
 	/**
