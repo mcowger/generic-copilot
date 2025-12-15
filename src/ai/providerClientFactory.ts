@@ -22,28 +22,17 @@ export class ProviderClientFactory {
 
 	switch (providerModelConfig.providerConfig.vercelType as VercelType) {
 	  case 'openrouter':
-		if (!providerModelConfig.apiKey) {
-		  throw new Error(`API key is required for openrouter provider`);
-		}
-		client = new OpenRouterProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
+		// apiKey is guaranteed to be defined for non-claude-code providers by getExecutionDataForModel
+		client = new OpenRouterProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey!);
 		break;
 	  case 'openai':
-		if (!providerModelConfig.apiKey) {
-		  throw new Error(`API key is required for openai provider`);
-		}
-		client = new OpenAIProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
+		client = new OpenAIProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey!);
 		break;
 	  case 'openai-compatible':
-		if (!providerModelConfig.apiKey) {
-		  throw new Error(`API key is required for openai-compatible provider`);
-		}
-		client = new OpenAICompatibleProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
+		client = new OpenAICompatibleProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey!);
 		break;
 	  case 'google':
-		if (!providerModelConfig.apiKey) {
-		  throw new Error(`API key is required for google provider`);
-		}
-		client = new GoogleProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
+		client = new GoogleProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey!);
 		break;
 	  case 'claude-code':
 		client = new ClaudeCodeProviderClient(providerModelConfig.providerConfig);
