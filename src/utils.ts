@@ -66,7 +66,13 @@ export function convertLmModeltoModelItem(model: LanguageModelChatInformation): 
 	return resolvedModel;
 }
 
-async function ensureApiKey(provider: string, secrets: vscode.SecretStorage): Promise<string | undefined> {
+async function ensureApiKey(provider: string, providerConfig: ProviderConfig | undefined, secrets: vscode.SecretStorage): Promise<string | undefined> {
+	// Claude-code providers don't require API keys (authentication handled by claude executable)
+	if (providerConfig?.vercelType === "claude-code") {
+		logger.debug(`Skipping API key requirement for claude-code provider "${provider}"`);
+		return undefined;
+	}
+
 	// Provider-level keys only; no generic key fallback
 	const normalizedProvider = provider.toLowerCase();
 	const providerKey = `generic-copilot.apiKey.${normalizedProvider}`;
@@ -121,18 +127,7 @@ export async function getExecutionDataForModel(
 	// Get model properties
 	const providerKey: string = modelItem.provider;
 
-	// Get API key for the model's provider
-	const modelApiKey = await ensureApiKey(providerKey, secrets);
-	if (!modelApiKey) {
-		logger.error(`API key for provider "${providerKey}" not found`);
-		throw new Error(
-			providerKey && providerKey.trim()
-				? `API key for provider "${providerKey}" not found`
-				: "No provider specified for model; please set 'owned_by' and configure its API key"
-		);
-	}
-
-	// Look up the provider configuration to get baseUrl
+	// Look up the provider configuration to get baseUrl and vercelType
 	const config = vscode.workspace.getConfiguration();
 	const providers = config.get<ProviderConfig[]>("generic-copilot.providers", []);
 	const provider = providers.find((p) => p.id === providerKey);
@@ -140,6 +135,17 @@ export async function getExecutionDataForModel(
 	if (!provider) {
 		logger.error(`Provider "${providerKey}" not found in configuration`);
 		throw new Error(`Provider "${providerKey}" not found in configuration`);
+	}
+
+	// Get API key for the model's provider (optional for claude-code)
+	const modelApiKey = await ensureApiKey(providerKey, provider, secrets);
+	if (!modelApiKey && provider.vercelType !== "claude-code") {
+		logger.error(`API key for provider "${providerKey}" not found`);
+		throw new Error(
+			providerKey && providerKey.trim()
+				? `API key for provider "${providerKey}" not found`
+				: "No provider specified for model; please set 'owned_by' and configure its API key"
+		);
 	}
 
 	const providerWithProcessedHeaders: ProviderConfig = {
