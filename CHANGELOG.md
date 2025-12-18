@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.17.0] - 2025-12-18
+
+- Add support for Anthropic provider and update related documentation and types (b566041)
+- Simplify copilot-instructions.md to reference AGENTS.md instead of duplicating content (91794e7)
+- Add .github/copilot-instructions.md following GitHub best practices (733eac0)
+
+
 ## [v0.16.0] - 2025-12-15
 
 - Add DeepSeek provider support and update dependencies.  Specifically enables reasoning trace retention for deepseek reasoner. (ce3bea8)
