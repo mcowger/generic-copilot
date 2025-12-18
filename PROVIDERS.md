@@ -4,7 +4,7 @@ This document outlines all the steps required to add a new Vercel AI provider ty
 
 ## Overview
 
-The extension currently supports three provider types: `openrouter`, `openai`, and `openai-compatible`. To add a new provider type, you'll need to make changes across multiple files in the codebase.
+The extension currently supports multiple provider types including: `openrouter`, `openai`, `openai-compatible`, `google`, `deepseek`, `claude-code`, and `anthropic`. To add a new provider type, you'll need to make changes across multiple files in the codebase.
 
 ## Required Changes
 

@@ -274,6 +274,7 @@
 		"typescript-eslint": "^8.46.2"
 	},
 	"dependencies": {
+		"@ai-sdk/anthropic": "^2.0.56",
 		"@ai-sdk/deepseek": "^1.0.32",
 		"@ai-sdk/google": "^2.0.44",
 		"@ai-sdk/openai": "^2.0.77",
