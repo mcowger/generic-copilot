@@ -1,5 +1,34 @@
 # Claude Code Integration
 
+
+## V2 (`ccv2`)
+⚠️ **Highly Experimental Feature** ⚠️
+This version drastically simplifies the implementation, making use of direct APIs and truly native tool calls.  Its very experimental, and may not optimally use CC quota.
+
+To configure:
+
+## Installation Requirements
+1. Have *native* Claude Code executable installed and accessible (installed via `curl -fsSL https://claude.ai/install.sh | bash` or via Homebrew).  You MUST use the `bun`-native one, not the one installed via `npm`.
+2. Make sure `ANTHROPIC_API_KEY` is not set (or is valid).  If present, it will be used.
+2. Ensure you have logged into `claude` at least once.
+3. Run `claude setup-token` and record the token that is displayed.  This is your API token - keep it safe somewhere.
+4.  Follow the standard instructions to setup a provider and model.  When asked for an API key, use the key selected in Step 3 above.
+
+### Notes:
+
+Valid models are:
+* claude-sonnet-4-5
+* claude-haiku-4-5
+* claude-opus-4-5
+
+### Caveats:
+
+* This may not be quota or cache efficient.
+* This may not be as reliable as claude's own tools
+* This may violate your ToS with Anthropic.
+
+
+## V1 (`claude-code`)
 ⚠️ **Highly Experimental Feature** ⚠️
 
 This integration provides a unique approach to using Claude Code within VS Code through the generic-copilot extension.
