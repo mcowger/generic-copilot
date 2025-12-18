@@ -7,8 +7,6 @@ import { GoogleProviderClient } from "./providers/google";
 import { ClaudeCodeProviderClient } from "./providers/claude-code";
 import { logger } from "../outputLogger";
 import { DeepSeekProviderClient } from "./providers/deepseek";
-import { AnthropicProviderClient } from "./providers/anthropic";
-import { CCv2ProviderClient } from "./providers/ccv2";
 
 
 export class ProviderClientFactory {
@@ -41,12 +39,6 @@ export class ProviderClientFactory {
 		break;
 	  case 'deepseek':
 		client = new DeepSeekProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
-		break;
-	  case 'anthropic':
-		client = new AnthropicProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
-		break;
-	  case 'ccv2':
-		client = new CCv2ProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
 		break;
 	  default:
 		logger.error(`Unsupported provider type: ${providerModelConfig.providerConfig.vercelType}`);
