@@ -18,7 +18,7 @@ export interface ProvidersProps {
   onChange: (providers: ProviderConfig[]) => void;
 }
 
-const vercelTypes: ProviderConfig['vercelType'][] = ['openai-compatible', 'openai', 'openrouter', 'google', 'claude-code', 'deepseek', 'anthropic', 'ccv2'];
+const vercelTypes: ProviderConfig['vercelType'][] = ['openai-compatible', 'openai', 'openrouter', 'google', 'claude-code', 'deepseek', 'anthropic', 'ccv2', 'zai'];
 
 const ProviderItem: React.FC<{
   provider: ProviderConfig;

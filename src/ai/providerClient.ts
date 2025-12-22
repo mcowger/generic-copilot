@@ -12,7 +12,7 @@ import { updateContextStatusBar } from "../statusBar";
 import { z } from "zod";
 import * as vscode from "vscode";
 
-import { generateText, JSONValue, streamText } from "ai";
+import { generateText, JSONValue, streamText, LanguageModelUsage, StreamTextResult } from "ai";
 import { ModelItem, ProviderConfig, VercelType } from "../types";
 import { LM2VercelTool, normalizeToolInputs, convertToolResultToString } from "./utils/conversion";
 import { CacheRegistry, ToolCallMetadata } from "./utils/metadataCache";
@@ -150,7 +150,7 @@ export abstract class ProviderClient {
 				this.processResponseMetadata(result);
 
 				// Add usage information after streaming completes
-				responseLog.usage = await result.usage;
+				responseLog.usage = await this.processResultData(result);
 
 				// Calculate duration
 				const endTime = Date.now();
@@ -340,5 +340,11 @@ export abstract class ProviderClient {
 	protected processResponseMetadata(result: any): void {
 		// Default implementation does nothing.
 		// Subclasses like OpenAIProviderClient can override to cache response metadata.
+	}
+
+	protected processResultData(result: StreamTextResult<Record<string, any>, never>): Promise<LanguageModelUsage> {
+		// Default implementation does nothing.
+		// Subclasses can override to process result data from the provider.
+		return result.usage
 	}
 }

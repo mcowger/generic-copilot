@@ -9,6 +9,7 @@ import { logger } from "../outputLogger";
 import { DeepSeekProviderClient } from "./providers/deepseek";
 import { AnthropicProviderClient } from "./providers/anthropic";
 import { CCv2ProviderClient } from "./providers/ccv2";
+import { ZaiProviderClient } from "./providers/zai";
 
 
 export class ProviderClientFactory {
@@ -47,6 +48,9 @@ export class ProviderClientFactory {
 		break;
 	  case 'ccv2':
 		client = new CCv2ProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
+		break;
+	  case 'zai':
+		client = new ZaiProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
 		break;
 	  default:
 		logger.error(`Unsupported provider type: ${providerModelConfig.providerConfig.vercelType}`);
