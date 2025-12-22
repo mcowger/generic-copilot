@@ -11,7 +11,6 @@ import * as vscode from "vscode";
 import { JSONValue } from "ai";
 import { logger } from "../../outputLogger";
 import { CacheRegistry } from "../utils/metadataCache";
-import { LM2VercelMessage } from "../utils/conversion";
 import type { ModelMessage } from "ai";
 
 export class DeepSeekProviderClient extends ProviderClient {
@@ -40,7 +39,7 @@ export class DeepSeekProviderClient extends ProviderClient {
 	 * 3) on the next request, inject it into the most recent assistant message if missing
 	 */
 	override convertMessages(messages: readonly LanguageModelChatRequestMessage[]): ModelMessage[] {
-		const payload = LM2VercelMessage(messages);
+		const payload = super.convertMessages(messages);
 
 		const cache = CacheRegistry.getCache("deepseekPendingReasoning", 10);
 		const pendingReasoning = cache.get("pending") as string | undefined;
