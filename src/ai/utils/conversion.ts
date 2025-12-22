@@ -1,38 +1,13 @@
 import {
-	LanguageModelChatRequestMessage,
-	LanguageModelChatMessageRole,
-	LanguageModelTextPart,
-	LanguageModelThinkingPart,
-	LanguageModelToolCallPart,
-	LanguageModelToolResultPart,
 	ProvideLanguageModelChatResponseOptions,
 } from "vscode";
 import {
-	AssistantModelMessage,
-	ModelMessage,
-	ReasoningOutput,
-	TextPart,
-	ToolCallPart,
-	ToolModelMessage,
-	ToolResultPart,
-	UserModelMessage,
 	tool,
-	jsonSchema,
-	SystemModelMessage,
-	type JSONValue,
+	jsonSchema
 } from "ai";
-import { CacheRegistry, ToolCallMetadata } from "./metadataCache";
 import { logger } from "../../outputLogger";
-//import { LanguageModelChatMessageRoleExtended, LanguageModelChatMessageRoleExtended as LanguageModelChatMessageRoleExtendedType } from "../../types";
 
-/**
- * Tool call part with providerOptions for sending to AI SDK providers.
- * providerOptions is used for INPUT (what we send to providers),
- * while providerMetadata is used for OUTPUT (what we receive from providers).
- */
-interface ToolCallPartWithProviderOptions extends ToolCallPart {
-	providerOptions?: Record<string, Record<string, JSONValue>>;
-}
+
 
 // Converts VS Code tools to AI SDK tool format
 // borrowed and adapted from https://github.com/jaykv/modelbridge/blob/main/src/provider.ts (MIT License)

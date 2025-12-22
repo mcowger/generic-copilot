@@ -20,6 +20,7 @@ Heavily inspired (and then extended) by https://github.com/JohnnyZ93/oai-compati
 - **Flexible Headers & parameters**: Set custom parameters for any model.
 - **Supports Autocompletion and Inline Suggestions**: Configure a model with the 'Use For Autocomplete' option, and it will be used to provide suggestions.
 - **Configurable Retries**: Set the number of retries for failed requests on a per-model basis (default: 3).
+- **Anthropic & OpenAI Input Caching**: Automatically caches system messages and tool definitions for Anthropic models, significantly reducing latency and cost.
 
 ---
 

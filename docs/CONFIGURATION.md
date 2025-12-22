@@ -236,6 +236,20 @@ To properly support Gemini 3:
 1. Use `vercelType: "google"` for your provider configuration.
 2. Ensure your model `family` is set to `"gemini"`.
 
+## Anthropic & Input Token Caching
+
+The `anthropic` provider automatically sets appropriate cache control values to achieve input token caching. This includes:
+- All system messages
+- All tool call definitions
+
+This significantly reduces latency and cost for multi-turn conversations. Observed hit rates are typically around 80%.
+
+
+## OpenAI & Input Token Caching
+
+The `openai` provider automatically sets appropriate cache control values to achieve input token caching. This includes.
+
+This significantly reduces latency and cost for multi-turn conversations. Observed hit rates are typically around 80%.
 ---
 
 # Troubleshooting
