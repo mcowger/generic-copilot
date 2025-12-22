@@ -23,7 +23,7 @@ Valid models are:
 
 ### Caveats:
 
-* This may not be quota or cache efficient.
+* This *does* implement strong caching.
 * This may not be as reliable as claude's own tools
 * This may violate your ToS with Anthropic.
 

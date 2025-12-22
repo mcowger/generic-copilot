@@ -1,8 +1,13 @@
 import { ProviderConfig } from "../../types";
 import { createAnthropic, AnthropicProviderSettings } from "@ai-sdk/anthropic";
 import { ProviderClient } from "../providerClient";
-import { LanguageModelChatRequestMessage } from "vscode";
-import { ModelMessage } from "ai";
+import { LanguageModelChatRequestMessage, ProvideLanguageModelChatResponseOptions } from "vscode";
+import { ModelMessage, SystemModelMessage } from "ai";
+import {
+	addAnthropicCacheControlToLastTool,
+	addAnthropicCacheControlToLastSystemMessage,
+	addAnthropicCacheControlToFirstUserMessage,
+} from "./anthropic";
 
 export class CCv2ProviderClient extends ProviderClient {
 	constructor(config: ProviderConfig, apiKey: string) {
@@ -29,9 +34,36 @@ export class CCv2ProviderClient extends ProviderClient {
 		);
 	}
 
-    convertMessages(messages: readonly LanguageModelChatRequestMessage[]): ModelMessage[] {
-        // Override to filter out system messages for claude code
-        return super.convertMessages(messages).filter(m => m.role !== 'system');
+	override convertMessages(messages: readonly LanguageModelChatRequestMessage[]): ModelMessage[] {
+		// For CCv2, we need to prepend "You are Claude Code, Anthropic's official CLI for Claude."
+		// to the system messages
+		const converted = super.convertMessages(messages);
 
-    }
+		// Find system messages and prepend the Claude Code message
+		const systemMessages = converted.filter((m: ModelMessage) => m.role === 'system');
+		const nonSystemMessages = converted.filter((m: ModelMessage) => m.role !== 'system');
+
+		let result: ModelMessage[] = converted;
+
+		if (systemMessages.length > 0) {
+			// Prepend the Claude Code identification as the first system message
+			const claudeCodeMessage: SystemModelMessage = {
+				role: "system",
+				content: "You are Claude Code, Anthropic's official CLI for Claude.",
+			};
+
+			result = [claudeCodeMessage, ...systemMessages, ...nonSystemMessages];
+		}
+
+		// Add cache control to the last system message and first user message
+		result = addAnthropicCacheControlToLastSystemMessage(result);
+		result = addAnthropicCacheControlToFirstUserMessage(result);
+
+		return result;
+	}
+
+	override convertTools(options: ProvideLanguageModelChatResponseOptions): Record<string, any> | undefined {
+		const tools = super.convertTools(options);
+		return addAnthropicCacheControlToLastTool(tools);
+	}
 }
