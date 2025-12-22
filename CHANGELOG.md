@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.18.6] - 2025-12-21
+
+- No changes detected (manual release).
+
+
 ## [v0.18.5] - 2025-12-21
 
 - Merge pull request #43 from clshortfuse:patch-2 (69c3b86)
