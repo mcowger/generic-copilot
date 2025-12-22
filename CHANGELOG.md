@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.18.5] - 2025-12-21
+
+- Merge pull request #43 from clshortfuse:patch-2 (69c3b86)
+- Fix Jinja template role alternation error for LMStudio models (36a44ee)
+
+
 ## [v0.18.0] - 2025-12-18
 
 - Updated Providers (226f33e)
