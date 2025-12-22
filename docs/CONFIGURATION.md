@@ -19,10 +19,13 @@ Providers define the connection details for an API endpoint. Models reference a 
 | Field         | Type     | Required | Description                                                                    |
 |---------------|----------|----------|--------------------------------------------------------------------------------|
 | `id`         | `string` | Yes      | A unique, lowercase identifier for the provider (e.g., "openrouter", "zai").   |
-| `vercelType`        | `string` | Yes      | The provider type. Must be one of `openai`, `openai-compatible`, `openrouter`, `google`, `claude-code`. |
+| `vercelType`        | `string` | Yes      | The provider type. Must be one of `openai`, `openai-compatible`, `openrouter`, `google`, `deepseek`, `anthropic`, `claude-code`, `ccv2`, or `zai`. |
 | `displayName` | `string` | No       | A user-friendly name for the provider that appears in the UI.                  |
 | `baseUrl`     | `string` | No      | The base URL of the provider's API endpoint (e.g., "https://api.example.com/v1"). |
 | `headers`     | `object` | No       | Custom HTTP headers to be sent with every request to this provider.            |
+
+Notes:
+* ZAI uses the anthropic endpoint by default, not the chat completions endpoint.
 
 ## Model Configuration (`generic-copilot.models`)
 
