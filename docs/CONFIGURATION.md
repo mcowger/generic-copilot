@@ -19,7 +19,7 @@ Providers define the connection details for an API endpoint. Models reference a 
 | Field         | Type     | Required | Description                                                                    |
 |---------------|----------|----------|--------------------------------------------------------------------------------|
 | `id`         | `string` | Yes      | A unique, lowercase identifier for the provider (e.g., "openrouter", "zai").   |
-| `vercelType`        | `string` | Yes      | The provider type. Must be one of `openai`, `openai-compatible`, `openrouter`, `google`, `deepseek`, `anthropic`, `claude-code`, `ccv2`, or `zai`. |
+| `vercelType`        | `string` | Yes      | The provider type. Must be one of `openai`, `openai-compatible`, `openrouter`, `google`, `deepseek`, `anthropic`, `claude-code`, `ccv2`, `zai`, or `litellm`. |
 | `displayName` | `string` | No       | A user-friendly name for the provider that appears in the UI.                  |
 | `baseUrl`     | `string` | No      | The base URL of the provider's API endpoint (e.g., "https://api.example.com/v1"). |
 | `headers`     | `object` | No       | Custom HTTP headers to be sent with every request to this provider.            |
@@ -51,6 +51,7 @@ Models define the specific LLMs you want to use. Each model must be associated w
 | `context_length` | `number` | The maximum context window size for the model. Defaults to `128000`.                                    |
 | `owned_by`       | `string` | The provider name. This is typically inherited from the provider's `id` and doesn't need to be set manually. |
 | `family`         | `string` | The model family (e.g., "gpt", "claude", "gemini"). Affects how Copilot interacts with the model. Defaults to "generic". |
+| `litellm_api_type` | `string` | **Required for LiteLLM provider.** Specifies which underlying API to use: `google`, `openai`, `anthropic`, or `openai-compatible`. |
 
 ### `model_parameters` Schema
 
@@ -183,6 +184,82 @@ Each provider has its own API key stored securely:
 ## Custom Headers
 
 Headers can be set at the provider level and will be inherited by all models associated with that provider. See the `Provider Configuration` section for details.
+
+## LiteLLM Provider
+
+The `litellm` provider type allows you to use a single LiteLLM server endpoint to access models that use different underlying APIs (Google, OpenAI, Anthropic, or OpenAI-compatible).
+
+### When to Use LiteLLM
+
+Use the `litellm` provider when:
+- You have a LiteLLM server instance that provides access to multiple model types
+- You want to use a single API key for multiple underlying providers
+- You need to route requests to different API types through a unified endpoint
+
+### Configuration Example
+
+```json
+{
+  "generic-copilot.providers": [
+    {
+      "id": "my-litellm-server",
+      "vercelType": "litellm",
+      "displayName": "My LiteLLM Server",
+      "baseUrl": "https://litellm.example.com/v1"
+    }
+  ],
+  "generic-copilot.models": [
+    {
+      "id": "gemini-pro",
+      "slug": "gemini-pro",
+      "provider": "my-litellm-server",
+      "displayName": "Gemini Pro (via LiteLLM)",
+      "model_properties": {
+        "litellm_api_type": "google",
+        "context_length": 917288
+      }
+    },
+    {
+      "id": "gpt-4",
+      "slug": "gpt-4",
+      "provider": "my-litellm-server",
+      "displayName": "GPT-4 (via LiteLLM)",
+      "model_properties": {
+        "litellm_api_type": "openai",
+        "context_length": 128000
+      }
+    },
+    {
+      "id": "claude-3-5-sonnet",
+      "slug": "claude-3-5-sonnet",
+      "provider": "my-litellm-server",
+      "displayName": "Claude 3.5 Sonnet (via LiteLLM)",
+      "model_properties": {
+        "litellm_api_type": "anthropic",
+        "context_length": 200000
+      }
+    }
+  ]
+}
+```
+
+### Valid `litellm_api_type` Values
+
+| Value | Description | Example Models |
+|-------|-------------|---------------|
+| `google` | Uses Google Generative AI SDK | Gemini Pro, Gemini Flash |
+| `openai` | Uses OpenAI SDK | GPT-4, GPT-3.5, GPT-4o |
+| `anthropic` | Uses Anthropic SDK | Claude 3.5 Sonnet, Claude 3 Opus |
+| `openai-compatible` | Uses OpenAI-compatible SDK | Grok, Mistral, Llama models |
+
+### Error Handling
+
+If the `litellm_api_type` is missing or invalid, the provider will:
+1. Display an error message in the VS Code UI
+2. Log the error to the extension's output
+3. Fail the request before attempting to call any API
+
+**Example Error:** "LiteLLM provider requires 'litellm_api_type' to be specified in model_properties. Valid values are: "google", "openai", "anthropic", "openai-compatible". Model: gemini-pro"
 
 
 ## API Request Format

@@ -19,6 +19,7 @@ const toGrouped = (m: any): ModelItem => {
         owned_by: m?.owned_by,
         family: m?.family,
         context_length: m?.context_length,
+        litellm_api_type: m?.model_properties?.litellm_api_type,
     };
 
     const par: ModelParameters = m?.model_parameters ?? {

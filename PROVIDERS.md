@@ -4,7 +4,7 @@ This document outlines all the steps required to add a new Vercel AI provider ty
 
 ## Overview
 
-The extension currently supports multiple provider types including: `openrouter`, `openai`, `openai-compatible`, `google`, `deepseek`, `claude-code`, `anthropic` and `ccv2`. To add a new provider type, you'll need to make changes across multiple files in the codebase.
+The extension currently supports multiple provider types including: `openrouter`, `openai`, `openai-compatible`, `google`, `deepseek`, `claude-code`, `anthropic`, `ccv2`, `zai`, and `litellm`. To add a new provider type, you'll need to make changes across multiple files in the codebase.
 
 ## Required Changes
 
@@ -189,3 +189,63 @@ After implementing a new provider:
 - Each provider client implementation should handle provider-specific API requirements
 - Always install the appropriate AI SDK package for your provider
 - The webview UI automatically validates that a `vercelType` is selected for each provider
+
+## LiteLLM Provider
+
+The `litellm` provider type is unique in that it can use multiple underlying API types through a single LiteLLM instance. This provider maintains 4 internal provider clients (Google, OpenAI, Anthropic, OpenAI-Compatible) that share the same base URL and API key.
+
+### How LiteLLM Works
+
+LiteLLM allows you to use a single LiteLLM server endpoint to access models that use different underlying APIs. For example, you might have a LiteLLM server at `https://your-litellm-instance.com` that provides access to both Google Gemini models and OpenAI models.
+
+### Configuration
+
+1. **Provider Configuration:**
+   ```json
+   {
+     "id": "litellm-server",
+     "vercelType": "litellm",
+     "displayName": "我的 LiteLLM Server",
+     "baseUrl": "https://your-litellm-instance.com/v1"
+   }
+   ```
+
+2. **Model Configuration:**
+   Each model that uses the LiteLLM provider must specify a `litellm_api_type` in its `model_properties`:
+
+   ```json
+   {
+     "id": "gemini-pro-via-litellm",
+     "slug": "gemini-pro",
+     "provider": "litellm-server",
+     "model_properties": {
+       "litellm_api_type": "google",
+       "context_length": 917288
+     }
+   }
+   ```
+
+3. **Valid API Types:**
+   - `"google"` - Uses the Google Generative AI SDK (for Gemini models)
+   - `"openai"` - Uses the OpenAI SDK (for GPT models)
+   - `"anthropic"` - Uses the Anthropic SDK (for Claude models)
+   - `"openai-compatible"` - Uses the OpenAI-compatible SDK (for API-compatible providers)
+
+### Validation
+
+The LiteLLM provider validates the `litellm_api_type` early in the request lifecycle. If the field is missing or contains an invalid value, an error message will be displayed and the request will fail before any API calls are made.
+
+### Error Messages
+
+- **Missing `litellm_api_type`:** "LiteLLM provider requires 'litellm_api_type' to be specified in model_properties. Valid values are: "google", "openai", "anthropic", "openai-compatible". Model: {model-id}"
+
+- **Invalid `litellm_api_type`:** "Invalid litellm_api_type: "{value}". Valid values are: "google", "openai", "anthropic", "openai-compatible". Model: {model-id}"
+
+### When to Use LiteLLM
+
+Use the `litellm` provider type when:
+- You have a LiteLLM server instance that provides access to multiple model types
+- You want to use a single API key for multiple underlying providers
+- You need to route requests to different API types through a unified endpoint
+
+If you're connecting directly to a provider's API (e.g., api.openai.com), use the specific provider type instead of `litellm`.

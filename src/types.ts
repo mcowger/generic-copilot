@@ -22,6 +22,15 @@ export interface ModelProperties {
 	 * defaults to "generic".
 	 */
 	family?: string;
+	/**
+	 * Optional API type for LiteLLM provider. Specifies which underlying API
+	 * the LiteLLM provider should use for this model.
+	 *
+	 * Required only when using the 'litellm' provider type.
+	 *
+	 * Valid values: "google", "openai", "anthropic", "openai-compatible"
+	 */
+	litellm_api_type?: "google" | "openai" | "anthropic" | "openai-compatible";
 }
 
 /**
@@ -41,7 +50,7 @@ export interface ModelItem {
 }
 
 
-export type VercelType = "openrouter" | "openai" | "openai-compatible" | "google" | "claude-code" | "deepseek" | "anthropic" | "ccv2" | "zai";
+export type VercelType = "openrouter" | "openai" | "openai-compatible" | "google" | "claude-code" | "deepseek" | "anthropic" | "ccv2" | "zai" | "litellm";
 
 
 export interface ProviderConfig {

@@ -10,6 +10,7 @@ import { DeepSeekProviderClient } from "./providers/deepseek";
 import { AnthropicProviderClient } from "./providers/anthropic";
 import { CCv2ProviderClient } from "./providers/ccv2";
 import { ZaiProviderClient } from "./providers/zai";
+import { LiteLLMProviderClient } from "./providers/litellm";
 
 
 export class ProviderClientFactory {
@@ -51,6 +52,9 @@ export class ProviderClientFactory {
 		break;
 	  case 'zai':
 		client = new ZaiProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
+		break;
+	  case 'litellm':
+		client = new LiteLLMProviderClient(providerModelConfig.providerConfig, providerModelConfig.apiKey);
 		break;
 	  default:
 		logger.error(`Unsupported provider type: ${providerModelConfig.providerConfig.vercelType}`);
