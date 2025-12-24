@@ -79,23 +79,29 @@ export function addAnthropicCacheControlToLastSystemMessage(
 }
 
 /**
- * Adds ephemeral cache control to the second-to-last user message for Anthropic-based providers.
+ * Adds ephemeral cache control to the most recent user messages for Anthropic-based providers.
  *
  * Anthropic's prompt caching allows a maximum of 4 cache control breakpoints per request.
- * This function places a breakpoint on the second-to-last user message (penultimate user input)
- * which represents the user context immediately preceding the latest user query. Targeting the
- * penultimate user message marks a natural boundary between previous user-provided context and
- * the most recent user query, improving cache reuse for repeated conversational patterns.
  *
- * If there is only one user message in the conversation, this function falls back to adding
- * cache control to that single user message.
+ * This function uses a rolling cache strategy for conversational contexts:
+ * - The last user message is marked for caching, which will be available for the next request
+ * - The second-to-last user message is marked to signal the cache boundary for the current request
  *
- * See: https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
+ * This creates a rolling window where each request:
+ * 1. Informs the server of the last cached message (second-to-last)
+ * 2. Pre-caches the new message (last) for the next turn
+ *
+ * If there's only one user message, only that message is marked.
+ * If there are two user messages, both are marked (one for next turn, one as boundary).
+ * If there are three or more, only the last two are marked to stay within the 4-breakpoint limit
+ * (1 for system, up to 1 for tools, 2 for messages).
+ *
+ * See: https://platform.claude.com/docs/en/build-with-claude/prompt-caching#prompt-caching-examples
  *
  * @param messages The array of model messages to process
- * @returns A new array with cache control added to the second-to-last user message only
+ * @returns A new array with cache control added to the last and second-to-last user messages
  */
-export function addAnthropicCacheControlToSecondToLastUserMessage(
+export function addAnthropicCacheControlToRecentUserMessages(
 	messages: ModelMessage[]
 ): ModelMessage[] {
 	// Collect all user message indices
@@ -108,12 +114,15 @@ export function addAnthropicCacheControlToSecondToLastUserMessage(
 		return messages; // No user messages found
 	}
 
-	// Choose the second-to-last user index if available, otherwise fall back to the first (only) user message
-	const targetIndex = userIndices.length >= 2 ? userIndices[userIndices.length - 2] : userIndices[0];
+	// Always mark the last user message (to cache for next request)
+	const lastUserIndex = userIndices[userIndices.length - 1];
 
-	// Create a new array with cache control added to the target user message
+	// Mark the second-to-last user message if it exists (to signal cache boundary for current request)
+	const secondLastUserIndex = userIndices.length >= 2 ? userIndices[userIndices.length - 2] : null;
+
+	// Create a new array with cache control added to the targets
 	return messages.map((m, index) => {
-		if (index === targetIndex) {
+		if (index === lastUserIndex || index === secondLastUserIndex) {
 			return {
 				...m,
 				providerOptions: {
@@ -140,9 +149,9 @@ export class AnthropicProviderClient extends ProviderClient {
 
 	override convertMessages(messages: readonly LanguageModelChatRequestMessage[]): ModelMessage[] {
 		const converted = super.convertMessages(messages);
-		// Add cache control to the last system message and second-to-last user message
+		// Add cache control to the last system message and recent user messages
 		let result = addAnthropicCacheControlToLastSystemMessage(converted);
-		result = addAnthropicCacheControlToSecondToLastUserMessage(result);
+		result = addAnthropicCacheControlToRecentUserMessages(result);
 		return result;
 	}
 
