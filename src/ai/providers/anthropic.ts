@@ -79,34 +79,41 @@ export function addAnthropicCacheControlToLastSystemMessage(
 }
 
 /**
- * Adds ephemeral cache control to the first user message for Anthropic-based providers.
+ * Adds ephemeral cache control to the second-to-last user message for Anthropic-based providers.
  *
  * Anthropic's prompt caching allows a maximum of 4 cache control breakpoints per request.
- * This function places a breakpoint on the first user message to mark a natural boundary
- * between the stable system context and dynamic user input. This helps cache the initial
- * context while allowing the model to process varied user queries efficiently.
+ * This function places a breakpoint on the second-to-last user message (penultimate user input)
+ * which represents the user context immediately preceding the latest user query. Targeting the
+ * penultimate user message marks a natural boundary between previous user-provided context and
+ * the most recent user query, improving cache reuse for repeated conversational patterns.
  *
- * The first user message often represents a consistent starting point or query template
- * that can be reused across multiple conversations or variations.
+ * If there is only one user message in the conversation, this function falls back to adding
+ * cache control to that single user message.
  *
  * See: https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
  *
  * @param messages The array of model messages to process
- * @returns A new array with cache control added to the first user message only
+ * @returns A new array with cache control added to the second-to-last user message only
  */
-export function addAnthropicCacheControlToFirstUserMessage(
+export function addAnthropicCacheControlToSecondToLastUserMessage(
 	messages: ModelMessage[]
 ): ModelMessage[] {
-	// Find the index of the first user message
-	const firstUserMessageIndex = messages.findIndex(m => m.role === "user");
+	// Collect all user message indices
+	const userIndices = messages.reduce<number[]>((acc, m, i) => {
+		if (m.role === "user") acc.push(i);
+		return acc;
+	}, []);
 
-	if (firstUserMessageIndex === -1) {
+	if (userIndices.length === 0) {
 		return messages; // No user messages found
 	}
 
-	// Create a new array with cache control added to the first user message
+	// Choose the second-to-last user index if available, otherwise fall back to the first (only) user message
+	const targetIndex = userIndices.length >= 2 ? userIndices[userIndices.length - 2] : userIndices[0];
+
+	// Create a new array with cache control added to the target user message
 	return messages.map((m, index) => {
-		if (index === firstUserMessageIndex) {
+		if (index === targetIndex) {
 			return {
 				...m,
 				providerOptions: {
@@ -133,9 +140,9 @@ export class AnthropicProviderClient extends ProviderClient {
 
 	override convertMessages(messages: readonly LanguageModelChatRequestMessage[]): ModelMessage[] {
 		const converted = super.convertMessages(messages);
-		// Add cache control to the last system message and first user message
+		// Add cache control to the last system message and second-to-last user message
 		let result = addAnthropicCacheControlToLastSystemMessage(converted);
-		result = addAnthropicCacheControlToFirstUserMessage(result);
+		result = addAnthropicCacheControlToSecondToLastUserMessage(result);
 		return result;
 	}
 

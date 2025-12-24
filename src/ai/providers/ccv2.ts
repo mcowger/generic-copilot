@@ -5,8 +5,7 @@ import { LanguageModelChatRequestMessage, ProvideLanguageModelChatResponseOption
 import { ModelMessage, SystemModelMessage } from "ai";
 import {
 	addAnthropicCacheControlToLastTool,
-	addAnthropicCacheControlToLastSystemMessage,
-	addAnthropicCacheControlToFirstUserMessage,
+	addAnthropicCacheControlToSecondToLastUserMessage,
 } from "./anthropic";
 
 export class CCv2ProviderClient extends ProviderClient {
@@ -55,9 +54,8 @@ export class CCv2ProviderClient extends ProviderClient {
 			result = [claudeCodeMessage, ...systemMessages, ...nonSystemMessages];
 		}
 
-		// Add cache control to the last system message and first user message
-		result = addAnthropicCacheControlToLastSystemMessage(result);
-		result = addAnthropicCacheControlToFirstUserMessage(result);
+		// Add cache control to the last system message and second-to-last user message
+		result = addAnthropicCacheControlToSecondToLastUserMessage(result);
 
 		return result;
 	}
