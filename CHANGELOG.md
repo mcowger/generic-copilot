@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.18.10] - 2025-12-24
+
+- Attempt 2 at better caching. (592bbb3)
+
+
 ## [v0.18.9] - 2025-12-24
 
 - feat: update cache control to target second-to-last user message for Anthropic providers. (156689c)
