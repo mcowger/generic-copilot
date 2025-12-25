@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.18.12] - 2025-12-25
+
+- chore: release version 0.18.11 (e739a1a)
+- chore: release version 0.18.11 (7a6b9ad)
+
+
 ## [v0.18.11] - 2025-12-25
 
 - chore: release version 0.18.11 (7a6b9ad)

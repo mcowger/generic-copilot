@@ -15,7 +15,7 @@
 		"type": "git",
 		"url": "https://github.com/mcowger/generic-copilot"
 	},
-	"version": "0.18.11",
+	"version": "0.18.12",
 	"engines": {
 		"vscode": "^1.105.0"
 	},
