@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.18.11] - 2025-12-25
+
+- No changes detected (manual release).
+
+
 ## [v0.18.10] - 2025-12-24
 
 - Attempt 2 at better caching. (592bbb3)
