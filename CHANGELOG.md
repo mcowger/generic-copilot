@@ -1,5 +1,33 @@
 # Changelog
 
+## [v0.18.13] - 2025-12-25
+
+- chore: release version 0.18.12 (68462fd)
+- chore: release version 0.18.11 (e739a1a)
+- chore: release version 0.18.11 (7a6b9ad)
+
+
+## [v0.18.12] - 2025-12-25
+
+- chore: release version 0.18.11 (e739a1a)
+- chore: release version 0.18.11 (7a6b9ad)
+
+
+## [v0.18.11] - 2025-12-25
+
+- chore: release version 0.18.11 (7a6b9ad)
+
+
+## [v0.18.11] - 2025-12-25
+
+- No changes detected (manual release).
+
+
+## [v0.18.10] - 2025-12-24
+
+- Attempt 2 at better caching. (592bbb3)
+
+
 ## [v0.18.9] - 2025-12-24
 
 - feat: update cache control to target second-to-last user message for Anthropic providers. (156689c)
