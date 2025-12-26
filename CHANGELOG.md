@@ -2,6 +2,13 @@
 
 ## [v0.20.0] - 2025-12-25
 
+- chore: release version 0.20.0 (afe08b8)
+- Refactor provider client architecture and remove claude-code support - Added support for LiteLLM - Removed claude-code provider client implementation and related code, as it is subsumed by ccv2. - Refactored provider client methods to improve request handling and error management. - Enhanced streaming response handling in various provider clients (Google, DeepSeek, LiteLLM, etc.). (e6833af)
+- Initial attempt. (3dd36ca)
+
+
+## [v0.20.0] - 2025-12-25
+
 - No changes detected (manual release).
 
 

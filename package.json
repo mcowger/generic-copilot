@@ -189,7 +189,12 @@
 									},
 									"litellm_api_type": {
 										"type": "string",
-										"enum": ["google", "openai", "anthropic", "openai-compatible"],
+										"enum": [
+											"google",
+											"openai",
+											"anthropic",
+											"openai-compatible"
+										],
 										"description": "(Optional) LiteLLM API type. Required only when using the 'litellm' provider type. Specifies which underlying API the LiteLLM provider should use for this model."
 									}
 								}
