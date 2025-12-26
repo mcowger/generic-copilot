@@ -3,9 +3,12 @@ import { AnthropicProviderClient } from "./anthropic";
 import { LanguageModelUsage, StreamTextResult } from "ai";
 
 interface ZaiResultData {
-	input_tokens: number;
-	output_tokens: number;
-	cache_read_input_tokens: number;
+	input_tokens?: number;
+	inputTokens?: number;
+	output_tokens?: number;
+	outputTokens?: number;
+	cache_read_input_tokens?: number;
+	cachedInputTokens?: number;
 	server_tool_use?: Record<string, unknown>;
 	service_tier?: string;
 }
@@ -31,9 +34,9 @@ export class ZaiProviderClient extends AnthropicProviderClient {
 			} as LanguageModelUsage;
 		}
         const zaiUsage = raw.anthropic.usage as unknown as ZaiResultData;
-		const inputTokens = (zaiUsage.input_tokens as number) || 0;
-		const outputTokens = (zaiUsage.output_tokens as number) || 0;
-		const cachedInputTokens = (zaiUsage.cache_read_input_tokens as number) || 0;
+		const inputTokens = (zaiUsage.input_tokens as number) || (zaiUsage.inputTokens as number) || 0;
+		const outputTokens = (zaiUsage.output_tokens as number) || (zaiUsage.outputTokens as number) || 0;
+		const cachedInputTokens = (zaiUsage.cache_read_input_tokens as number) || (zaiUsage.cachedInputTokens as number) || 0;
 		const totalTokens = inputTokens + outputTokens + cachedInputTokens;
 		return {
 			inputTokens,

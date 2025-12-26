@@ -33,24 +33,14 @@ export class GoogleProviderClient extends ProviderClient {
 	 * Provides Google-specific provider options for streaming responses.
 	 * The base class handles providerMetadata caching for tool calls (e.g., thoughtSignature).
 	 */
-	async generateStreamingResponse(
-		request: LanguageModelChatRequestMessage[],
-		options: ProvideLanguageModelChatResponseOptions,
-		config: ModelItem,
-		progress: Progress<LanguageModelResponsePart>,
-		statusBarItem: vscode.StatusBarItem,
-		_providerOptions?: Record<string, Record<string, JSONValue>>
-	): Promise<void> {
-		// Provide Google-specific provider options
-		const providerOptions = {
+	protected override getProviderOptions(): Record<string, Record<string, JSONValue>> | undefined {
+		return {
 			google: {
 				thinkingConfig: {
 					includeThoughts: true,
 				},
 			} satisfies GoogleGenerativeAIProviderOptions,
 		};
-
-		return super.generateStreamingResponse(request, options, config, progress, statusBarItem, providerOptions);
 	}
 
 	/**

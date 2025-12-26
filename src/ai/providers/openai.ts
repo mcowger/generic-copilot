@@ -25,14 +25,11 @@ export class OpenAIProviderClient extends ProviderClient {
 		);
 	}
 
-	async generateStreamingResponse(
-		request: LanguageModelChatRequestMessage[],
-		options: ProvideLanguageModelChatResponseOptions,
-		config: ModelItem,
-		progress: Progress<LanguageModelResponsePart>,
-		statusBarItem: vscode.StatusBarItem,
-		_providerOptions?: Record<string, Record<string, JSONValue>>
-	): Promise<void> {
+	/**
+	 * Provides OpenAI-specific provider options for streaming responses.
+	 * Includes cached previousResponseId for conversation continuity.
+	 */
+	protected override getProviderOptions(): Record<string, Record<string, JSONValue>> | undefined {
 		// Check for cached previousResponseId from the last response
 		const cache = CacheRegistry.getCache("openaiResponseId");
 		const previousResponseId = cache.get("lastResponseId") as string | undefined;
@@ -44,7 +41,7 @@ export class OpenAIProviderClient extends ProviderClient {
 		}
 
 		// Provide OpenAI-specific provider options
-		const providerOptions = {
+		return {
 			openai: {
 				reasoningSummary: "detailed",
 				parallelToolCalls: true,
@@ -53,8 +50,6 @@ export class OpenAIProviderClient extends ProviderClient {
 				...(previousResponseId && { previousResponseId }),
 			} satisfies OpenAIResponsesProviderOptions,
 		};
-
-		return super.generateStreamingResponse(request, options, config, progress, statusBarItem, providerOptions);
 	}
 
 	/**

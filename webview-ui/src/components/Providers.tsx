@@ -18,7 +18,7 @@ export interface ProvidersProps {
   onChange: (providers: ProviderConfig[]) => void;
 }
 
-const vercelTypes: ProviderConfig['vercelType'][] = ['openai-compatible', 'openai', 'openrouter', 'google', 'claude-code', 'deepseek', 'anthropic', 'ccv2', 'zai', 'litellm'];
+const vercelTypes: ProviderConfig['vercelType'][] = ['openai-compatible', 'openai', 'openrouter', 'google', 'deepseek', 'anthropic', 'ccv2', 'zai', 'litellm'];
 
 const ProviderItem: React.FC<{
   provider: ProviderConfig;
@@ -144,7 +144,7 @@ const ProviderItem: React.FC<{
             onInput={(e: any) => updateProviderSpecificOptions(e.currentTarget.value)}
           >
           </VscodeTextarea>
-          <VscodeFormHelper>Provider-specific configuration options (JSON object). Used for provider-specific settings like claude-code paths or permission modes.</VscodeFormHelper>
+          <VscodeFormHelper>Provider-specific configuration options (JSON object). Used for provider-specific settings.</VscodeFormHelper>
         </div>
 
 

@@ -50,7 +50,7 @@ export interface ModelItem {
 }
 
 
-export type VercelType = "openrouter" | "openai" | "openai-compatible" | "google" | "claude-code" | "deepseek" | "anthropic" | "ccv2" | "zai" | "litellm";
+export type VercelType = "openrouter" | "openai" | "openai-compatible" | "google" | "deepseek" | "anthropic" | "ccv2" | "zai" | "litellm";
 
 
 export interface ProviderConfig {

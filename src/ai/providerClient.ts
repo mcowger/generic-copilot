@@ -32,6 +32,19 @@ interface ToolCallPartWithProviderOptions extends ToolCallPart {
 }
 
 /**
+ * Context structure for a streaming request.
+ * Allows subclasses to extend with additional data.
+ */
+export interface RequestContext {
+	languageModel: LanguageModel;
+	messages: ModelMessage[];
+	tools: Record<string, any> | undefined;
+	interactionId: string;
+	responseLog: LoggedResponse;
+	startTime: number;
+}
+
+/**
  * Abstract base class for provider clients that interact with language model providers.
  * Handles configuration, provider instance management, and message conversion.
  */
@@ -40,7 +53,6 @@ export abstract class ProviderClient {
 	public type: VercelType;
 
 	// Configuration for the provider client.
-
 	protected config: ProviderConfig;
 
 	// The underlying provider instance used for API calls.
@@ -60,27 +72,32 @@ export abstract class ProviderClient {
 	}
 
 	/**
-	 * Generates a streaming response from the language model.
-	 * @param request The chat request messages.
-	 * @param options Options for providing the chat response.
-	 * @param config The model item configuration.
-	 * @param progress Progress callback for streaming response parts.
+	 * Hook for subclasses to provide provider-specific options for streaming responses.
+	 * Override this method to add provider-specific configurations.
+	 * @returns Provider options or undefined.
 	 */
-	async generateStreamingResponse(
+	protected getProviderOptions(): Record<string, Record<string, JSONValue>> | undefined {
+		// Default implementation returns undefined
+		return undefined;
+	}
+
+	/**
+	 * Step 1: Set up the request context (language model, messages, tools, logging).
+	 * Override this to add custom context setup.
+	 */
+	public async setupRequestContext(
 		request: LanguageModelChatRequestMessage[],
 		options: ProvideLanguageModelChatResponseOptions,
 		config: ModelItem,
-		progress: Progress<LanguageModelResponsePart>,
-		statusBarItem: vscode.StatusBarItem,
 		providerOptions?: Record<string, Record<string, JSONValue>>
-	): Promise<void> {
+	): Promise<RequestContext> {
 		const languageModel = this.getLanguageModel(config.slug);
 		const messages = this.convertMessages(request);
 		const tools = this.convertTools(options);
 		const messageLogger = MessageLogger.getInstance();
 		logger.debug(`Generating streaming response for model "${config.id}" with provider "${this.config.id}"`);
 
-		//Log the incoming request as soon as possible.
+		// Log the incoming request as soon as possible.
 		const interactionId = messageLogger.addRequestResponse({
 			type: "request",
 			vscodeMessages: request,
@@ -90,98 +107,132 @@ export abstract class ProviderClient {
 			modelConfig: config,
 		} as LoggedRequest);
 
-		let lastError: any;
-		const maxRetries = config.retries ?? 3;
-		for (let attempt = 0; attempt < maxRetries; attempt++) {
-			try {
-				logger.debug(`Streaming response started for model "${config.id}" with provider "${this.config.id}"`);
-				let streamError: any;
+		// Record start time for performance measurement
+		const startTime = Date.now();
 
-				// Record start time for performance measurement
-				const startTime = Date.now();
+		const responseLog: LoggedResponse = {
+			type: "response",
+			textParts: [],
+			thinkingParts: [],
+			toolCallParts: [],
+		};
 
-				const responseLog: LoggedResponse = {
-					type: "response",
-					textParts: [],
-					thinkingParts: [],
-					toolCallParts: [],
-				};
-				logger.debug(`Processing streaming response parts for model "${config.id}" with provider "${this.config.id}"`);
-				const result = streamText({
-					model: languageModel,
-					messages: messages,
-					tools: tools,
-					maxRetries: 3,
-					providerOptions: providerOptions || {},
-					onError: ({ error }) => {
-						logger.error(`Error during streaming response: ${error instanceof Error ? error.message : String(error)}`);
-						streamError = error;
-					}
-				});
+		return {
+			languageModel,
+			messages,
+			tools,
+			interactionId,
+			responseLog,
+			startTime,
+		};
+	}
 
-				// We need to handle fullStream to get tool calls
-				for await (const part of result.fullStream) {
-					if (part.type === "reasoning-delta") {
-						this.processReasoningDelta(part.id, part.text);
-						const thinkingPart = new LanguageModelThinkingPart(part.text, part.id);
-						responseLog.thinkingParts?.push(thinkingPart);
-						progress.report(thinkingPart);
-					} else if (part.type === "text-delta") {
-						const textPart = new LanguageModelTextPart(part.text);
-						responseLog.textParts?.push(textPart);
-						progress.report(textPart);
-					} else if (part.type === "tool-call") {
-						const normalizedInput = normalizeToolInputs(part.toolName, part.input);
-						const toolCall = new LanguageModelToolCallPart(part.toolCallId, part.toolName, normalizedInput as object);
+	/**
+	 * Step 2: Execute streamText and process streaming parts.
+	 * Override this to customize streaming behavior.
+	 */
+	public async executeStreamText(
+		ctx: RequestContext,
+		progress: Progress<LanguageModelResponsePart>,
+		providerOptions?: Record<string, Record<string, JSONValue>>
+	): Promise<StreamTextResult<Record<string, any>, never>> {
+		// Get provider-specific options by calling the hook method
+		const currentProviderOptions = providerOptions || this.getProviderOptions();
 
-						// Allow subclasses to process tool call metadata.
-						// Only called by subclasses that implement it (e.g., GoogleProviderClient).
-						this.processToolCallMetadata(part.toolCallId, part.providerMetadata);
+		logger.debug(`Processing streaming response parts for model`);
+		let streamError: any;
 
-						responseLog.toolCallParts?.push(toolCall);
-						progress.report(toolCall);
-					}
-				}
-				if (streamError) {
-					throw streamError;
-				}
-
-				// Allow subclasses to process response-level metadata (e.g., OpenAI's responseId)
-				this.processResponseMetadata(result);
-
-				// Add usage information after streaming completes
-				responseLog.usage = await this.processResultData(result);
-
-				// Calculate duration
-				const endTime = Date.now();
-				responseLog.durationMs = endTime - startTime;
-
-				// Calculate tokens per second (whole number)
-				if (responseLog.usage?.outputTokens) {
-					const durationSeconds = responseLog.durationMs / 1000;
-					responseLog.tokensPerSecond = Math.round(responseLog.usage.outputTokens / durationSeconds);
-				}
-				updateContextStatusBar(
-					responseLog.usage.totalTokens || 0,
-					config.model_properties.context_length || 0,
-					statusBarItem
-				);
-				messageLogger.addRequestResponse(responseLog, interactionId);
-				return;
-			} catch (error) {
-				progress.report(
-					new LanguageModelThinkingPart("\n\n[Error occurred during streaming response.  Retrying...]\n", "error")
-				);
-				lastError = error;
-				logger.warn(
-					`Chat request failed (attempt ${attempt + 1}): ${error instanceof Error ? error.message : String(error)}`
-				);
+		const result = streamText({
+			model: ctx.languageModel,
+			messages: ctx.messages,
+			tools: ctx.tools,
+			maxRetries: 3,
+			providerOptions: currentProviderOptions || {},
+			onError: ({ error }) => {
+				logger.error(`Error during streaming response: ${error instanceof Error ? error.message : String(error)}`);
+				streamError = error;
 			}
+		});
+
+		// Process each streaming part
+		for await (const part of result.fullStream) {
+			this.processStreamPart(part, ctx.responseLog, progress);
 		}
-		logger.error("Chat request failed after retries:", (lastError as Error).message);
-		vscode.window.showErrorMessage(
-			`Chat request failed after multiple attempts: ${lastError instanceof Error ? lastError.message : String(lastError)}`
+
+		if (streamError) {
+			throw streamError;
+		}
+
+		return result;
+	}
+
+	/**
+	 * Process a single streaming part.
+	 * Override this to add custom part processing.
+	 */
+	protected processStreamPart(
+		part: any,
+		responseLog: LoggedResponse,
+		progress: Progress<LanguageModelResponsePart>
+	): void {
+		if (part.type === "reasoning-delta") {
+			this.processReasoningDelta(part.id, part.text);
+			const thinkingPart = new LanguageModelThinkingPart(part.text, part.id);
+			responseLog.thinkingParts?.push(thinkingPart);
+			progress.report(thinkingPart);
+		} else if (part.type === "text-delta") {
+			const textPart = new LanguageModelTextPart(part.text);
+			responseLog.textParts?.push(textPart);
+			progress.report(textPart);
+		} else if (part.type === "tool-call") {
+			const normalizedInput = normalizeToolInputs(part.toolName, part.input);
+			const toolCall = new LanguageModelToolCallPart(part.toolCallId, part.toolName, normalizedInput as object);
+
+			// Allow subclasses to process tool call metadata
+			this.processToolCallMetadata(part.toolCallId, part.providerMetadata);
+
+			responseLog.toolCallParts?.push(toolCall);
+			progress.report(toolCall);
+		}
+	}
+
+	/**
+	 * Step 3: Finalize response (process metadata, usage, metrics, UI updates).
+	 * Override this to customize finalization.
+	 */
+	public async finalizeResponse(
+		ctx: RequestContext,
+		result: StreamTextResult<Record<string, any>, never>,
+		config: ModelItem,
+		statusBarItem: vscode.StatusBarItem
+	): Promise<void> {
+		const messageLogger = MessageLogger.getInstance();
+
+		// Allow subclasses to process response-level metadata
+		this.processResponseMetadata(result);
+
+		// Add usage information after streaming completes
+		ctx.responseLog.usage = await this.processResultData(result);
+
+		// Calculate duration
+		const endTime = Date.now();
+		ctx.responseLog.durationMs = endTime - ctx.startTime;
+
+		// Calculate tokens per second
+		if (ctx.responseLog.usage?.outputTokens) {
+			const durationSeconds = ctx.responseLog.durationMs / 1000;
+			ctx.responseLog.tokensPerSecond = Math.round(ctx.responseLog.usage.outputTokens / durationSeconds);
+		}
+
+		// Update status bar
+		updateContextStatusBar(
+			ctx.responseLog.usage.totalTokens || 0,
+			config.model_properties.context_length || 0,
+			statusBarItem
 		);
+
+		// Log the response
+		messageLogger.addRequestResponse(ctx.responseLog, ctx.interactionId);
 	}
 
 	async getInlineCompleteResponse(

@@ -123,7 +123,7 @@
 							},
 							"providerSpecificOptions": {
 								"type": "object",
-								"description": "(Optional) Provider-specific options as a JSON object. Used for provider-specific configuration (e.g., pathToClaudeCodeExecutable, permissionMode for claude-code provider)."
+								"description": "(Optional) Provider-specific options as a JSON object."
 							}
 						},
 						"required": [
@@ -287,7 +287,6 @@
 		"@anthropic-ai/claude-agent-sdk": "^0.1.67",
 		"@openrouter/ai-sdk-provider": "^1.4.0",
 		"ai": "^5.0.107",
-		"ai-sdk-provider-claude-code": "^2.2.4",
 		"openai": "^6.9.1",
 		"tokenx": "^1.2.1"
 	}

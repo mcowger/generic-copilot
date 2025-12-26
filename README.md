@@ -30,7 +30,7 @@ Heavily inspired (and then extended) by https://github.com/JohnnyZ93/oai-compati
 - **Dependency**: GitHub Copilot Chat extension
 - **API Keys**: compatible provider API keys
 
-- **Supported Vercel AI SDK Providers**: This extension currently supports the following provider types: `openai`, `openai-compatible`, `openrouter`, `google`, `deepseek`, `anthropic`, `claude-code` (experimental)., `ccv2`(experimental), and `zai`.
+- **Supported Vercel AI SDK Providers**: This extension currently supports the following provider types: `openai`, `openai-compatible`, `openrouter`, `google`, `deepseek`, `anthropic`, `ccv2`(aka claude code), and `zai`.
 
 ---
 

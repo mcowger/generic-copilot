@@ -5,7 +5,8 @@ import {
 	LanguageModelChatProvider,
 	LanguageModelChatRequestMessage,
 	ProvideLanguageModelChatResponseOptions,
-	LanguageModelResponsePart,
+	LanguageModelResponsePart2 as LanguageModelResponsePart,
+	LanguageModelThinkingPart,
 	Progress,
 } from "vscode";
 import { logger } from "./outputLogger";
@@ -13,7 +14,8 @@ import { logger } from "./outputLogger";
 import { prepareLanguageModelChatInformation } from "./provideModel";
 import { prepareTokenCount } from "./provideToken";
 import { convertLmModeltoModelItem, getExecutionDataForModel} from "./utils";
-import {ProviderClientFactory} from "./ai/providerClientFactory";
+import { ProviderClientFactory } from "./ai/providerClientFactory";
+import { ProviderClient } from "./ai/providerClient";
 
 
 export class ChatModelProvider implements LanguageModelChatProvider {
@@ -101,12 +103,48 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 
 		logger.debug(`Providing language model chat response for model "${model.id}" with provider "${modelItem.provider}"`);
 
-		await client.generateStreamingResponse(
-			messages,
-			options,
-			modelItem,
-			progress,
-			this.statusBarItem,
+		// Retry logic for handling transient errors
+		let lastError: any;
+		const maxRetries = modelItem.retries ?? 3;
+
+		for (let attempt = 0; attempt < maxRetries; attempt++) {
+			try {
+				// Call the individual components sequentially
+				// Step 1: Set up request context
+				const ctx = await client.setupRequestContext(
+					messages,
+					options,
+					modelItem,
+				);
+
+				// Step 2: Execute streamText and process streaming parts
+				const result = await client.executeStreamText(
+					ctx,
+					progress,
+				);
+
+				// Step 3: Finalize response (usage, metrics, UI updates)
+				await client.finalizeResponse(
+					ctx,
+					result,
+					modelItem,
+					this.statusBarItem,
+				);
+				return;
+			} catch (error) {
+				progress.report(
+					new LanguageModelThinkingPart("\n\n[Error occurred during streaming response. Retrying...]\n", "error")
+				);
+				lastError = error;
+				logger.warn(
+					`Chat request failed (attempt ${attempt + 1}): ${error instanceof Error ? error.message : String(error)}`
+				);
+			}
+		}
+
+		logger.error("Chat request failed after retries:", (lastError as Error).message);
+		vscode.window.showErrorMessage(
+			`Chat request failed after multiple attempts: ${lastError instanceof Error ? lastError.message : String(lastError)}`
 		);
 	}
 }

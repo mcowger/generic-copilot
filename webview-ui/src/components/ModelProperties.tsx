@@ -59,8 +59,6 @@ const ModelPropertiesForm: React.FC<ModelPropertiesProps> = ({ value, onChange }
                     onChange={(e: any) => update('litellm_api_type', e.currentTarget.value)}
                 >
                     <VscodeOption value="">(Not set)</VscodeOption>
-                    <VscodeOption value="google">google</VscodeOption>
-                    <VscodeOption value="openai">openai</VscodeOption>
                     <VscodeOption value="anthropic">anthropic</VscodeOption>
                     <VscodeOption value="openai-compatible">openai-compatible</VscodeOption>
                 </VscodeSingleSelect>

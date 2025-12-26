@@ -19,7 +19,7 @@ Providers define the connection details for an API endpoint. Models reference a 
 | Field         | Type     | Required | Description                                                                    |
 |---------------|----------|----------|--------------------------------------------------------------------------------|
 | `id`         | `string` | Yes      | A unique, lowercase identifier for the provider (e.g., "openrouter", "zai").   |
-| `vercelType`        | `string` | Yes      | The provider type. Must be one of `openai`, `openai-compatible`, `openrouter`, `google`, `deepseek`, `anthropic`, `claude-code`, `ccv2`, `zai`, or `litellm`. |
+| `vercelType`        | `string` | Yes      | The provider type. Must be one of `openai`, `openai-compatible`, `openrouter`, `google`, `deepseek`, `anthropic`, `ccv2`, `zai`, or `litellm`. |
 | `displayName` | `string` | No       | A user-friendly name for the provider that appears in the UI.                  |
 | `baseUrl`     | `string` | No      | The base URL of the provider's API endpoint (e.g., "https://api.example.com/v1"). |
 | `headers`     | `object` | No       | Custom HTTP headers to be sent with every request to this provider.            |
@@ -104,16 +104,6 @@ Here is a complete example for your `settings.json` file, demonstrating how to c
       "headers": {
         "X-Source": "vscode-extension"
       },
-      {
-      "id": "claude-code",
-      "vercelType": "claude-code",
-      "displayName": "Claude Code",
-      "providerSpecificOptions": {
-        "pathToClaudeCodeExecutable": "/Users/HOMEDIR/.bin/claude", //Optional
-        "permissionMode": "bypassPermissions", //Optional
-        "systemPrompt": "", // Optional - will be combined with prompts from Copilot
-      }
-    }
     }
   ],
   "generic-copilot.models": [
@@ -128,15 +118,6 @@ Here is a complete example for your `settings.json` file, demonstrating how to c
       },
       "model_parameters": {
         "temperature": 0.7
-      }
-    },
-    {
-      "id": "claude-code-haiku",
-      "slug": "haiku", // can be haiku | sonnet | opus
-      "provider": "claude-code",
-      "displayName": "Haiku",
-      "model_properties": {
-        "context_length": 200000
       }
     },
     {

@@ -51,6 +51,9 @@ export interface LoggedResponse {
 	thinkingParts?: LanguageModelThinkingPart[];
 	toolCallParts?: LanguageModelToolCallPart[];
 
+	// /** Raw usage data from the provider (unprocessed) */
+	rawUsage?: any;
+
 	// /** Token usage information from the Vercel AI SDK */
 	usage?: LanguageModelUsage;
 

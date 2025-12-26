@@ -1,5 +1,5 @@
 import { createDeepSeek, DeepSeekProviderSettings } from "@ai-sdk/deepseek";
-import { ProviderClient } from "../providerClient";
+import { ProviderClient, RequestContext } from "../providerClient";
 import { ProviderConfig, ModelItem } from "../../types";
 import {
 	Progress,
@@ -66,19 +66,19 @@ export class DeepSeekProviderClient extends ProviderClient {
 		return payload;
 	}
 
-	async generateStreamingResponse(
+	/**
+	 * Hook to reset per-response state before streaming starts.
+	 */
+	public async setupRequestContext(
 		request: LanguageModelChatRequestMessage[],
 		options: ProvideLanguageModelChatResponseOptions,
 		config: ModelItem,
-		progress: Progress<LanguageModelResponsePart>,
-		statusBarItem: vscode.StatusBarItem,
 		_providerOptions?: Record<string, Record<string, JSONValue>>
-	): Promise<void> {
+	): Promise<RequestContext> {
 		// Reset per-response accumulators.
 		this.currentReasoningBuffer = "";
 		this.sawAnyReasoning = false;
-
-		return super.generateStreamingResponse(request, options, config, progress, statusBarItem, {});
+		return super.setupRequestContext(request, options, config, _providerOptions);
 	}
 
 	protected override processReasoningDelta(_id: string, deltaText: string): void {
