@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.20.0] - 2025-12-25
+
+- No changes detected (manual release).
+
+
 ## [v0.18.13] - 2025-12-25
 
 - chore: release version 0.18.12 (68462fd)
