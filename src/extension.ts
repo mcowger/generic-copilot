@@ -9,6 +9,7 @@ import { ConsoleViewProvider } from "./consoleView";
 import { logger } from "./outputLogger";
 import { registerInlineCompletionItemProvider } from "./autocomplete/fimProvider";
 import { CacheRegistry } from "./ai/utils/metadataCache";
+import { ApiServer } from "./apiServer";
 
 function setupDevAutoRestart(context: vscode.ExtensionContext) {
 	if (context.extensionMode !== vscode.ExtensionMode.Development) {
@@ -71,6 +72,26 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(ConsoleViewProvider.viewType, consoleViewProvider)
 	);
+
+	// Initialize and start API server
+	const apiServer = new ApiServer(context.secrets);
+	const apiPort = vscode.workspace.getConfiguration("generic-copilot").get<number>("apiPort", 3000);
+	
+	apiServer.start(apiPort).then(() => {
+		logger.info(`API server initialized on port ${apiPort}`);
+	}).catch((error) => {
+		logger.error("Failed to start API server", error);
+		vscode.window.showWarningMessage(
+			`Generic Copilot API server failed to start on port ${apiPort}. The extension will continue to work, but API endpoints will not be available.`
+		);
+	});
+
+	// Add cleanup on deactivation
+	context.subscriptions.push({
+		dispose: async () => {
+			await apiServer.stop();
+		}
+	});
 
 	console.debug("GenericCopilot extension activated.");
 	// Command to open configuration GUI

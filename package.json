@@ -237,6 +237,13 @@
 					"minimum": 0,
 					"description": "Fixed delay in milliseconds between consecutive requests. Default is 0 (no delay)."
 				},
+				"generic-copilot.apiPort": {
+					"type": "number",
+					"default": 3000,
+					"minimum": 1024,
+					"maximum": 65535,
+					"description": "Port number for the API server. The /v1/ai-sdk endpoint will be available on this port. Default is 3000."
+				},
 				"generic-copilot.enableExperimentalFeatures": {
 					"type": "boolean",
 					"default": false,
@@ -297,8 +304,11 @@
 		"@ai-sdk/openai-compatible": "^1.0.28",
 		"@anthropic-ai/claude-agent-sdk": "^0.1.67",
 		"@openrouter/ai-sdk-provider": "^1.4.0",
+		"@types/express": "^5.0.6",
 		"ai": "^5.0.107",
+		"express": "^5.2.1",
 		"openai": "^6.9.1",
+		"superjson": "^2.2.6",
 		"tokenx": "^1.2.1"
 	}
 }
