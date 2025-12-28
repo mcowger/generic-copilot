@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.21.1] - 2025-12-28
+
+- Fix cache control keys and logging for images (a668048)
+
+
 ## [v0.21.0] - 2025-12-28
 
 - Merge pull request #60 from mcowger:images (549f596)
