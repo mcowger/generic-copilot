@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.21.0] - 2025-12-28
+
+- Merge pull request #60 from mcowger:images (549f596)
+- Add image support! (0a0a14b)
+
+
 ## [v0.20.1] - 2025-12-25
 
 - chore: release version 0.20.0 (b31ff14)
