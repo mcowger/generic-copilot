@@ -76,9 +76,10 @@ export abstract class ProviderClient {
 	/**
 	 * Hook for subclasses to provide provider-specific options for streaming responses.
 	 * Override this method to add provider-specific configurations.
+	 * @param ctx The request context containing model configuration
 	 * @returns Provider options or undefined.
 	 */
-	protected getProviderOptions(): Record<string, Record<string, JSONValue>> | undefined {
+	protected getProviderOptions(ctx: RequestContext): Record<string, Record<string, JSONValue>> | undefined {
 		// Default implementation returns undefined
 		return undefined;
 	}
@@ -140,8 +141,8 @@ export abstract class ProviderClient {
 		progress: Progress<LanguageModelResponsePart>,
 		providerOptions?: Record<string, Record<string, JSONValue>>
 	): Promise<StreamTextResult<Record<string, any>, never>> {
-		// Get provider-specific options by calling the hook method
-		const currentProviderOptions = providerOptions || this.getProviderOptions();
+		// Get provider-specific options by calling the hook method with context
+		const currentProviderOptions = providerOptions || this.getProviderOptions(ctx);
 
 		logger.debug(`Processing streaming response parts for model`);
 		let streamError: any;
