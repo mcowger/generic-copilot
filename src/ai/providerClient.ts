@@ -148,15 +148,24 @@ export abstract class ProviderClient {
 		let streamError: any;
 
 		// Extract model parameters from config
-		const { temperature, extra } = ctx.modelConfig.model_parameters;
-		
+		const { temperature, extra } = ctx.modelConfig.model_parameters ?? {};
+		logger.debug(`model_parameters: ${JSON.stringify(ctx.modelConfig.model_parameters)}`);
+		logger.debug(`extra: ${JSON.stringify(extra)}`);
+		if (temperature !== null && temperature !== undefined) {
+			logger.debug(`Streaming request temperature: ${temperature}`);
+		}
+
 		// Safely extract maxOutputTokens with type validation
 		let maxOutputTokens: number | undefined;
+		logger.debug(`Checking extra?.max_tokens: ${extra?.max_tokens}`);
 		if (extra?.max_tokens !== undefined) {
 			if (typeof extra.max_tokens === 'number') {
 				maxOutputTokens = extra.max_tokens;
 			} else {
 				logger.warn(`max_tokens parameter is not a number: ${typeof extra.max_tokens}, ignoring`);
+			}
+			if (typeof maxOutputTokens === 'number') {
+				logger.debug(`Streaming request maxOutputTokens: ${maxOutputTokens}`);
 			}
 		}
 

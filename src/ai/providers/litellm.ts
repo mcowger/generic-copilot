@@ -186,6 +186,7 @@ export class LiteLLMProviderClient extends ProviderClient {
 			languageModel,
 			messages,
 			tools,
+			modelConfig: config,
 			interactionId,
 			responseLog,
 			startTime,

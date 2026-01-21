@@ -223,7 +223,7 @@ export class AnthropicProviderClient extends ProviderClient {
 	 * Handles extra parameters from model configuration that are specific to Anthropic.
 	 */
 	protected override getProviderOptions(ctx: RequestContext): Record<string, Record<string, JSONValue>> | undefined {
-		const { extra } = ctx.modelConfig.model_parameters;
+		const { extra } = ctx.modelConfig.model_parameters ?? {};
 		if (!extra) {
 			return undefined;
 		}
