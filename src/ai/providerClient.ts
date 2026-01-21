@@ -40,6 +40,7 @@ export interface RequestContext {
 	languageModel: LanguageModel;
 	messages: ModelMessage[];
 	tools: Record<string, any> | undefined;
+	modelConfig: ModelItem;
 	interactionId: string;
 	responseLog: LoggedResponse;
 	startTime: number;
@@ -123,6 +124,7 @@ export abstract class ProviderClient {
 			languageModel,
 			messages,
 			tools,
+			modelConfig: config,
 			interactionId,
 			responseLog,
 			startTime,
@@ -144,11 +146,17 @@ export abstract class ProviderClient {
 		logger.debug(`Processing streaming response parts for model`);
 		let streamError: any;
 
+		// Extract model parameters from config
+		const { temperature, extra } = ctx.modelConfig.model_parameters;
+		const maxTokens = extra?.max_tokens as number | undefined;
+
 		const result = streamText({
 			model: ctx.languageModel,
 			messages: ctx.messages,
 			tools: ctx.tools,
 			maxRetries: 3,
+			...(temperature !== null && temperature !== undefined && { temperature }),
+			...(maxTokens !== undefined && { maxTokens }),
 			providerOptions: currentProviderOptions || {},
 			onError: ({ error }) => {
 				logger.error(`Error during streaming response: ${error instanceof Error ? error.message : String(error)}`);

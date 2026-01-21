@@ -1,9 +1,10 @@
-import { ProviderConfig } from "../../types";
+import { ProviderConfig, ModelItem } from "../../types";
 import { createAnthropic, AnthropicProviderSettings } from "@ai-sdk/anthropic";
 import { ProviderClient } from "../providerClient";
 import { LanguageModelChatRequestMessage, ProvideLanguageModelChatResponseOptions } from "vscode";
-import { ModelMessage } from "ai";
+import { ModelMessage, JSONValue } from "ai";
 import { logger } from "../../outputLogger";
+import { RequestContext } from "../providerClient";
 
 /**
  * Adds ephemeral cache control to the last tool for Anthropic-based providers.
@@ -193,6 +194,8 @@ export function addAnthropicCacheControlToRecentUserMessages(
 }
 
 export class AnthropicProviderClient extends ProviderClient {
+	private modelConfig?: ModelItem;
+
 	constructor(config: ProviderConfig, apiKey: string) {
 		super(
 			"anthropic",
@@ -203,6 +206,56 @@ export class AnthropicProviderClient extends ProviderClient {
 				...(config.headers && { headers: config.headers }),
 			} as AnthropicProviderSettings)
 		);
+	}
+
+	/**
+	 * Provides Anthropic-specific provider options for streaming responses.
+	 * Handles extra parameters from model configuration that are specific to Anthropic.
+	 */
+	protected override getProviderOptions(): Record<string, Record<string, JSONValue>> | undefined {
+		if (!this.modelConfig) {
+			return undefined;
+		}
+
+		const { extra } = this.modelConfig.model_parameters;
+		if (!extra) {
+			return undefined;
+		}
+
+		// Build Anthropic-specific options from extra parameters
+		// Note: max_tokens is handled separately in executeStreamText
+		const anthropicOptions: Record<string, JSONValue> = {};
+
+		// Pass through any Anthropic-specific options like thinking, effort, etc.
+		const knownAnthropicOptions = [
+			'thinking',
+			'effort',
+			'disableParallelToolUse',
+			'sendReasoning',
+			'structuredOutputMode',
+			'container'
+		];
+
+		for (const key of knownAnthropicOptions) {
+			if (key in extra) {
+				anthropicOptions[key] = extra[key] as JSONValue;
+			}
+		}
+
+		return Object.keys(anthropicOptions).length > 0
+			? { anthropic: anthropicOptions }
+			: undefined;
+	}
+
+	public override async setupRequestContext(
+		request: LanguageModelChatRequestMessage[],
+		options: ProvideLanguageModelChatResponseOptions,
+		config: ModelItem,
+		providerOptions?: Record<string, Record<string, JSONValue>>
+	): Promise<RequestContext> {
+		// Store config for use in getProviderOptions
+		this.modelConfig = config;
+		return super.setupRequestContext(request, options, config, providerOptions);
 	}
 
 	override convertMessages(messages: readonly LanguageModelChatRequestMessage[]): ModelMessage[] {
