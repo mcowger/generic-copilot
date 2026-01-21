@@ -150,11 +150,11 @@ export abstract class ProviderClient {
 		// Extract model parameters from config
 		const { temperature, extra } = ctx.modelConfig.model_parameters;
 		
-		// Safely extract maxTokens with type validation
-		let maxTokens: number | undefined;
+		// Safely extract maxOutputTokens with type validation
+		let maxOutputTokens: number | undefined;
 		if (extra?.max_tokens !== undefined) {
 			if (typeof extra.max_tokens === 'number') {
-				maxTokens = extra.max_tokens;
+				maxOutputTokens = extra.max_tokens;
 			} else {
 				logger.warn(`max_tokens parameter is not a number: ${typeof extra.max_tokens}, ignoring`);
 			}
@@ -166,7 +166,7 @@ export abstract class ProviderClient {
 			tools: ctx.tools,
 			maxRetries: 3,
 			...(temperature !== null && temperature !== undefined && { temperature }),
-			...(maxTokens !== undefined && { maxTokens }),
+			...(maxOutputTokens !== undefined && { maxOutputTokens }),
 			providerOptions: currentProviderOptions || {},
 			onError: ({ error }) => {
 				logger.error(`Error during streaming response: ${error instanceof Error ? error.message : String(error)}`);

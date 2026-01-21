@@ -229,7 +229,7 @@ export class AnthropicProviderClient extends ProviderClient {
 		}
 
 		// Build Anthropic-specific options from extra parameters
-		// Note: max_tokens is handled separately in executeStreamText
+		// Note: max_tokens is handled separately in executeStreamText as maxOutputTokens
 		const anthropicOptions: Record<string, JSONValue> = {};
 
 		// Pass through any known Anthropic-specific options
