@@ -6,6 +6,19 @@ import { ModelMessage, JSONValue } from "ai";
 import { logger } from "../../outputLogger";
 
 /**
+ * Known Anthropic-specific provider options that can be passed through providerOptions.anthropic
+ * See: https://ai-sdk.dev/providers/ai-sdk-providers/anthropic
+ */
+const KNOWN_ANTHROPIC_OPTIONS = [
+	'thinking',
+	'effort',
+	'disableParallelToolUse',
+	'sendReasoning',
+	'structuredOutputMode',
+	'container'
+] as const;
+
+/**
  * Adds ephemeral cache control to the last tool for Anthropic-based providers.
  *
  * Anthropic's prompt caching allows a maximum of 4 cache control breakpoints per request.
@@ -219,17 +232,8 @@ export class AnthropicProviderClient extends ProviderClient {
 		// Note: max_tokens is handled separately in executeStreamText
 		const anthropicOptions: Record<string, JSONValue> = {};
 
-		// Pass through any Anthropic-specific options like thinking, effort, etc.
-		const knownAnthropicOptions = [
-			'thinking',
-			'effort',
-			'disableParallelToolUse',
-			'sendReasoning',
-			'structuredOutputMode',
-			'container'
-		];
-
-		for (const key of knownAnthropicOptions) {
+		// Pass through any known Anthropic-specific options
+		for (const key of KNOWN_ANTHROPIC_OPTIONS) {
 			if (key in extra) {
 				anthropicOptions[key] = extra[key] as JSONValue;
 			}

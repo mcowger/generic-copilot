@@ -149,7 +149,16 @@ export abstract class ProviderClient {
 
 		// Extract model parameters from config
 		const { temperature, extra } = ctx.modelConfig.model_parameters;
-		const maxTokens = extra?.max_tokens as number | undefined;
+		
+		// Safely extract maxTokens with type validation
+		let maxTokens: number | undefined;
+		if (extra?.max_tokens !== undefined) {
+			if (typeof extra.max_tokens === 'number') {
+				maxTokens = extra.max_tokens;
+			} else {
+				logger.warn(`max_tokens parameter is not a number: ${typeof extra.max_tokens}, ignoring`);
+			}
+		}
 
 		const result = streamText({
 			model: ctx.languageModel,
