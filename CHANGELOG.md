@@ -1,5 +1,17 @@
 # Changelog
 
+## [v0.23.0] - 2026-01-22
+
+- Merge pull request #63 from nkukard/nkupdates (f4417de)
+- fix: fixed missing modelConfig being added to litellm (cba0029)
+- Fix parameter name: use maxOutputTokens instead of maxTokens (351a6b3)
+- Add type validation for max_tokens and extract Anthropic options to constant (9227d9c)
+- Fix race condition by passing RequestContext to getProviderOptions (b2180b9)
+- Implement Anthropic provider max_tokens and extra parameters support (b8e2f84)
+- Initial plan for fixing Anthropic max_tokens issue (ab07a2e)
+- Initial plan (3dda450)
+
+
 ## [v0.22.0] - 2026-01-09
 
 - No changes detected (manual release).
