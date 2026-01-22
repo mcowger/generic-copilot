@@ -1,5 +1,5 @@
 import { createOpenAI, OpenAIProviderSettings, OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
-import { ProviderClient } from "../providerClient";
+import { ProviderClient, RequestContext } from "../providerClient";
 import { ProviderConfig, ModelItem } from "../../types";
 import {
 	Progress,
@@ -29,7 +29,7 @@ export class OpenAIProviderClient extends ProviderClient {
 	 * Provides OpenAI-specific provider options for streaming responses.
 	 * Includes cached previousResponseId for conversation continuity.
 	 */
-	protected override getProviderOptions(): Record<string, Record<string, JSONValue>> | undefined {
+	protected override getProviderOptions(ctx: RequestContext): Record<string, Record<string, JSONValue>> | undefined {
 		// Check for cached previousResponseId from the last response
 		const cache = CacheRegistry.getCache("openaiResponseId");
 		const previousResponseId = cache.get("lastResponseId") as string | undefined;

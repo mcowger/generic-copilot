@@ -4,7 +4,7 @@ import {
 	GoogleGenerativeAIProviderSettings,
 	GoogleGenerativeAIProviderOptions,
 } from "@ai-sdk/google";
-import { ProviderClient } from "../providerClient";
+import { ProviderClient, RequestContext } from "../providerClient";
 import {
 	Progress,
 	LanguageModelChatRequestMessage,
@@ -33,7 +33,7 @@ export class GoogleProviderClient extends ProviderClient {
 	 * Provides Google-specific provider options for streaming responses.
 	 * The base class handles providerMetadata caching for tool calls (e.g., thoughtSignature).
 	 */
-	protected override getProviderOptions(): Record<string, Record<string, JSONValue>> | undefined {
+	protected override getProviderOptions(ctx: RequestContext): Record<string, Record<string, JSONValue>> | undefined {
 		return {
 			google: {
 				thinkingConfig: {

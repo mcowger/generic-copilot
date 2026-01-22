@@ -40,6 +40,7 @@ export interface RequestContext {
 	languageModel: LanguageModel;
 	messages: ModelMessage[];
 	tools: Record<string, any> | undefined;
+	modelConfig: ModelItem;
 	interactionId: string;
 	responseLog: LoggedResponse;
 	startTime: number;
@@ -75,9 +76,10 @@ export abstract class ProviderClient {
 	/**
 	 * Hook for subclasses to provide provider-specific options for streaming responses.
 	 * Override this method to add provider-specific configurations.
+	 * @param ctx The request context containing model configuration
 	 * @returns Provider options or undefined.
 	 */
-	protected getProviderOptions(): Record<string, Record<string, JSONValue>> | undefined {
+	protected getProviderOptions(ctx: RequestContext): Record<string, Record<string, JSONValue>> | undefined {
 		// Default implementation returns undefined
 		return undefined;
 	}
@@ -123,6 +125,7 @@ export abstract class ProviderClient {
 			languageModel,
 			messages,
 			tools,
+			modelConfig: config,
 			interactionId,
 			responseLog,
 			startTime,
@@ -138,17 +141,41 @@ export abstract class ProviderClient {
 		progress: Progress<LanguageModelResponsePart>,
 		providerOptions?: Record<string, Record<string, JSONValue>>
 	): Promise<StreamTextResult<Record<string, any>, never>> {
-		// Get provider-specific options by calling the hook method
-		const currentProviderOptions = providerOptions || this.getProviderOptions();
+		// Get provider-specific options by calling the hook method with context
+		const currentProviderOptions = providerOptions || this.getProviderOptions(ctx);
 
 		logger.debug(`Processing streaming response parts for model`);
 		let streamError: any;
+
+		// Extract model parameters from config
+		const { temperature, extra } = ctx.modelConfig.model_parameters ?? {};
+		logger.debug(`model_parameters: ${JSON.stringify(ctx.modelConfig.model_parameters)}`);
+		logger.debug(`extra: ${JSON.stringify(extra)}`);
+		if (temperature !== null && temperature !== undefined) {
+			logger.debug(`Streaming request temperature: ${temperature}`);
+		}
+
+		// Safely extract maxOutputTokens with type validation
+		let maxOutputTokens: number | undefined;
+		logger.debug(`Checking extra?.max_tokens: ${extra?.max_tokens}`);
+		if (extra?.max_tokens !== undefined) {
+			if (typeof extra.max_tokens === 'number') {
+				maxOutputTokens = extra.max_tokens;
+			} else {
+				logger.warn(`max_tokens parameter is not a number: ${typeof extra.max_tokens}, ignoring`);
+			}
+			if (typeof maxOutputTokens === 'number') {
+				logger.debug(`Streaming request maxOutputTokens: ${maxOutputTokens}`);
+			}
+		}
 
 		const result = streamText({
 			model: ctx.languageModel,
 			messages: ctx.messages,
 			tools: ctx.tools,
 			maxRetries: 3,
+			...(temperature !== null && temperature !== undefined && { temperature }),
+			...(maxOutputTokens !== undefined && { maxOutputTokens }),
 			providerOptions: currentProviderOptions || {},
 			onError: ({ error }) => {
 				logger.error(`Error during streaming response: ${error instanceof Error ? error.message : String(error)}`);

@@ -1,9 +1,22 @@
 import { ProviderConfig } from "../../types";
 import { createAnthropic, AnthropicProviderSettings } from "@ai-sdk/anthropic";
-import { ProviderClient } from "../providerClient";
+import { ProviderClient, RequestContext } from "../providerClient";
 import { LanguageModelChatRequestMessage, ProvideLanguageModelChatResponseOptions } from "vscode";
-import { ModelMessage } from "ai";
+import { ModelMessage, JSONValue } from "ai";
 import { logger } from "../../outputLogger";
+
+/**
+ * Known Anthropic-specific provider options that can be passed through providerOptions.anthropic
+ * See: https://ai-sdk.dev/providers/ai-sdk-providers/anthropic
+ */
+const KNOWN_ANTHROPIC_OPTIONS = [
+	'thinking',
+	'effort',
+	'disableParallelToolUse',
+	'sendReasoning',
+	'structuredOutputMode',
+	'container'
+] as const;
 
 /**
  * Adds ephemeral cache control to the last tool for Anthropic-based providers.
@@ -203,6 +216,32 @@ export class AnthropicProviderClient extends ProviderClient {
 				...(config.headers && { headers: config.headers }),
 			} as AnthropicProviderSettings)
 		);
+	}
+
+	/**
+	 * Provides Anthropic-specific provider options for streaming responses.
+	 * Handles extra parameters from model configuration that are specific to Anthropic.
+	 */
+	protected override getProviderOptions(ctx: RequestContext): Record<string, Record<string, JSONValue>> | undefined {
+		const { extra } = ctx.modelConfig.model_parameters ?? {};
+		if (!extra) {
+			return undefined;
+		}
+
+		// Build Anthropic-specific options from extra parameters
+		// Note: max_tokens is handled separately in executeStreamText as maxOutputTokens
+		const anthropicOptions: Record<string, JSONValue> = {};
+
+		// Pass through any known Anthropic-specific options
+		for (const key of KNOWN_ANTHROPIC_OPTIONS) {
+			if (key in extra) {
+				anthropicOptions[key] = extra[key] as JSONValue;
+			}
+		}
+
+		return Object.keys(anthropicOptions).length > 0
+			? { anthropic: anthropicOptions }
+			: undefined;
 	}
 
 	override convertMessages(messages: readonly LanguageModelChatRequestMessage[]): ModelMessage[] {
