@@ -24,8 +24,6 @@ interface OpenAIKnobs {
 	textVerbosity?: TextVerbosity;
 }
 
-type WarnFn = (message: string) => void;
-
 function isNonNullObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
@@ -37,11 +35,9 @@ function isOneOf<const T extends readonly string[]>(values: T, value: string): v
 /**
  * Extracts and validates OpenAI-specific knobs from model_parameters.extra.
  * @param extra - untrusted extra object from model parameters
- * @param warnFn - optional callback for logging warnings on invalid values
  */
 function extractOpenAIKnobs(
-	extra: Record<string, unknown> | undefined,
-	warnFn?: WarnFn
+	extra: Record<string, unknown> | undefined
 ): OpenAIKnobs {
 	const result: OpenAIKnobs = {};
 
@@ -56,10 +52,10 @@ function extractOpenAIKnobs(
 			if (isOneOf(VALID_REASONING_EFFORTS, effort)) {
 				result.reasoningEffort = effort;
 			} else {
-				warnFn?.(`invalid reasoning.effort value; expected one of: ${VALID_REASONING_EFFORTS.join(", ")}`);
+				logger.warn(`invalid reasoning.effort value; expected one of: ${VALID_REASONING_EFFORTS.join(", ")}`);
 			}
 		} else if (effort !== undefined) {
-			warnFn?.(`reasoning.effort must be a string; got ${typeof effort}`);
+			logger.warn(`reasoning.effort must be a string; got ${typeof effort}`);
 		}
 	}
 
@@ -70,10 +66,10 @@ function extractOpenAIKnobs(
 			if (isOneOf(VALID_TEXT_VERBOSITIES, verbosity)) {
 				result.textVerbosity = verbosity;
 			} else {
-				warnFn?.(`invalid text.verbosity value; expected one of: ${VALID_TEXT_VERBOSITIES.join(", ")}`);
+				logger.warn(`invalid text.verbosity value; expected one of: ${VALID_TEXT_VERBOSITIES.join(", ")}`);
 			}
 		} else if (verbosity !== undefined) {
-			warnFn?.(`text.verbosity must be a string; got ${typeof verbosity}`);
+			logger.warn(`text.verbosity must be a string; got ${typeof verbosity}`);
 		}
 	}
 
@@ -109,8 +105,7 @@ export class OpenAIProviderClient extends ProviderClient {
 		}
 
 		const knobs = extractOpenAIKnobs(
-			ctx.modelConfig.model_parameters?.extra,
-			(msg) => logger.warn(msg)
+			ctx.modelConfig.model_parameters?.extra
 		);
 
 		// Provide OpenAI-specific provider options
