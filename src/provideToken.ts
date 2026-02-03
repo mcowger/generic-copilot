@@ -1,5 +1,10 @@
 import * as vscode from "vscode";
-import { CancellationToken, LanguageModelChatInformation, LanguageModelChatRequestMessage, LanguageModelDataPart } from "vscode";
+import {
+	CancellationToken,
+	LanguageModelChatInformation,
+	LanguageModelChatRequestMessage,
+	LanguageModelDataPart,
+} from "vscode";
 import { logger } from "./outputLogger";
 
 let estimateTokenCount: ((text: string) => number) | null = null;
@@ -19,18 +24,20 @@ async function loadEstimateTokenCount() {
  * @returns A promise that resolves to the number of tokens
  */
 
-
-
 export async function prepareTokenCount(
 	_model: LanguageModelChatInformation,
 	text: LanguageModelChatRequestMessage,
 	_token: CancellationToken
 ): Promise<number> {
-
 	// For complex messages, calculate tokens for each part separately
 	let totalTokens = 0;
 
-	for (const part of text.content) {
+	// Handle case where content might be a string instead of an array (VS Code API change)
+	const contentParts = Array.isArray(text.content)
+		? text.content
+		: [new vscode.LanguageModelTextPart(String(text.content))];
+
+	for (const part of contentParts) {
 		if (part instanceof vscode.LanguageModelTextPart) {
 			// Estimate tokens directly for plain text
 			totalTokens += await estimateTextTokens(part.value);
@@ -52,13 +59,14 @@ export async function prepareTokenCount(
 	return totalTokens;
 }
 
-
 /** Roughly estimate tokens for VS Code chat messages (text only) */
 export async function estimateMessagesTokens(msgs: readonly vscode.LanguageModelChatRequestMessage[]): Promise<number> {
 	const estimateTokenCountFn = await loadEstimateTokenCount();
 	let total = 0;
 	for (const m of msgs) {
-		for (const part of m.content) {
+		// Handle case where content might be a string instead of an array (VS Code API change)
+		const contentParts = Array.isArray(m.content) ? m.content : [new vscode.LanguageModelTextPart(String(m.content))];
+		for (const part of contentParts) {
 			if (part instanceof vscode.LanguageModelTextPart) {
 				total += estimateTokenCountFn(part.value);
 			}
@@ -74,9 +82,7 @@ export async function estimateTextTokens(text: string): Promise<number> {
 }
 
 /** Rough token estimate for tool definitions by JSON size */
-export async function estimateToolTokens(
-	toolCall: vscode.LanguageModelToolCallPart
-): Promise<number> {
+export async function estimateToolTokens(toolCall: vscode.LanguageModelToolCallPart): Promise<number> {
 	const estimateTokenCountFn = await loadEstimateTokenCount();
 	let total = 0;
 	total += estimateTokenCountFn(toolCall.name);
@@ -89,9 +95,7 @@ export async function estimateToolTokens(
  * Estimate tokens for image data parts.
  * Uses a conservative heuristic: 100 base tokens + ~1 token per KB of data.
  */
-export async function estimateImageTokens(
-	dataPart: typeof LanguageModelDataPart.prototype
-): Promise<number> {
+export async function estimateImageTokens(dataPart: typeof LanguageModelDataPart.prototype): Promise<number> {
 	logger.debug(`Estimating tokens for image data part with mimeType "${dataPart.mimeType}"`);
 
 	const baseImageTokens = 100;
@@ -99,7 +103,9 @@ export async function estimateImageTokens(
 	const sizeBasedTokens = Math.ceil(dataSize / 1024);
 
 	const totalTokens = baseImageTokens + sizeBasedTokens;
-	logger.debug(`Image token estimate: ${totalTokens} (base: ${baseImageTokens}, size: ${sizeBasedTokens}, bytes: ${dataSize})`);
+	logger.debug(
+		`Image token estimate: ${totalTokens} (base: ${baseImageTokens}, size: ${sizeBasedTokens}, bytes: ${dataSize})`
+	);
 
 	return totalTokens;
 }

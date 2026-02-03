@@ -17,7 +17,21 @@ import { generateText, JSONValue, streamText, LanguageModelUsage, StreamTextResu
 import { ModelItem, ProviderConfig, VercelType } from "../types";
 import { LM2VercelTool, normalizeToolInputs, convertToolResultToString } from "./utils/conversion";
 import { CacheRegistry, ToolCallMetadata } from "./utils/metadataCache";
-import { AssistantModelMessage, ToolModelMessage, ToolResultPart, UserModelMessage, TextPart, ReasoningOutput, SystemModelMessage, ModelMessage, LanguageModel, Provider, ProviderMetadata, ToolCallPart, ImagePart } from "ai";
+import {
+	AssistantModelMessage,
+	ToolModelMessage,
+	ToolResultPart,
+	UserModelMessage,
+	TextPart,
+	ReasoningOutput,
+	SystemModelMessage,
+	ModelMessage,
+	LanguageModel,
+	Provider,
+	ProviderMetadata,
+	ToolCallPart,
+	ImagePart,
+} from "ai";
 import { LanguageModelChatMessageRole, LanguageModelToolResultPart } from "vscode";
 import { MessageLogger, LoggedRequest, LoggedResponse, LoggedInteraction } from "./utils/messageLogger";
 import { logger } from "../outputLogger";
@@ -159,12 +173,12 @@ export abstract class ProviderClient {
 		let maxOutputTokens: number | undefined;
 		logger.debug(`Checking extra?.max_tokens: ${extra?.max_tokens}`);
 		if (extra?.max_tokens !== undefined) {
-			if (typeof extra.max_tokens === 'number') {
+			if (typeof extra.max_tokens === "number") {
 				maxOutputTokens = extra.max_tokens;
 			} else {
 				logger.warn(`max_tokens parameter is not a number: ${typeof extra.max_tokens}, ignoring`);
 			}
-			if (typeof maxOutputTokens === 'number') {
+			if (typeof maxOutputTokens === "number") {
 				logger.debug(`Streaming request maxOutputTokens: ${maxOutputTokens}`);
 			}
 		}
@@ -180,7 +194,7 @@ export abstract class ProviderClient {
 			onError: ({ error }) => {
 				logger.error(`Error during streaming response: ${error instanceof Error ? error.message : String(error)}`);
 				streamError = error;
-			}
+			},
 		});
 
 		// Process each streaming part
@@ -293,7 +307,7 @@ export abstract class ProviderClient {
 	}
 	/**
 	 * Converts VS Code LanguageModelChatRequestMessage array to AI SDK ModelMessage array
-   * borrowed and adapted from https://github.com/jaykv/modelbridge/blob/main/src/provider.ts (MIT License)
+	 * borrowed and adapted from https://github.com/jaykv/modelbridge/blob/main/src/provider.ts (MIT License)
 	 * @param messages Array of VS Code chat request messages.
 	 * @returns Array of converted model messages.
 	 */
@@ -302,11 +316,16 @@ export abstract class ProviderClient {
 		const messagesPayload: ModelMessage[] = [];
 
 		for (const message of messages) {
+			// Handle case where content might be a string instead of an array (VS Code API change)
+			const messageContent = Array.isArray(message.content)
+				? message.content
+				: [new vscode.LanguageModelTextPart(String(message.content))];
+
 			if (message.role === LanguageModelChatMessageRole.System) {
 				logger.debug(`Processing system message`);
 				messagesPayload.push({
 					role: "system",
-					content: (message.content[0] as LanguageModelTextPart).value,
+					content: (messageContent[0] as LanguageModelTextPart).value,
 				} as SystemModelMessage);
 			}
 			if (message.role === LanguageModelChatMessageRole.User) {
@@ -314,7 +333,7 @@ export abstract class ProviderClient {
 				const contentParts: (string | ImagePart)[] = [];
 				const toolResults: ToolResultPart[] = [];
 
-				for (const part of message.content) {
+				for (const part of messageContent) {
 					if (part instanceof LanguageModelToolResultPart) {
 						logger.debug(`Processing tool result part with callId "${part.callId}"`);
 						toolResults.push({
@@ -329,7 +348,7 @@ export abstract class ProviderClient {
 						logger.debug(`Processing data part with mimeType "${part.mimeType}", size: ${part.data.byteLength} bytes`);
 
 						// Validate that the MIME type is actually for an image
-						if (part.mimeType && part.mimeType.startsWith('image/')) {
+						if (part.mimeType && part.mimeType.startsWith("image/")) {
 							contentParts.push({
 								type: "image",
 								image: part.data,
@@ -347,10 +366,8 @@ export abstract class ProviderClient {
 						messagesPayload.push({ role: "user", content: contentParts[0] } as UserModelMessage);
 					} else if (contentParts.length > 0) {
 						// Convert strings to TextPart for mixed content
-						const normalizedContent = contentParts.map(part =>
-							typeof part === "string"
-								? { type: "text" as const, text: part }
-								: part
+						const normalizedContent = contentParts.map((part) =>
+							typeof part === "string" ? { type: "text" as const, text: part } : part
 						);
 						messagesPayload.push({ role: "user", content: normalizedContent } as UserModelMessage);
 					} else {
@@ -363,7 +380,7 @@ export abstract class ProviderClient {
 				logger.debug(`Processing assistant message`);
 				const contentParts: (TextPart | ToolCallPart | ReasoningOutput)[] = [];
 
-				for (const part of message.content) {
+				for (const part of messageContent) {
 					if (part instanceof LanguageModelToolCallPart) {
 						const toolCallPart: ToolCallPartWithProviderOptions = {
 							type: "tool-call",
@@ -449,6 +466,6 @@ export abstract class ProviderClient {
 	protected processResultData(result: StreamTextResult<Record<string, any>, never>): Promise<LanguageModelUsage> {
 		// Default implementation does nothing.
 		// Subclasses can override to process result data from the provider.
-		return result.usage
+		return result.usage;
 	}
 }
