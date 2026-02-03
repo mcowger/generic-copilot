@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.24.0] - 2026-02-03
+
+- fix: handle VS Code API change where message.content can be a string (0581daf)
+- Merge pull request #64 from n-r-w/extra_params (439c451)
+- refactor: remove unused warning function and simplify knob extraction logging (c428105)
+- chore: add /.serena to .gitignore (952475d)
+- feat: add extraction and validation for OpenAI-specific knobs in model parameters (03d4c35)
+
+
 ## [v0.23.0] - 2026-01-22
 
 - Merge pull request #63 from nkukard/nkupdates (f4417de)
