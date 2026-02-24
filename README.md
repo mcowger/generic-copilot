@@ -1,4 +1,18 @@
-# Generic Provider for Copilot
+# ⚠️ PROJECT NO LONGER MAINTAINED
+
+## 🚨 PLEASE MIGRATE TO: https://github.com/smallmain/vscode-unify-chat-provider
+
+This project is **no longer being actively maintained**.
+
+The alternative (`vscode-unify-chat-provider`) provides:
+- **Similar levels of control and visibility** over your chat providers
+- **Enhanced model definition information**
+- **Additional backend support, including Oauth options**
+- **Active development and maintenance**
+
+---
+
+# Generic Provider for Copilot (DEPRECATED)
 
 ![Splash Image](/docs/images/splash.jpg)
 
