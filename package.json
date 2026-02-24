@@ -297,14 +297,14 @@
 		"typescript-eslint": "^8.46.2"
 	},
 	"dependencies": {
-		"@ai-sdk/anthropic": "^2.0.56",
-		"@ai-sdk/deepseek": "^1.0.32",
-		"@ai-sdk/google": "^2.0.44",
-		"@ai-sdk/openai": "^2.0.77",
-		"@ai-sdk/openai-compatible": "^1.0.28",
+		"@ai-sdk/anthropic": "^3.0.46",
+		"@ai-sdk/deepseek": "^2.0.20",
+		"@ai-sdk/google": "^3.0.30",
+		"@ai-sdk/openai": "^3.0.32",
+		"@ai-sdk/openai-compatible": "^2.0.30",
 		"@anthropic-ai/claude-agent-sdk": "^0.1.67",
-		"@openrouter/ai-sdk-provider": "^1.4.0",
-		"ai": "^5.0.107",
+		"@openrouter/ai-sdk-provider": "^2.2.3",
+		"ai": "^6.0.98",
 		"openai": "^6.9.1",
 		"tokenx": "^1.2.1"
 	}

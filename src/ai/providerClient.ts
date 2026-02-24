@@ -27,11 +27,11 @@ import {
 	SystemModelMessage,
 	ModelMessage,
 	LanguageModel,
-	Provider,
 	ProviderMetadata,
 	ToolCallPart,
 	ImagePart,
 } from "ai";
+import { ProviderV3 } from "@ai-sdk/provider";
 import { LanguageModelChatMessageRole, LanguageModelToolResultPart } from "vscode";
 import { MessageLogger, LoggedRequest, LoggedResponse, LoggedInteraction } from "./utils/messageLogger";
 import { logger } from "../outputLogger";
@@ -72,7 +72,7 @@ export abstract class ProviderClient {
 	protected config: ProviderConfig;
 
 	// The underlying provider instance used for API calls.
-	protected providerInstance: Provider;
+	protected providerInstance: ProviderV3;
 
 	/**
 	 * Constructs a new ProviderClient.
@@ -80,7 +80,7 @@ export abstract class ProviderClient {
 	 * @param config The provider configuration.
 	 * @param providerInstance The provider instance.
 	 */
-	protected constructor(type: VercelType, config: ProviderConfig, providerInstance: Provider) {
+	protected constructor(type: VercelType, config: ProviderConfig, providerInstance: ProviderV3) {
 		this.type = type;
 		this.config = config;
 		this.providerInstance = providerInstance;
@@ -456,9 +456,7 @@ export abstract class ProviderClient {
 		// Subclasses like OpenAIProviderClient can override to cache response metadata.
 	}
 
-	protected processResultData(result: StreamTextResult<Record<string, any>, never>): Promise<LanguageModelUsage> {
-		// Default implementation does nothing.
-		// Subclasses can override to process result data from the provider.
+	protected processResultData(result: StreamTextResult<Record<string, any>, never>): PromiseLike<LanguageModelUsage> {
 		return result.usage;
 	}
 }
