@@ -33,7 +33,7 @@
 				},
 	    		"background": {
 	    			"activeOnStart": true,
-	    			"beginsPattern": "\\[watch\\]",
+	    			"beginsPattern": "^> esbuild|\\[watch\\] build started",
 	      			"endsPattern": "\\[watch\\] build finished"
 	    		}
 			},
