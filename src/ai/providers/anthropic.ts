@@ -152,7 +152,7 @@ export function addAnthropicCacheControlToRecentUserMessages(
 	// Build target indices based on conversation length
 	// For longer conversations (>5 messages), prioritize recent assistant messages over system
 	const targetIndices = new Set<number>();
-	
+
 	if (messages.length > 5 && assistantIndices.length >= 2) {
 		// Long conversation: mark last 2 assistant messages and last user/tool
 		targetIndices.add(assistantIndices[0]); // last assistant
@@ -176,7 +176,7 @@ export function addAnthropicCacheControlToRecentUserMessages(
 				// For user messages, add cache control to the last content block
 				const lastPartIndex = (m.content as any[]).length - 1;
 				logger.debug(`[Cache Control] Adding to message ${index} (${m.role}), last part index: ${lastPartIndex}, part type: ${(m.content as any[])[lastPartIndex]?.type}`);
-				
+
 				const newContent = m.content.map((part: any, partIndex: number) => {
 					// Add cache control to the LAST part (regardless of type)
 					if (partIndex === lastPartIndex) {
@@ -258,16 +258,16 @@ export class AnthropicProviderClient extends ProviderClient {
 
 	override convertMessages(messages: readonly LanguageModelChatRequestMessage[]): ModelMessage[] {
 		const converted = super.convertMessages(messages);
-		
+
 		// Log message structure before adding cache control
 		logger.debug(`[Cache Control] Converting ${converted.length} messages:`);
 		converted.forEach((m, i) => {
-			const contentType = Array.isArray(m.content) 
+			const contentType = Array.isArray(m.content)
 				? `array[${(m.content as any[]).length}]: ${(m.content as any[]).map((p: any) => p.type).join(', ')}`
 				: typeof m.content === 'string' ? 'string' : 'null';
 			logger.debug(`  [${i}] ${m.role}: ${contentType}`);
 		});
-		
+
 		// Add cache control strategically to stay within 4 breakpoint limit
 		// For short conversations (<=5 messages), cache the system message
 		// For longer conversations, skip system (already cached) and focus on recent messages
@@ -276,13 +276,13 @@ export class AnthropicProviderClient extends ProviderClient {
 			result = addAnthropicCacheControlToLastSystemMessage(result);
 		}
 		result = addAnthropicCacheControlToRecentUserMessages(result);
-		
+
 		// Log final cache control placement
 		logger.debug(`[Cache Control] Final cache control placement:`);
 		result.forEach((m, i) => {
 			const hasCacheControl = m.providerOptions?.anthropic?.cacheControl ? true : false;
-			const contentCacheControl = Array.isArray(m.content) 
-				? (m.content as any[]).map((p: any, pi: number) => 
+			const contentCacheControl = Array.isArray(m.content)
+				? (m.content as any[]).map((p: any, pi: number) =>
 					p.providerOptions?.anthropic?.cacheControl ? `part[${pi}]` : null
 				).filter(Boolean).join(', ')
 				: '';
@@ -290,14 +290,14 @@ export class AnthropicProviderClient extends ProviderClient {
 				logger.debug(`  [${i}] ${m.role}: message=${hasCacheControl}, content=${contentCacheControl || 'none'}`);
 			}
 		});
-		
+
 		return result;
 	}
 
 	override convertTools(options: ProvideLanguageModelChatResponseOptions): Record<string, any> | undefined {
 		const tools = super.convertTools(options);
 		const result = addAnthropicCacheControlToLastTool(tools);
-		
+
 		// Log which tool got cache control
 		if (result) {
 			const toolsWithCache = Object.entries(result)
@@ -307,7 +307,7 @@ export class AnthropicProviderClient extends ProviderClient {
 				logger.debug(`[Cache Control] Tools with cache control: ${toolsWithCache.join(', ')}`);
 			}
 		}
-		
+
 		return result;
 	}
 }
