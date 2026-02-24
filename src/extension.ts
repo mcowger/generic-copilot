@@ -4,7 +4,6 @@ import * as path from "path";
 import { ChatModelProvider } from "./provider";
 import type { ProviderConfig } from "./types";
 import { ConfigurationPanel } from "./configurationPanel";
-import { initStatusBar } from "./statusBar";
 import { ConsoleViewProvider } from "./consoleView";
 import { logger } from "./outputLogger";
 import { registerInlineCompletionItemProvider } from "./autocomplete/fimProvider";
@@ -60,8 +59,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Keep UA minimal: only extension version and VS Code version
 	const ua = `generic-copilot/${extVersion} VSCode/${vscodeVersion}`;
 
-	const tokenCountStatusBarItem: vscode.StatusBarItem = initStatusBar(context);
-	const provider = new ChatModelProvider(context.secrets, ua, tokenCountStatusBarItem, context);
+	const provider = new ChatModelProvider(context.secrets, ua, context);
 	const providerRegistration = vscode.lm.registerLanguageModelChatProvider("generic-copilot", provider);
 	registerInlineCompletionItemProvider(context);
 	context.subscriptions.push(providerRegistration);

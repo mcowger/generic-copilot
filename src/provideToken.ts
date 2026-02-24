@@ -26,9 +26,15 @@ async function loadEstimateTokenCount() {
 
 export async function prepareTokenCount(
 	_model: LanguageModelChatInformation,
-	text: LanguageModelChatRequestMessage,
+	text: string | LanguageModelChatRequestMessage,
 	_token: CancellationToken
 ): Promise<number> {
+	// Handle string input directly
+	if (typeof text === "string") {
+		logger.debug(`Counting tokens for string input (length: ${text.length})`);
+		return estimateTextTokens(text);
+	}
+
 	// For complex messages, calculate tokens for each part separately
 	let totalTokens = 0;
 
@@ -45,17 +51,24 @@ export async function prepareTokenCount(
 			// Tool call token calculation
 			totalTokens += await estimateToolTokens(part);
 		} else if (part instanceof vscode.LanguageModelToolResultPart) {
-			// Tool result token calculation
-			const resultText = typeof part.content === "string" ? part.content : JSON.stringify(part.content);
-			totalTokens += await estimateTextTokens(resultText);
+			// Tool result content is Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>
+			// Extract text from each inner part rather than JSON.stringify-ing the objects
+			for (const inner of part.content) {
+				if (inner instanceof vscode.LanguageModelTextPart) {
+					totalTokens += await estimateTextTokens(inner.value);
+				} else if (inner instanceof LanguageModelDataPart) {
+					totalTokens += await estimateImageTokens(inner);
+				} else if (inner !== null && inner !== undefined) {
+				totalTokens += await estimateTextTokens(String(inner));
+				}
+			}
 		} else if (part instanceof LanguageModelDataPart) {
-			// Image data token calculation
+		// Image data token calculation
 			totalTokens += await estimateImageTokens(part);
 		}
 	}
 	// Apply correction factor based on empirical observations
 	totalTokens = Math.ceil(totalTokens * 1.0166);
-	//logger.debug(`Token count prepared: ${totalTokens}`);
 	return totalTokens;
 }
 
@@ -69,6 +82,25 @@ export async function estimateMessagesTokens(msgs: readonly vscode.LanguageModel
 		for (const part of contentParts) {
 			if (part instanceof vscode.LanguageModelTextPart) {
 				total += estimateTokenCountFn(part.value);
+			} else if (part instanceof vscode.LanguageModelToolCallPart) {
+				// Count tool call tokens (name + input + callId)
+				total += estimateTokenCountFn(part.name);
+				total += estimateTokenCountFn(JSON.stringify(part.input));
+				total += estimateTokenCountFn(part.callId);
+			} else if (part instanceof vscode.LanguageModelToolResultPart) {
+				// Tool result content is Array<LanguageModelTextPart | ...>
+				for (const inner of part.content) {
+					if (inner instanceof vscode.LanguageModelTextPart) {
+						total += estimateTokenCountFn(inner.value);
+					} else if (inner instanceof LanguageModelDataPart) {
+						total += await estimateImageTokens(inner);
+					} else if (inner !== null && inner !== undefined) {
+						total += estimateTokenCountFn(String(inner));
+					}
+				}
+			} else if (part instanceof LanguageModelDataPart) {
+				// Count image tokens
+				total += await estimateImageTokens(part);
 			}
 		}
 	}

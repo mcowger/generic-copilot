@@ -24,12 +24,10 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 	 * Create a provider using the given secret storage for the API key.
 	 * @param secrets VS Code secret storage.
 	 * @param userAgent User agent string for API requests.
-	 * @param statusBarItem Status bar item for displaying token count.
 	 */
 	constructor(
 		private readonly secrets: vscode.SecretStorage,
 		private readonly userAgent: string,
-		private readonly statusBarItem: vscode.StatusBarItem,
 		private readonly context: vscode.ExtensionContext
 	) { }
 
@@ -62,13 +60,11 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 	 */
 	async provideTokenCount(
 		model: LanguageModelChatInformation,
-		text: LanguageModelChatRequestMessage,
+		text: string | LanguageModelChatRequestMessage,
 		_token: CancellationToken
 	): Promise<number> {
-		//logger.debug(`Providing token count for model "${model.id}"`);
 		try {
 			const tokenCount = await prepareTokenCount(model, text, _token);
-			//logger.debug(`Token count for model "${model.id}": ${tokenCount}`);
 			return tokenCount;
 		} catch (error) {
 			throw error;
@@ -123,13 +119,12 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 					progress,
 				);
 
-				// Step 3: Finalize response (usage, metrics, UI updates)
-				await client.finalizeResponse(
+				// Step 3: Finalize response (usage, metrics, logging)
+			await client.finalizeResponse(
 					ctx,
 					result,
 					modelItem,
-					this.statusBarItem,
-				);
+			);
 				return;
 			} catch (error) {
 				progress.report(

@@ -9,7 +9,7 @@ import {
 	CancellationToken,
 	LanguageModelDataPart,
 } from "vscode";
-import { updateContextStatusBar } from "../statusBar";
+
 import { z } from "zod";
 import * as vscode from "vscode";
 
@@ -247,7 +247,6 @@ export abstract class ProviderClient {
 		ctx: RequestContext,
 		result: StreamTextResult<Record<string, any>, never>,
 		config: ModelItem,
-		statusBarItem: vscode.StatusBarItem
 	): Promise<void> {
 		const messageLogger = MessageLogger.getInstance();
 
@@ -267,12 +266,6 @@ export abstract class ProviderClient {
 			ctx.responseLog.tokensPerSecond = Math.round(ctx.responseLog.usage.outputTokens / durationSeconds);
 		}
 
-		// Update status bar
-		updateContextStatusBar(
-			ctx.responseLog.usage.totalTokens || 0,
-			config.model_properties.context_length || 0,
-			statusBarItem
-		);
 
 		// Log the response
 		messageLogger.addRequestResponse(ctx.responseLog, ctx.interactionId);
