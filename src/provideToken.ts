@@ -55,7 +55,7 @@ export async function prepareTokenCount(
 	}
 	// Apply correction factor based on empirical observations
 	totalTokens = Math.ceil(totalTokens * 1.0166);
-	logger.debug(`Token count prepared: ${totalTokens}`);
+	//logger.debug(`Token count prepared: ${totalTokens}`);
 	return totalTokens;
 }
 
@@ -96,7 +96,7 @@ export async function estimateToolTokens(toolCall: vscode.LanguageModelToolCallP
  * Uses a conservative heuristic: 100 base tokens + ~1 token per KB of data.
  */
 export async function estimateImageTokens(dataPart: typeof LanguageModelDataPart.prototype): Promise<number> {
-	logger.debug(`Estimating tokens for image data part with mimeType "${dataPart.mimeType}"`);
+	//logger.debug(`Estimating tokens for image data part with mimeType "${dataPart.mimeType}"`);
 
 	const baseImageTokens = 100;
 	const dataSize = dataPart.data.byteLength;

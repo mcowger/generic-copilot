@@ -65,10 +65,10 @@ export class ChatModelProvider implements LanguageModelChatProvider {
 		text: LanguageModelChatRequestMessage,
 		_token: CancellationToken
 	): Promise<number> {
-		logger.debug(`Providing token count for model "${model.id}"`);
+		//logger.debug(`Providing token count for model "${model.id}"`);
 		try {
 			const tokenCount = await prepareTokenCount(model, text, _token);
-			logger.debug(`Token count for model "${model.id}": ${tokenCount}`);
+			//logger.debug(`Token count for model "${model.id}": ${tokenCount}`);
 			return tokenCount;
 		} catch (error) {
 			throw error;

@@ -54,6 +54,9 @@ export class CCv2ProviderClient extends ProviderClient {
 			result = [claudeCodeMessage, ...systemMessages, ...nonSystemMessages];
 		}
 
+		// Add cache control to recent user/assistant messages
+		result = addAnthropicCacheControlToRecentUserMessages(result);
+
 		return result;
 	}
 
