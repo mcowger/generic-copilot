@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.25.2] - 2026-02-24
+
+- fix: correct display name format in model information (1ec2ff0)
+
+
 ## [v0.25.1] - 2026-02-24
 
 - No changes detected (manual release).
