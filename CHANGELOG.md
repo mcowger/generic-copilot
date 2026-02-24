@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.24.1] - 2026-02-24
+
+- Address caching behavior (3cd932a)
+- Adjust caching breakpoints to handle tool call results better. (59685a0)
+
+
 ## [v0.24.0] - 2026-02-03
 
 - fix: handle VS Code API change where message.content can be a string (0581daf)
