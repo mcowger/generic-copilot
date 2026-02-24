@@ -41,12 +41,12 @@ export async function prepareLanguageModelChatInformation(
 
 			// Build canonical ID using provider key and raw model id
 			const modelId =  `${props.owned_by}/${resolved.id}`;
-			// Compose human-friendly display name as providerDisplayName/modelDisplayName[::configId]
+			// Compose human-friendly display name as modelDisplayName/providerDisplayName[::configId]
 
 			const providerMeta = providers.find((p) => p.id === props.owned_by);
 			const providerDisplayName = providerMeta?.displayName || providerMeta?.id;
 			const modelDisplayName = resolved.displayName || resolved.id;
-			const modelFullName = `${providerDisplayName}/${modelDisplayName}`;
+			const modelFullName = `${modelDisplayName}/${providerDisplayName}`;
 
 			return {
 				id: modelId,
