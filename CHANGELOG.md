@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.25.1] - 2026-02-24
+
+- No changes detected (manual release).
+
+
 ## [v0.25.0] - 2026-02-24
 
 - refactor: remove status bar integration as its now duplicative and update token counting logic (d97e1d1)
