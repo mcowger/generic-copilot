@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.25.0] - 2026-02-24
+
+- refactor: remove status bar integration as its now duplicative and update token counting logic (d97e1d1)
+
+
 ## [v0.24.1] - 2026-02-24
 
 - Address caching behavior (3cd932a)
